@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body {
+    margin: 0;
+    padding: 0;
+    background-color: #fbf9f9;
+    color: #1b1c1c;
+    font-family: 'Work Sans', sans-serif;
+  }
+  
+  body {
+    overscroll-behavior: none;
+  }
+  
+  /* Remove default webkit scrollbars for brutalist clean aesthetic */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #efeded;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #050505;
+  }
+}
+
+/* Material Symbols font icon helper */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Hard mechanical box-shadow utility classes */
+.hard-shadow-chartreuse {
+  box-shadow: 3px 3px 0px #CCFF00;
+}
+.hard-shadow-chartreuse-lg {
+  box-shadow: 4px 4px 0px #CCFF00;
+}
+.hard-shadow-black {
+  box-shadow: 3px 3px 0px #050505;
+}
+.hard-shadow-black-lg {
+  box-shadow: 4px 4px 0px #050505;
+}
