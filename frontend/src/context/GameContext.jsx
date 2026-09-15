@@ -5,26 +5,76 @@ const GameContext = createContext();
 
 export function GameProvider({ children }) {
   const [currentView, setCurrentView] = useState('arena'); // 'arena' | 'admin' | 'portal'
-  const [p1Score, setP1Score] = useState(1450);
-  const [p2Score, setP2Score] = useState(1200);
-  const [p1Streak, setP1Streak] = useState(4);
-  const [p2Streak, setP2Streak] = useState(1);
+  const [adminSubTab, setAdminSubTab] = useState('thalaivar'); // 'thalaivar' | 'total-comalies' | 'kanaku-valaku'
+
+  // Connected Players & Teams Roster for "Total Comalies" & Arena
+  const [players, setPlayers] = useState([
+    {
+      id: 1,
+      name: 'Alex Vance',
+      handle: 'AGENT ZERO',
+      tag: 'YOU',
+      lane: 'Lane #01',
+      score: 1450,
+      streak: 4,
+      status: 'CONNECTED',
+      activeSabotages: []
+    },
+    {
+      id: 2,
+      name: 'Elena Rostova',
+      handle: 'VORTEX-9',
+      tag: 'OPPONENT',
+      lane: 'Lane #02',
+      score: 1200,
+      streak: 1,
+      status: 'CONNECTED',
+      activeSabotages: ['Sound Distortion']
+    },
+    {
+      id: 3,
+      name: 'Marcus Thorne',
+      handle: 'NULL_POINTER',
+      tag: 'BENCH',
+      lane: 'Lane #03',
+      score: 950,
+      streak: 0,
+      status: 'CONNECTED',
+      activeSabotages: []
+    },
+    {
+      id: 4,
+      name: 'CyberSpectre',
+      handle: 'CYBER_SPECTRE',
+      tag: 'STANDBY',
+      lane: 'Lane #04',
+      score: 750,
+      streak: 0,
+      status: 'CONNECTED',
+      activeSabotages: []
+    }
+  ]);
+
   const [p1Handle, setP1Handle] = useState('VALKYRIE_01');
   const [p2Handle, setP2Handle] = useState('NEXUS_CORE');
   const [activeFaction, setActiveFaction] = useState('KINETIC');
   const [arenaPin, setArenaPin] = useState('794-20');
 
-  // Buzzer & Lock-in State
+  // Buzzer & Lock-in State with sequential queue
   const [buzzersArmed, setBuzzersArmed] = useState(true);
   const [isLockedIn, setIsLockedIn] = useState(false);
-  const [lockedPlayer, setLockedPlayer] = useState({
-    name: 'PLAYER 1 // ALEX VANCE',
-    tag: 'AGENT ZERO (YOU)',
-    latency: '0.142s',
-    timestamp: '14:02:44.819'
-  });
 
-  // Sabotages State
+  const initialQueue = [
+    { id: 1, playerId: 1, name: 'Alex Vance', handle: 'AGENT ZERO (YOU)', latency: '0.142s', timestamp: '14:02:44.819', rank: 1 },
+    { id: 2, playerId: 2, name: 'Elena Rostova', handle: 'VORTEX-9 (OPPONENT)', latency: '0.198s', timestamp: '14:02:44.875', rank: 2 },
+    { id: 3, playerId: 3, name: 'Marcus Thorne', handle: 'NULL_POINTER', latency: '0.245s', timestamp: '14:02:44.922', rank: 3 },
+    { id: 4, playerId: 4, name: 'CyberSpectre', handle: 'CYBER_SPECTRE', latency: '0.312s', timestamp: '14:02:44.989', rank: 4 }
+  ];
+
+  const [buzzerQueue, setBuzzerQueue] = useState(initialQueue);
+  const [queueIndex, setQueueIndex] = useState(0);
+
+  // Active Threat / Sabotage for live arena
   const [activeThreat, setActiveThreat] = useState({
     name: 'NONE ACTIVE',
     isActive: false,
@@ -36,14 +86,14 @@ export function GameProvider({ children }) {
   // Round Clock
   const [roundSeconds, setRoundSeconds] = useState(102.85);
 
-  // Activity Stream Audit Log
+  // Kanaku Valaku (Audit Log)
   const [auditLogs, setAuditLogs] = useState([
     {
       id: 1,
       time: '14:02:44',
       category: 'LOCK EVENT',
       message: 'Buzzer resolved to Player 1 (Alex Vance) in 0.142s.',
-      colorClass: 'text-signal-emerald'
+      colorClass: 'text-signal-emerald font-bold'
     },
     {
       id: 2,
@@ -56,7 +106,7 @@ export function GameProvider({ children }) {
       id: 3,
       time: '14:01:50',
       category: 'SABOTAGE',
-      message: 'Sound Distortion active on Player 1 terminal.',
+      message: 'Sound Distortion active on Player 2 (Elena Rostova) terminal.',
       colorClass: 'text-sabotage-crimson font-bold'
     },
     {
@@ -71,14 +121,13 @@ export function GameProvider({ children }) {
   const threatTimerRef = useRef(null);
   const resetTimeoutRef = useRef(null);
 
-  // Format current time
   const getFormattedTime = () => {
     const d = new Date();
     const pad = (n) => n.toString().padStart(2, '0');
     return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
   };
 
-  // Web Audio Synth Beep
+  // Web Audio Synth
   const playTone = (frequency = 880, duration = 0.18, type = 'sine') => {
     try {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -99,7 +148,7 @@ export function GameProvider({ children }) {
     }
   };
 
-  // Add an entry to the audit log
+  // Append entry to Kanaku Valaku
   const appendLog = (category, message, colorClass = 'text-primary') => {
     setAuditLogs((prev) => [
       {
@@ -113,31 +162,88 @@ export function GameProvider({ children }) {
     ]);
   };
 
-  // Adjust score
-  const adjustScore = (player, delta) => {
-    if (player === 1) {
-      setP1Score((prev) => {
-        const next = prev + delta;
-        appendLog('SCORE', `Admin adjusted Player 1 by ${delta > 0 ? '+' : ''}${delta} pts.`);
-        return next;
-      });
+  // Adjust score of any player by ID
+  const adjustPlayerScore = (playerId, delta) => {
+    setPlayers((prev) =>
+      prev.map((p) => {
+        if (p.id === playerId) {
+          const nextScore = p.score + delta;
+          appendLog('SCORE', `Adjusted score for ${p.name} (${delta > 0 ? '+' : ''}${delta} pts). New total: ${nextScore}.`);
+          return { ...p, score: nextScore };
+        }
+        return p;
+      })
+    );
+  };
+
+  // Set manual custom score for player
+  const setPlayerCustomScore = (playerId, newScore) => {
+    setPlayers((prev) =>
+      prev.map((p) => {
+        if (p.id === playerId) {
+          appendLog('SCORE', `Admin manually set score for ${p.name} to ${newScore} pts.`);
+          return { ...p, score: newScore };
+        }
+        return p;
+      })
+    );
+  };
+
+  // Legacy P1 / P2 helper wrappers
+  const p1Score = players.find((p) => p.id === 1)?.score ?? 1450;
+  const p2Score = players.find((p) => p.id === 2)?.score ?? 1200;
+  const adjustScore = (playerNum, delta) => {
+    adjustPlayerScore(playerNum, delta);
+  };
+
+  // Current active buzzer player from the queue
+  const currentBuzzerWinner = buzzerQueue[queueIndex] || {
+    id: 0,
+    playerId: 0,
+    name: 'NO FURTHER BUZZERS',
+    handle: 'QUEUE EXHAUSTED',
+    latency: '0.000s',
+    timestamp: '--:--:--',
+    rank: 0
+  };
+
+  // Step to the next player in the buzzer queue
+  const advanceToNextPlayer = () => {
+    if (queueIndex < buzzerQueue.length - 1) {
+      const nextIndex = queueIndex + 1;
+      setQueueIndex(nextIndex);
+      const nextPlayer = buzzerQueue[nextIndex];
+      playTone(780, 0.15);
+      appendLog(
+        'QUEUE ADVANCE',
+        `Admin advanced to next pressed player: #${nextPlayer.rank} ${nextPlayer.name} (${nextPlayer.latency} latency).`,
+        'text-acid-chartreuse font-bold'
+      );
     } else {
-      setP2Score((prev) => {
-        const next = prev + delta;
-        appendLog('SCORE', `Admin adjusted Player 2 by ${delta > 0 ? '+' : ''}${delta} pts.`);
-        return next;
-      });
+      playTone(300, 0.2, 'sawtooth');
+      appendLog('QUEUE', 'Buzzer queue reached the end. No more pressed players.', 'text-on-surface-variant');
     }
   };
 
-  // Buzzer Trigger Action
+  // Award floor points to current buzzer winner
+  const awardFastestAnswer = (playerIdOverride) => {
+    const targetPlayerId = playerIdOverride || currentBuzzerWinner.playerId || 1;
+    adjustPlayerScore(targetPlayerId, 50);
+    playTone(1100, 0.2);
+    appendLog(
+      'ARBITRAGE',
+      `Floor points (+50) awarded to ${currentBuzzerWinner.name || 'Player ' + targetPlayerId}.`,
+      'text-signal-emerald font-bold'
+    );
+  };
+
+  // Buzzer Trigger in Arena
   const executeBuzzIn = () => {
     if (isLockedIn || !buzzersArmed) return;
 
     setIsLockedIn(true);
     playTone(950, 0.22, 'triangle');
 
-    // Trigger celebration confetti
     try {
       confetti({
         particleCount: 45,
@@ -147,15 +253,18 @@ export function GameProvider({ children }) {
       });
     } catch (e) {}
 
-    const latencyNum = (0.120 + Math.random() * 0.08).toFixed(3);
+    const latencyNum = (0.12 + Math.random() * 0.08).toFixed(3);
     const nowTime = getFormattedTime();
 
-    setLockedPlayer({
-      name: 'PLAYER 1 // AGENT ZERO',
-      tag: 'YOU (AGENT ZERO)',
-      latency: `${latencyNum}s`,
-      timestamp: nowTime
-    });
+    // Set queue to active player first
+    const updatedQueue = [
+      { id: 1, playerId: 1, name: 'Alex Vance', handle: 'AGENT ZERO (YOU)', latency: `${latencyNum}s`, timestamp: nowTime, rank: 1 },
+      { id: 2, playerId: 2, name: 'Elena Rostova', handle: 'VORTEX-9', latency: '0.198s', timestamp: nowTime, rank: 2 },
+      { id: 3, playerId: 3, name: 'Marcus Thorne', handle: 'NULL_POINTER', latency: '0.245s', timestamp: nowTime, rank: 3 },
+      { id: 4, playerId: 4, name: 'CyberSpectre', handle: 'CYBER_SPECTRE', latency: '0.312s', timestamp: nowTime, rank: 4 }
+    ];
+    setBuzzerQueue(updatedQueue);
+    setQueueIndex(0);
 
     appendLog('LOCK EVENT', `Buzzer locked by Player 1 (Agent Zero) in ${latencyNum}s! Priority acquired.`, 'text-signal-emerald font-bold');
 
@@ -165,7 +274,6 @@ export function GameProvider({ children }) {
     }, 7000);
   };
 
-  // Buzzer Controls
   const armBuzzers = () => {
     setBuzzersArmed(true);
     playTone(600, 0.1);
@@ -175,53 +283,50 @@ export function GameProvider({ children }) {
   const lockBuzzers = () => {
     setBuzzersArmed(false);
     playTone(300, 0.15, 'square');
-    appendLog('BUZZERS', 'Master circuit LOCKED by Game Master.', 'text-sabotage-crimson');
+    appendLog('BUZZERS', 'Master circuit LOCKED by Game Master.', 'text-sabotage-crimson font-bold');
   };
 
   const resetBuzzers = () => {
     setIsLockedIn(false);
-    setLockedPlayer({
-      name: 'AWAITING LOCK-IN',
-      tag: 'NONE',
-      latency: '0.000s',
-      timestamp: '--:--:--'
-    });
+    setQueueIndex(0);
+    setBuzzerQueue([
+      { id: 1, playerId: 1, name: 'Alex Vance', handle: 'AGENT ZERO', latency: '0.142s', timestamp: getFormattedTime(), rank: 1 },
+      { id: 2, playerId: 2, name: 'Elena Rostova', handle: 'VORTEX-9', latency: '0.198s', timestamp: getFormattedTime(), rank: 2 },
+      { id: 3, playerId: 3, name: 'Marcus Thorne', handle: 'NULL_POINTER', latency: '0.245s', timestamp: getFormattedTime(), rank: 3 }
+    ]);
     playTone(700, 0.1);
-    appendLog('BUZZERS', 'Hardware buffers flushed. Awaiting next buzz.', 'text-on-surface-variant');
+    appendLog('BUZZERS', 'Hardware buffers flushed & queue reset.', 'text-on-surface-variant');
   };
 
-  const awardFastestAnswer = (player) => {
-    adjustScore(player, 50);
-    playTone(1100, 0.2);
-    appendLog('ARBITRAGE', `Lock-in awarded to Player ${player} (+50 Floor points).`, 'text-signal-emerald');
-  };
+  // Deploy Sabotage to a target player
+  const deploySabotageToPlayer = (sabotageName, duration, targetPlayerId) => {
+    const target = players.find((p) => p.id === targetPlayerId);
+    const targetName = target ? target.name : `Player ${targetPlayerId}`;
 
-  const rejectLockIn = () => {
-    playTone(250, 0.25, 'sawtooth');
-    appendLog('ARBITRAGE', 'Lock-in attempt nullified by Game Master.', 'text-sabotage-crimson font-bold');
-    setLockedPlayer({
-      name: 'SIGNAL NULLIFIED',
-      tag: 'FOUL',
-      latency: '0.000s',
-      timestamp: getFormattedTime()
-    });
-  };
-
-  // Sabotage Simulation
-  const deploySabotage = (name, duration, target) => {
-    if (threatTimerRef.current) clearInterval(threatTimerRef.current);
+    setPlayers((prev) =>
+      prev.map((p) => {
+        if (p.id === targetPlayerId) {
+          const updatedSabotages = p.activeSabotages.includes(sabotageName)
+            ? p.activeSabotages
+            : [...p.activeSabotages, sabotageName];
+          return { ...p, activeSabotages: updatedSabotages };
+        }
+        return p;
+      })
+    );
 
     setActiveThreat({
-      name: `${name.toUpperCase()} [ACTIVE]`,
+      name: `${sabotageName.toUpperCase()} [ACTIVE]`,
       isActive: true,
       timeLeft: duration || 15,
-      target,
-      sub: `Tactical disruption payload deployed against ${target}.`
+      target: targetName,
+      sub: `Tactical disruption payload deployed against ${targetName}.`
     });
 
     playTone(420, 0.3, 'sawtooth');
-    appendLog('SABOTAGE', `${name} fired directly against ${target}.`, 'text-sabotage-crimson font-bold');
+    appendLog('SABOTAGE', `${sabotageName} deployed directly against ${targetName}.`, 'text-sabotage-crimson font-bold');
 
+    if (threatTimerRef.current) clearInterval(threatTimerRef.current);
     let left = duration || 15;
     threatTimerRef.current = setInterval(() => {
       left -= 1;
@@ -234,23 +339,49 @@ export function GameProvider({ children }) {
           target: '',
           sub: 'Shields nominal. No hostile modifiers.'
         });
-        appendLog('SYS', `Disruption expired: ${name}.`, 'text-on-surface-variant');
+        appendLog('SYS', `Disruption expired: ${sabotageName} on ${targetName}.`, 'text-on-surface-variant');
       } else {
         setActiveThreat((prev) => ({ ...prev, timeLeft: left }));
       }
     }, 1000);
   };
 
-  const cancelSabotage = (name) => {
-    if (threatTimerRef.current) clearInterval(threatTimerRef.current);
-    setActiveThreat({
-      name: 'NONE ACTIVE',
-      isActive: false,
-      timeLeft: 0,
-      target: '',
-      sub: 'Shields nominal. No hostile modifiers.'
-    });
-    appendLog('SYS', `Sabotage aborted manually: ${name}.`, 'text-on-surface-variant');
+  // Remove / Neutralize Sabotage from a player (Admin capability)
+  const removeSabotageFromPlayer = (playerId, sabotageName) => {
+    const player = players.find((p) => p.id === playerId);
+    const playerName = player ? player.name : `Player ${playerId}`;
+
+    setPlayers((prev) =>
+      prev.map((p) => {
+        if (p.id === playerId) {
+          return {
+            ...p,
+            activeSabotages: sabotageName
+              ? p.activeSabotages.filter((s) => s !== sabotageName)
+              : []
+          };
+        }
+        return p;
+      })
+    );
+
+    if (activeThreat.isActive) {
+      setActiveThreat({
+        name: 'NONE ACTIVE',
+        isActive: false,
+        timeLeft: 0,
+        target: '',
+        sub: 'Shields nominal. Hostile modifier neutralized by Admin.'
+      });
+      if (threatTimerRef.current) clearInterval(threatTimerRef.current);
+    }
+
+    playTone(1050, 0.25, 'triangle');
+    appendLog(
+      'NEUTRALIZE',
+      `Admin OVERRIDE: Removed sabotage [${sabotageName || 'ALL DISRUPTIONS'}] from ${playerName}.`,
+      'text-signal-emerald font-bold'
+    );
   };
 
   const clearLogs = () => {
@@ -258,7 +389,7 @@ export function GameProvider({ children }) {
     appendLog('SYS', 'Audit buffer cleared.', 'text-on-surface-variant');
   };
 
-  // Keyboard shortcut listener for spacebar in Arena
+  // Spacebar listener for Player Arena
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.code === 'Space' && e.target === document.body && currentView === 'arena') {
@@ -275,10 +406,11 @@ export function GameProvider({ children }) {
       value={{
         currentView,
         setCurrentView,
+        adminSubTab,
+        setAdminSubTab,
+        players,
         p1Score,
         p2Score,
-        p1Streak,
-        p2Streak,
         p1Handle,
         setP1Handle,
         p2Handle,
@@ -289,19 +421,23 @@ export function GameProvider({ children }) {
         setArenaPin,
         buzzersArmed,
         isLockedIn,
-        lockedPlayer,
+        buzzerQueue,
+        queueIndex,
+        currentBuzzerWinner,
+        advanceToNextPlayer,
         activeThreat,
         roundSeconds,
         auditLogs,
         adjustScore,
+        adjustPlayerScore,
+        setPlayerCustomScore,
         executeBuzzIn,
         armBuzzers,
         lockBuzzers,
         resetBuzzers,
         awardFastestAnswer,
-        rejectLockIn,
-        deploySabotage,
-        cancelSabotage,
+        deploySabotageToPlayer,
+        removeSabotageFromPlayer,
         clearLogs,
         playTone
       }}

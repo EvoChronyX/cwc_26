@@ -3,18 +3,21 @@ import { useGame } from '../context/GameContext';
 
 export default function PlayerArena() {
   const {
-    p1Score,
-    p2Score,
+    players,
     buzzersArmed,
     isLockedIn,
-    lockedPlayer,
+    currentBuzzerWinner,
     activeThreat,
     executeBuzzIn,
-    deploySabotage,
+    deploySabotageToPlayer,
     playTone
   } = useGame();
 
   const [selectedAnswer, setSelectedAnswer] = useState(null);
+  const [sabotageTargetPlayerId, setSabotageTargetPlayerId] = useState(2); // default opponent P2
+
+  const p1 = players.find((p) => p.id === 1) || { score: 1450, name: 'Alex Vance', handle: 'AGENT ZERO' };
+  const p2 = players.find((p) => p.id === 2) || { score: 1200, name: 'Elena Rostova', handle: 'VORTEX-9' };
 
   const questions = [
     {
@@ -39,12 +42,69 @@ export default function PlayerArena() {
     }
   ];
 
+  const sabotagesList = [
+    {
+      id: 'static-blind',
+      name: 'Static Blind',
+      badge: 'DEF 15s',
+      badgeColor: 'bg-primary text-on-primary',
+      desc: 'Injects heavy analog grain and severe optical blurring to target player HUD.',
+      duration: 15,
+      type: 'Available'
+    },
+    {
+      id: 'reverse-controls',
+      name: 'Reverse Controls',
+      badge: 'DEF 20s',
+      badgeColor: 'bg-primary text-on-primary',
+      desc: 'Inverts buzzer touch triggers and directional multiple choice selection matrix.',
+      duration: 20,
+      type: 'Available'
+    },
+    {
+      id: 'sound-distortion',
+      name: 'Sound Distortion',
+      badge: 'DEF 10s',
+      badgeColor: 'bg-primary text-on-primary',
+      desc: 'Streams 85dB filtered pink noise and synthetic radio fuzz into target earpiece.',
+      duration: 10,
+      type: 'Available'
+    },
+    {
+      id: 'buzzer-jammer',
+      name: 'Buzzer Jammer',
+      badge: 'CRITICAL',
+      badgeColor: 'bg-sabotage-crimson text-on-primary',
+      desc: 'Artificially inserts 3.00s latency buffer upon hardware buzzer strike.',
+      duration: 30,
+      type: 'Available'
+    },
+    {
+      id: 'double-risk',
+      name: 'Double Risk',
+      badge: '2X MULT',
+      badgeColor: 'bg-cobalt-deep text-on-primary',
+      desc: 'Doubles both point gain and point penalty for next locked submission.',
+      duration: 15,
+      type: 'Available'
+    },
+    {
+      id: 'time-drain',
+      name: 'Time Drain',
+      badge: '-5 SEC',
+      badgeColor: 'bg-primary text-on-primary',
+      desc: 'Instantly drains 10 continuous seconds from countdown clock during active prompt.',
+      duration: 10,
+      type: 'Available'
+    }
+  ];
+
   const handleSelectAnswer = (id) => {
     setSelectedAnswer(id);
     playTone(820, 0.09);
   };
 
-  const scoreDelta = p1Score - p2Score;
+  const scoreDelta = p1.score - p2.score;
 
   return (
     <div className="w-full pt-16 bg-background min-h-screen">
@@ -87,17 +147,17 @@ export default function PlayerArena() {
                 PROTOCOL 04.9
               </span>
             </div>
-            <h1 className="font-headline-xl text-headline-xl text-primary tracking-tight uppercase">
+            <h1 className="font-headline-xl text-headline-xl text-primary tracking-tight uppercase font-bold">
               Live Player Arena <span className="text-on-surface-variant font-light">// Real-Time Confrontation</span>
             </h1>
             <p className="font-body-base text-body-base text-on-surface-variant mt-2 max-w-2xl">
-              Execute fast-twitch reflex inputs, track telemetry divergence in real-time, and withstand active tactical disruption payloads routed from the Event Master engine.
+              Execute fast-twitch reflex inputs, track telemetry divergence in real-time, and fire tactical disruption payloads directly at contending opponents.
             </p>
           </div>
 
           {/* Quick Telemetry Stats */}
           <div className="flex items-center gap-4">
-            <div className="bg-surface-subtle p-4 rounded-xl flex flex-col items-start min-w-[130px]">
+            <div className="bg-surface-subtle p-4 rounded-xl flex flex-col items-start min-w-[130px] border border-hairline-light">
               <span className="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase">ROUND CLOCK</span>
               <span className="font-label-mono-lg text-headline-md text-primary font-bold tracking-tight">01:42.85</span>
             </div>
@@ -115,7 +175,7 @@ export default function PlayerArena() {
           <div className="xl:col-span-8 flex flex-col gap-8">
             
             {/* Head to Head HUD Card */}
-            <div className="w-full bg-surface-container-lowest rounded-2xl p-6 md:p-8 shadow-sm relative overflow-hidden">
+            <div className="w-full bg-surface-container-lowest rounded-2xl p-6 md:p-8 shadow-sm relative overflow-hidden border border-hairline-light">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 mb-6 border-b border-hairline-light gap-4">
                 <div className="flex items-center gap-3">
                   <span className="w-3 h-3 rounded-full bg-signal-emerald"></span>
@@ -141,7 +201,7 @@ export default function PlayerArena() {
                 </div>
 
                 {/* Player 1 (User) */}
-                <div className="bg-surface-subtle rounded-xl p-6 flex flex-col justify-between relative overflow-hidden group hover:bg-surface-container transition-colors">
+                <div className="bg-surface-subtle rounded-xl p-6 flex flex-col justify-between relative overflow-hidden group hover:bg-surface-container transition-colors border border-hairline-light">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 rounded-xl bg-primary text-on-primary flex items-center justify-center font-headline-md text-headline-md font-bold shadow-[2px_2px_0px_#CCFF00]">
@@ -149,10 +209,10 @@ export default function PlayerArena() {
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="font-headline-md text-headline-md font-bold text-primary tracking-tight">AGENT ZERO</span>
+                          <span className="font-headline-md text-headline-md font-bold text-primary tracking-tight">{p1.handle}</span>
                           <span className="bg-acid-chartreuse text-canvas-dark text-[9px] font-bold px-1.5 py-0.5 rounded uppercase">YOU</span>
                         </div>
-                        <span className="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase">AUTH: AGT-8491-VAL</span>
+                        <span className="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase">{p1.lane}</span>
                       </div>
                     </div>
                     <span className="material-symbols-outlined text-signal-emerald">verified_user</span>
@@ -167,7 +227,7 @@ export default function PlayerArena() {
                     </div>
                     <div className="flex items-baseline gap-2">
                       <span className="font-headline-xl text-headline-xl font-bold text-primary tracking-tight">
-                        {p1Score.toLocaleString()}
+                        {p1.score.toLocaleString()}
                       </span>
                       <span className="font-label-mono-lg text-label-mono-lg text-on-surface-variant">PTS</span>
                     </div>
@@ -186,7 +246,7 @@ export default function PlayerArena() {
                 </div>
 
                 {/* Player 2 (Opponent) */}
-                <div className="bg-surface-subtle rounded-xl p-6 flex flex-col justify-between relative overflow-hidden">
+                <div className="bg-surface-subtle rounded-xl p-6 flex flex-col justify-between relative overflow-hidden border border-hairline-light">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 rounded-xl bg-surface-container-high text-primary flex items-center justify-center font-headline-md text-headline-md font-bold">
@@ -194,10 +254,10 @@ export default function PlayerArena() {
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="font-headline-md text-headline-md font-bold text-primary tracking-tight">VORTEX-9</span>
+                          <span className="font-headline-md text-headline-md font-bold text-primary tracking-tight">{p2.handle}</span>
                           <span className="bg-surface-container text-on-surface-variant text-[9px] font-bold px-1.5 py-0.5 rounded uppercase">OPPONENT</span>
                         </div>
-                        <span className="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase">AUTH: AGT-2093-PAR</span>
+                        <span className="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase">{p2.lane}</span>
                       </div>
                     </div>
                     <span className="material-symbols-outlined text-outline">wifi_tethering</span>
@@ -212,7 +272,7 @@ export default function PlayerArena() {
                     </div>
                     <div className="flex items-baseline gap-2">
                       <span className="font-headline-xl text-headline-xl font-bold text-on-surface-variant tracking-tight">
-                        {p2Score.toLocaleString()}
+                        {p2.score.toLocaleString()}
                       </span>
                       <span className="font-label-mono-lg text-label-mono-lg text-on-surface-variant">PTS</span>
                     </div>
@@ -301,7 +361,7 @@ export default function PlayerArena() {
                       </div>
                       <div className="text-left">
                         <span className="font-headline-md text-headline-md text-acid-chartreuse font-bold block">
-                          YOU LOCKED IN! ({lockedPlayer.latency})
+                          YOU LOCKED IN! ({currentBuzzerWinner.latency})
                         </span>
                         <span className="font-body-sm text-body-sm text-on-primary">
                           Priority allocated. Waiting for Game Master ruling on Arena answer...
@@ -346,7 +406,7 @@ export default function PlayerArena() {
             </div>
 
             {/* Live Challenge Prompt Preview */}
-            <div className="w-full bg-surface-container-lowest rounded-2xl p-6 md:p-8 shadow-sm">
+            <div className="w-full bg-surface-container-lowest rounded-2xl p-6 md:p-8 shadow-sm border border-hairline-light">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <span className="font-label-mono-sm text-label-mono-sm uppercase text-cobalt-deep font-bold tracking-widest">
@@ -390,26 +450,45 @@ export default function PlayerArena() {
 
           </div>
 
-          {/* RIGHT: Tactical Sabotages & Real-Time Standings (xl:col-span-4) */}
+          {/* RIGHT: Tactical Sabotages Armory (Shifted completely to Arena as requested) */}
           <div className="xl:col-span-4 flex flex-col gap-8">
             
             {/* Synchronized Sabotages Deck */}
-            <div className="w-full bg-surface-container-lowest rounded-2xl p-6 shadow-sm flex flex-col">
+            <div className="w-full bg-surface-container-lowest rounded-2xl p-6 shadow-sm flex flex-col border border-hairline-light">
               <div className="flex items-center justify-between pb-4 mb-4 border-b border-hairline-light">
                 <div>
                   <span className="font-label-mono-sm text-label-mono-sm text-primary uppercase font-bold tracking-widest block">
-                    TACTICAL SABOTAGES DECK
+                    TACTICAL SABOTAGES ARMORY
                   </span>
                   <span className="font-body-sm text-body-sm text-on-surface-variant">
-                    Synchronized live with Event Admin payload state
+                    Contender disruption warfare deployment deck
                   </span>
                 </div>
                 <span className="material-symbols-outlined text-on-surface-variant">security</span>
               </div>
 
+              {/* Target Opponent Selector */}
+              <div className="p-3.5 bg-surface-subtle rounded-xl mb-4 flex flex-col gap-1.5 border border-hairline-light">
+                <label className="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold" htmlFor="arena-sabotage-target">
+                  Target Contender:
+                </label>
+                <select
+                  id="arena-sabotage-target"
+                  className="w-full bg-surface-container-lowest px-3 py-2 text-body-base font-medium rounded border border-hairline-light outline-none"
+                  value={sabotageTargetPlayerId}
+                  onChange={(e) => setSabotageTargetPlayerId(Number(e.target.value))}
+                >
+                  {players.filter((p) => p.id !== 1).map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} ({p.handle} - {p.lane})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               {/* Incoming Sabotage Threat Monitor */}
-              <div className={`p-4 rounded-xl mb-6 flex items-center justify-between transition-colors ${
-                activeThreat.isActive ? 'bg-error-container' : 'bg-surface-subtle'
+              <div className={`p-4 rounded-xl mb-6 flex items-center justify-between transition-colors border border-hairline-light ${
+                activeThreat.isActive ? 'bg-error-container border-sabotage-crimson' : 'bg-surface-subtle'
               }`}>
                 <div className="flex items-center gap-3">
                   <span className={`w-3 h-3 rounded-full ${activeThreat.isActive ? 'bg-sabotage-crimson animate-ping' : 'bg-signal-emerald'}`}></span>
@@ -431,99 +510,39 @@ export default function PlayerArena() {
                 </span>
               </div>
 
-              {/* 6 Synchronized Sabotage Cards */}
+              {/* 6 Deployable Sabotages Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-3">
-                {/* Sabotage 1: Static Blind */}
-                <div className="p-3.5 rounded-xl bg-surface-subtle flex flex-col gap-1.5 hover:bg-surface-container transition-colors group">
-                  <div className="flex items-center justify-between">
-                    <span className="font-headline-md text-body-lead font-bold text-primary tracking-tight">Static Blind</span>
-                    <span className="bg-primary text-on-primary font-label-mono-sm text-[10px] px-2 py-0.5 rounded-full uppercase">DEF 15s</span>
+                {sabotagesList.map((sab) => (
+                  <div
+                    key={sab.id}
+                    className="p-3.5 rounded-xl bg-surface-subtle flex flex-col gap-2 hover:bg-surface-container transition-colors group border border-hairline-light"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-headline-md text-body-lead font-bold text-primary tracking-tight">
+                        {sab.name}
+                      </span>
+                      <span className={`${sab.badgeColor} font-label-mono-sm text-[10px] px-2 py-0.5 rounded-full uppercase`}>
+                        {sab.badge}
+                      </span>
+                    </div>
+                    <p className="font-body-sm text-body-sm text-on-surface-variant">{sab.desc}</p>
+                    <div className="flex items-center justify-between pt-1 font-label-mono-sm text-label-mono-sm border-t border-hairline-light mt-1">
+                      <span className="text-on-surface-variant">READY</span>
+                      <button
+                        type="button"
+                        onClick={() => deploySabotageToPlayer(sab.name, sab.duration, sabotageTargetPlayerId)}
+                        className="px-3 py-1 bg-primary text-on-primary hover:bg-acid-chartreuse hover:text-primary rounded font-label-mono-sm text-xs font-bold uppercase transition-all cursor-pointer shadow-[1px_1px_0px_#CCFF00]"
+                      >
+                        Fire Disrupt
+                      </button>
+                    </div>
                   </div>
-                  <p className="font-body-sm text-body-sm text-on-surface-variant">Obscures challenge prompt with high-gain CRT static distortion.</p>
-                  <div className="flex items-center justify-between pt-1 font-label-mono-sm text-label-mono-sm">
-                    <span className="text-on-surface-variant">STATUS:</span>
-                    <span className="text-signal-emerald font-bold uppercase">ARMED // READY</span>
-                  </div>
-                </div>
-
-                {/* Sabotage 2: Reverse Controls */}
-                <div className="p-3.5 rounded-xl bg-surface-subtle flex flex-col gap-1.5 hover:bg-surface-container transition-colors group">
-                  <div className="flex items-center justify-between">
-                    <span className="font-headline-md text-body-lead font-bold text-primary tracking-tight">Reverse Controls</span>
-                    <span className="bg-primary text-on-primary font-label-mono-sm text-[10px] px-2 py-0.5 rounded-full uppercase">DEF 12s</span>
-                  </div>
-                  <p className="font-body-sm text-body-sm text-on-surface-variant">Flips answer key quadrants (A-D inversion, arrow mappings).</p>
-                  <div className="flex items-center justify-between pt-1 font-label-mono-sm text-label-mono-sm">
-                    <span className="text-on-surface-variant">STATUS:</span>
-                    <span className="text-signal-emerald font-bold uppercase">ARMED // READY</span>
-                  </div>
-                </div>
-
-                {/* Sabotage 3: Sound Distortion */}
-                <div className="p-3.5 rounded-xl bg-surface-subtle flex flex-col gap-1.5 hover:bg-surface-container transition-colors group">
-                  <div className="flex items-center justify-between">
-                    <span className="font-headline-md text-body-lead font-bold text-primary tracking-tight">Sound Distortion</span>
-                    <span className="bg-primary text-on-primary font-label-mono-sm text-[10px] px-2 py-0.5 rounded-full uppercase">DEF 10s</span>
-                  </div>
-                  <p className="font-body-sm text-body-sm text-on-surface-variant">Plays discordant binaural noise pulses through headset stream.</p>
-                  <div className="flex items-center justify-between pt-1 font-label-mono-sm text-label-mono-sm">
-                    <span className="text-on-surface-variant">STATUS:</span>
-                    <span className="text-signal-emerald font-bold uppercase">ARMED // READY</span>
-                  </div>
-                </div>
-
-                {/* Sabotage 4: Buzzer Jammer */}
-                <div className="p-3.5 rounded-xl bg-surface-subtle flex flex-col gap-1.5 hover:bg-surface-container transition-colors group">
-                  <div className="flex items-center justify-between">
-                    <span className="font-headline-md text-body-lead font-bold text-primary tracking-tight">Buzzer Jammer</span>
-                    <span className="bg-sabotage-crimson text-on-primary font-label-mono-sm text-[10px] px-2 py-0.5 rounded-full uppercase">CRITICAL</span>
-                  </div>
-                  <p className="font-body-sm text-body-sm text-on-surface-variant">Adds a 650ms synthetic input jitter to target buzzer trigger.</p>
-                  <div className="flex items-center justify-between pt-1 font-label-mono-sm text-label-mono-sm">
-                    <span className="text-on-surface-variant">STATUS:</span>
-                    <span className="text-sabotage-crimson font-bold uppercase">ADMIN COOLDOWN (34s)</span>
-                  </div>
-                </div>
-
-                {/* Sabotage 5: Double Risk */}
-                <div className="p-3.5 rounded-xl bg-surface-subtle flex flex-col gap-1.5 hover:bg-surface-container transition-colors group">
-                  <div className="flex items-center justify-between">
-                    <span className="font-headline-md text-body-lead font-bold text-primary tracking-tight">Double Risk</span>
-                    <span className="bg-cobalt-deep text-on-primary font-label-mono-sm text-[10px] px-2 py-0.5 rounded-full uppercase">2X MULT</span>
-                  </div>
-                  <p className="font-body-sm text-body-sm text-on-surface-variant">Doubles both point gain and point penalty for next locked submission.</p>
-                  <div className="flex items-center justify-between pt-1 font-label-mono-sm text-label-mono-sm">
-                    <span className="text-on-surface-variant">STATUS:</span>
-                    <span className="text-signal-emerald font-bold uppercase">ARMED // READY</span>
-                  </div>
-                </div>
-
-                {/* Sabotage 6: Time Drain */}
-                <div className="p-3.5 rounded-xl bg-surface-subtle flex flex-col gap-1.5 hover:bg-surface-container transition-colors group">
-                  <div className="flex items-center justify-between">
-                    <span className="font-headline-md text-body-lead font-bold text-primary tracking-tight">Time Drain</span>
-                    <span className="bg-primary text-on-primary font-label-mono-sm text-[10px] px-2 py-0.5 rounded-full uppercase">-5 SEC</span>
-                  </div>
-                  <p className="font-body-sm text-body-sm text-on-surface-variant">Instantly accelerates target's answer countdown clock.</p>
-                  <div className="flex items-center justify-between pt-1 font-label-mono-sm text-label-mono-sm">
-                    <span className="text-on-surface-variant">STATUS:</span>
-                    <span className="text-signal-emerald font-bold uppercase">ARMED // READY</span>
-                  </div>
-                </div>
+                ))}
               </div>
-
-              {/* Interactive Test Sabotage Trigger */}
-              <button
-                type="button"
-                onClick={() => deploySabotage('Static Blind', 15, 'Player 1 (Agent Zero)')}
-                className="mt-4 w-full bg-surface-subtle hover:bg-surface-container-high text-primary font-label-mono-sm text-label-mono-sm py-2.5 rounded-lg transition-colors uppercase font-bold flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[16px]">sensors</span> Simulate Incoming Payload
-              </button>
             </div>
 
             {/* Quick Session Visualizer (SVG Sparkline) */}
-            <div className="w-full bg-canvas-dark text-on-primary rounded-2xl p-6 shadow-sm">
+            <div className="w-full bg-canvas-dark text-on-primary rounded-2xl p-6 shadow-sm border border-hairline-dark">
               <div className="flex items-center justify-between mb-4">
                 <span className="font-label-mono-sm text-label-mono-sm uppercase text-acid-chartreuse font-bold tracking-widest">
                   BUZZ VELOCITY PROFILE
@@ -531,7 +550,6 @@ export default function PlayerArena() {
                 <span className="font-label-mono-sm text-label-mono-sm text-on-primary-container">PAST 5 ROUNDS</span>
               </div>
               
-              {/* Inline SVG Sparkline for reaction latency */}
               <div className="w-full h-20 mb-3">
                 <svg className="w-full h-full text-acid-chartreuse" fill="none" preserveAspectRatio="none" viewBox="0 0 300 80">
                   <path d="M 0 60 L 50 45 L 100 52 L 150 20 L 200 35 L 250 15 L 300 10" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3"></path>
@@ -549,161 +567,8 @@ export default function PlayerArena() {
           </div>
         </div>
 
-        {/* LIVE MATCH LEADERBOARD SECTION */}
-        <section className="w-full px-4 sm:px-8 py-8 border-t border-hairline-light bg-surface">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-6 gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="w-2 h-2 rounded-full bg-signal-emerald"></span>
-                <span className="font-label-mono-sm text-label-mono-sm uppercase text-on-surface-variant font-bold tracking-widest">
-                  GLOBAL STANDINGS // SYNCHRONIZED
-                </span>
-              </div>
-              <h2 className="font-headline-lg text-headline-lg text-primary uppercase font-bold tracking-tight">
-                Live Match Leaderboard
-              </h2>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase">SORTED BY:</span>
-              <span className="bg-primary text-on-primary px-3 py-1 rounded-full font-label-mono-sm text-label-mono-sm uppercase font-bold">
-                TOTAL SCORE (PTS)
-              </span>
-            </div>
-          </div>
-
-          {/* Leaderboard Table Container */}
-          <div className="w-full overflow-x-auto rounded-2xl bg-surface-container-lowest shadow-sm">
-            <table className="w-full text-left border-collapse min-w-[700px]">
-              <thead>
-                <tr className="border-b border-hairline-light bg-surface-subtle font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase">
-                  <th className="py-4 px-6">RANK</th>
-                  <th className="py-4 px-6">PLAYER // AGENT</th>
-                  <th className="py-4 px-6">R1 SCORE</th>
-                  <th className="py-4 px-6">R2 SCORE</th>
-                  <th className="py-4 px-6">R3 (LIVE)</th>
-                  <th className="py-4 px-6">TOTAL PTS</th>
-                  <th className="py-4 px-6">BUZZ WIN %</th>
-                  <th className="py-4 px-6 text-right">STATUS</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-hairline-light font-body-base text-body-base">
-                {/* Rank 1: Current User */}
-                <tr className="bg-surface-subtle/50 hover:bg-surface-subtle transition-colors">
-                  <td className="py-4 px-6 font-label-mono-lg text-label-mono-lg font-bold text-primary">
-                    <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-acid-chartreuse text-canvas-dark text-xs font-bold">
-                      #01
-                    </span>
-                  </td>
-                  <td className="py-4 px-6">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-primary text-on-primary flex items-center justify-center font-bold text-xs">
-                        P1
-                      </div>
-                      <div>
-                        <span className="font-bold text-primary flex items-center gap-1.5">
-                          AGENT ZERO 
-                          <span className="bg-acid-chartreuse text-canvas-dark text-[9px] font-bold px-1.5 py-0.2 rounded uppercase">YOU</span>
-                        </span>
-                        <span className="font-label-mono-sm text-[10px] text-on-surface-variant uppercase">AGT-8491-VAL</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-4 px-6 font-label-mono-sm text-label-mono-sm">450</td>
-                  <td className="py-4 px-6 font-label-mono-sm text-label-mono-sm">600</td>
-                  <td className="py-4 px-6 font-label-mono-sm text-label-mono-sm text-signal-emerald font-bold">+{p1Score - 1050}</td>
-                  <td className="py-4 px-6 font-headline-md text-headline-md font-bold text-primary">{p1Score.toLocaleString()}</td>
-                  <td className="py-4 px-6 font-label-mono-sm text-label-mono-sm font-bold text-primary">78%</td>
-                  <td className="py-4 px-6 text-right">
-                    <span className="inline-block bg-primary text-acid-chartreuse px-2.5 py-0.5 rounded-full font-label-mono-sm text-[10px] font-bold uppercase">
-                      LOCKED &amp; READY
-                    </span>
-                  </td>
-                </tr>
-
-                {/* Rank 2: Vortex-9 */}
-                <tr className="hover:bg-surface-subtle transition-colors">
-                  <td className="py-4 px-6 font-label-mono-lg text-label-mono-lg font-bold text-on-surface-variant">#02</td>
-                  <td className="py-4 px-6">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-surface-container text-primary flex items-center justify-center font-bold text-xs">
-                        P2
-                      </div>
-                      <div>
-                        <span className="font-bold text-primary">VORTEX-9</span>
-                        <span className="font-label-mono-sm text-[10px] text-on-surface-variant block uppercase">AGT-2093-PAR</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-4 px-6 font-label-mono-sm text-label-mono-sm">500</td>
-                  <td className="py-4 px-6 font-label-mono-sm text-label-mono-sm">450</td>
-                  <td className="py-4 px-6 font-label-mono-sm text-label-mono-sm text-on-surface-variant font-bold">+{p2Score - 950}</td>
-                  <td className="py-4 px-6 font-headline-md text-headline-md font-bold text-on-surface-variant">{p2Score.toLocaleString()}</td>
-                  <td className="py-4 px-6 font-label-mono-sm text-label-mono-sm font-bold text-on-surface-variant">54%</td>
-                  <td className="py-4 px-6 text-right">
-                    <span className="inline-block bg-surface-subtle text-on-surface-variant px-2.5 py-0.5 rounded-full font-label-mono-sm text-[10px] uppercase">
-                      CONTENDING
-                    </span>
-                  </td>
-                </tr>
-
-                {/* Rank 3: NullPointer */}
-                <tr className="hover:bg-surface-subtle transition-colors">
-                  <td className="py-4 px-6 font-label-mono-lg text-label-mono-lg font-bold text-on-surface-variant">#03</td>
-                  <td className="py-4 px-6">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-surface-container text-primary flex items-center justify-center font-bold text-xs">
-                        P3
-                      </div>
-                      <div>
-                        <span className="font-bold text-primary">NULL_POINTER</span>
-                        <span className="font-label-mono-sm text-[10px] text-on-surface-variant block uppercase">AGT-7712-BER</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-4 px-6 font-label-mono-sm text-label-mono-sm">400</td>
-                  <td className="py-4 px-6 font-label-mono-sm text-label-mono-sm">350</td>
-                  <td className="py-4 px-6 font-label-mono-sm text-label-mono-sm text-on-surface-variant font-bold">+200</td>
-                  <td className="py-4 px-6 font-headline-md text-headline-md font-bold text-on-surface-variant">950</td>
-                  <td className="py-4 px-6 font-label-mono-sm text-label-mono-sm font-bold text-on-surface-variant">42%</td>
-                  <td className="py-4 px-6 text-right">
-                    <span className="inline-block bg-surface-subtle text-on-surface-variant px-2.5 py-0.5 rounded-full font-label-mono-sm text-[10px] uppercase">
-                      ACTIVE
-                    </span>
-                  </td>
-                </tr>
-
-                {/* Rank 4: CyberSpectre */}
-                <tr className="hover:bg-surface-subtle transition-colors">
-                  <td className="py-4 px-6 font-label-mono-lg text-label-mono-lg font-bold text-on-surface-variant">#04</td>
-                  <td className="py-4 px-6">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-surface-container text-primary flex items-center justify-center font-bold text-xs">
-                        P4
-                      </div>
-                      <div>
-                        <span className="font-bold text-primary">CYBER_SPECTRE</span>
-                        <span className="font-label-mono-sm text-[10px] text-on-surface-variant block uppercase">AGT-4019-NYC</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-4 px-6 font-label-mono-sm text-label-mono-sm">300</td>
-                  <td className="py-4 px-6 font-label-mono-sm text-label-mono-sm">300</td>
-                  <td className="py-4 px-6 font-label-mono-sm text-label-mono-sm text-on-surface-variant font-bold">+150</td>
-                  <td className="py-4 px-6 font-headline-md text-headline-md font-bold text-on-surface-variant">750</td>
-                  <td className="py-4 px-6 font-label-mono-sm text-label-mono-sm font-bold text-on-surface-variant">36%</td>
-                  <td className="py-4 px-6 text-right">
-                    <span className="inline-block bg-surface-subtle text-on-surface-variant px-2.5 py-0.5 rounded-full font-label-mono-sm text-[10px] uppercase">
-                      STANDBY
-                    </span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-
         {/* Global Footer */}
-        <footer className="w-full bg-surface-subtle py-space-lg">
+        <footer className="w-full bg-surface-subtle py-space-lg border-t border-hairline-light">
           <div className="w-full px-4 sm:px-8 flex flex-col md:flex-row items-center justify-between gap-space-md">
             <div className="flex items-center gap-space-sm">
               <span className="font-headline-md text-headline-md tracking-tight font-bold text-primary">CLASH // EVENT ARENA</span>
