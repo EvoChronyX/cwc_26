@@ -168,10 +168,11 @@
   <!-- 2. INITIAL VIEWPORT: ONLY BACKGROUND & 'KEELA POLAM' SCROLLING TEXT       -->
   <!-- ========================================================================= -->
   <section class="w-full h-screen flex flex-col justify-end items-center relative z-10 select-none pb-0">
-    <!-- 'Keela polam' Continuous Scrolling Text Marquee Ticker -->
+    <!-- 'Keela polam' Continuous Scrolling Text Marquee Ticker - Vanishes on scroll -->
     <div 
+      id="runningSlider"
       onclick="scrollToContent()"
-      class="w-full bg-black/90 border-y-2 border-acid-chartreuse py-3.5 overflow-hidden whitespace-nowrap cursor-pointer hover:bg-black transition-colors"
+      class="w-full bg-black/90 border-y-2 border-acid-chartreuse py-3.5 overflow-hidden whitespace-nowrap cursor-pointer hover:bg-black transition-all duration-500 ease-out transform opacity-100 translate-y-0 scale-100 pointer-events-auto"
     >
       <div class="animate-marquee font-headline-md font-extrabold text-sm sm:text-base text-acid-chartreuse tracking-widest uppercase flex items-center gap-8">
         <span>KEELA POLAM ✦ கீழ போலாம் ✦ SCROLL DOWN ✦ KEELA POLAM ✦ கீழ போலாம் ✦ SCROLL DOWN ✦</span>
@@ -182,12 +183,18 @@
     </div>
   </section>
 
+  <!-- Page-wide subtle glossy glass backdrop overlay when scrolled -->
+  <div 
+    id="pageGlassBackdrop"
+    class="fixed inset-0 z-[5] pointer-events-none transition-all duration-700 ease-out opacity-0 backdrop-blur-none bg-transparent"
+  ></div>
+
   <!-- ========================================================================= -->
-  <!-- 3. SCROLL REVEAL CONTENT: TEXT REVEALS IN ANIMATED MANNER, THEN LOGIN SECTION -->
+  <!-- 3. SCROLL REVEAL CONTENT: GLOSSY CONTAINER FOR THE ENTIRE PAGE CONTENT    -->
   <!-- ========================================================================= -->
   <div 
     id="revealContainer"
-    class="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-24 flex flex-col gap-10 relative z-10"
+    class="w-full max-w-5xl mx-auto px-4 sm:px-8 lg:px-10 pt-14 pb-20 mb-20 flex flex-col gap-10 relative z-10 rounded-3xl border border-transparent transition-all duration-700 ease-out bg-transparent shadow-none"
   >
     
     <!-- Staggered Animated Text Header Block -->
@@ -537,7 +544,10 @@
 
     // Scroll Reveal Handling
     function updateScrollReveal() {
-      const isScrolled = window.scrollY > 60;
+      const isScrolled = window.scrollY > 25;
+      const slider = document.getElementById('runningSlider');
+      const glassBackdrop = document.getElementById('pageGlassBackdrop');
+      const container = document.getElementById('revealContainer');
       const badge = document.getElementById('animBadge');
       const title = document.getElementById('animTitle');
       const desc = document.getElementById('animDesc');
@@ -545,6 +555,23 @@
       const card = document.getElementById('animLoginCard');
 
       if (isScrolled) {
+        // 1. Running slider vanishes with animation
+        if (slider) {
+          slider.classList.add('opacity-0', 'translate-y-8', 'scale-95', 'pointer-events-none');
+          slider.classList.remove('opacity-100', 'translate-y-0', 'scale-100', 'pointer-events-auto');
+        }
+
+        // 2. Glossy container effect appears for entire page
+        if (glassBackdrop) {
+          glassBackdrop.classList.remove('opacity-0', 'backdrop-blur-none', 'bg-transparent');
+          glassBackdrop.classList.add('opacity-100', 'backdrop-blur-md', 'bg-black/30');
+        }
+
+        if (container) {
+          container.classList.remove('bg-transparent', 'border-transparent', 'shadow-none');
+          container.classList.add('backdrop-blur-2xl', 'bg-black/45', 'border-white/20', 'shadow-[0_25px_60px_rgba(0,0,0,0.7),inset_0_1px_1px_rgba(255,255,255,0.3)]', 'ring-1', 'ring-white/10');
+        }
+
         badge.classList.remove('opacity-0', 'translate-y-8', 'pointer-events-none');
         badge.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
 
@@ -560,6 +587,23 @@
         card.classList.remove('opacity-0', 'translate-y-16', 'scale-95', 'pointer-events-none');
         card.classList.add('opacity-100', 'translate-y-0', 'scale-100', 'pointer-events-auto');
       } else {
+        // Slider returns
+        if (slider) {
+          slider.classList.remove('opacity-0', 'translate-y-8', 'scale-95', 'pointer-events-none');
+          slider.classList.add('opacity-100', 'translate-y-0', 'scale-100', 'pointer-events-auto');
+        }
+
+        // Glossy effect hides
+        if (glassBackdrop) {
+          glassBackdrop.classList.add('opacity-0', 'backdrop-blur-none', 'bg-transparent');
+          glassBackdrop.classList.remove('opacity-100', 'backdrop-blur-md', 'bg-black/30');
+        }
+
+        if (container) {
+          container.classList.add('bg-transparent', 'border-transparent', 'shadow-none');
+          container.classList.remove('backdrop-blur-2xl', 'bg-black/45', 'border-white/20', 'shadow-[0_25px_60px_rgba(0,0,0,0.7),inset_0_1px_1px_rgba(255,255,255,0.3)]', 'ring-1', 'ring-white/10');
+        }
+
         badge.classList.add('opacity-0', 'translate-y-8', 'pointer-events-none');
         badge.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto');
 

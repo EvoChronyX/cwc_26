@@ -77,28 +77,28 @@ export default function PortalAccess() {
 
   return (
     <div className="relative w-full min-h-[170vh] text-on-surface selection:bg-acid-chartreuse selection:text-primary">
-      
+
       {/* 1. COMPLETE FIXED BACKGROUND IMAGE IN CENTER POSITION WITHOUT REPETITION */}
-      <div 
+      <div
         className="fixed inset-0 w-full h-full bg-center bg-no-repeat bg-cover z-0 pointer-events-none"
-        style={{ 
+        style={{
           backgroundImage: `url(${heroBg})`,
           backgroundPosition: 'center center',
           backgroundRepeat: 'no-repeat',
           backgroundSize: 'cover'
         }}
       >
-        {/* Subtle Overlay to ensure visual crispness */}
-        <div className="absolute inset-0 bg-black/30"></div>
-        <div className="absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#CCFF00_1px,transparent_1px)] [background-size:24px_24px]"></div>
       </div>
 
       {/* 2. INITIAL VIEWPORT: ONLY BACKGROUND & 'KEELA POLAM' SCROLLING TEXT (FLOATING BUTTON REMOVED) */}
       <section className="w-full h-screen flex flex-col justify-end items-center relative z-10 select-none pb-0">
-        {/* 'Keela polam' Continuous Scrolling Text Marquee Ticker */}
-        <div 
+        {/* 'Keela polam' Continuous Scrolling Text Marquee Ticker - Vanishes on scroll */}
+        <div
           onClick={scrollToContent}
-          className="w-full bg-black/90 border-y-2 border-acid-chartreuse py-3.5 overflow-hidden whitespace-nowrap cursor-pointer hover:bg-black transition-colors"
+          className={`w-full bg-black/90 border-y-2 border-acid-chartreuse py-3.5 overflow-hidden whitespace-nowrap cursor-pointer hover:bg-black transition-all duration-500 ease-out transform ${hasScrolled
+            ? 'opacity-0 translate-y-8 scale-95 pointer-events-none'
+            : 'opacity-100 translate-y-0 scale-100 pointer-events-auto'
+            }`}
         >
           <div className="animate-marquee font-headline-md font-extrabold text-sm sm:text-base text-acid-chartreuse tracking-widest uppercase flex items-center gap-8">
             <span>KEELA POLAM ✦ கீழ போலாம் ✦ SCROLL DOWN ✦ KEELA POLAM ✦ கீழ போலாம் ✦ SCROLL DOWN ✦</span>
@@ -109,61 +109,62 @@ export default function PortalAccess() {
         </div>
       </section>
 
-      {/* 3. SCROLL REVEAL CONTENT: TEXT REVEALS IN ANIMATED MANNER, THEN LOGIN SECTION */}
-      <div 
+      {/* Page-wide subtle glossy glass backdrop overlay when scrolled */}
+      <div
+        className={`fixed inset-0 z-[5] pointer-events-none transition-all duration-700 ease-out ${hasScrolled
+          ? 'backdrop-blur-md bg-black/30 opacity-100'
+          : 'backdrop-blur-none bg-transparent opacity-0'
+          }`}
+      />
+
+      {/* 3. SCROLL REVEAL CONTENT: GLOSSY CONTAINER FOR THE ENTIRE PAGE CONTENT */}
+      <div
         ref={contentRef}
-        className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-24 flex flex-col gap-10 relative z-10"
+        className={`w-full max-w-5xl mx-auto px-4 sm:px-8 lg:px-10 pt-14 pb-20 mb-20 flex flex-col gap-10 relative z-10 rounded-3xl transition-all duration-700 ease-out ${hasScrolled
+          ? 'backdrop-blur-2xl bg-black/45 border border-white/20 shadow-[0_25px_60px_rgba(0,0,0,0.7),inset_0_1px_1px_rgba(255,255,255,0.3)] ring-1 ring-white/10'
+          : 'bg-transparent border border-transparent shadow-none'
+          }`}
       >
-        
+        {/* Glossy top edge glass reflection highlight */}
+        <div
+          className={`absolute top-0 left-8 right-8 h-[1px] bg-gradient-to-r from-transparent via-white/50 to-transparent pointer-events-none transition-opacity duration-700 ${hasScrolled ? 'opacity-100' : 'opacity-0'
+            }`}
+        />
+
         {/* Staggered Animated Text Header Block */}
         <div className="flex flex-col gap-4 text-center items-center">
           {/* Badge */}
-          <div 
-            className={`inline-flex items-center gap-2 px-3.5 py-1.5 bg-acid-chartreuse text-canvas-dark rounded font-label-mono-sm text-xs uppercase font-bold tracking-wider shadow-sm transition-all duration-700 ease-out transform ${
-              hasScrolled ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 pointer-events-none'
-            }`}
+          <div
+            className={`inline-flex items-center gap-2 px-3.5 py-1.5 bg-acid-chartreuse text-canvas-dark rounded font-label-mono-sm text-xs uppercase font-bold tracking-wider shadow-sm transition-all duration-700 ease-out transform ${hasScrolled ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 pointer-events-none'
+              }`}
           >
-            <span>CHAMPIONSHIP STAGE</span>
-            <span>//</span>
-            <span>LIVE EVENT PORTAL</span>
+            <span>Let's Code &</span>
+            <span>get cooked</span>
           </div>
 
           {/* Hero Title */}
-          <h1 
-            className={`font-display-hero text-3xl sm:text-5xl lg:text-6xl uppercase tracking-tight text-white font-extrabold leading-none drop-shadow-xl transition-all duration-700 delay-150 ease-out transform ${
-              hasScrolled ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
-            }`}
+          <h1
+            className={`font-display-hero text-3xl sm:text-5xl lg:text-6xl uppercase tracking-tight text-white font-extrabold leading-none drop-shadow-xl transition-all duration-700 delay-150 ease-out transform ${hasScrolled ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
+              }`}
           >
-            STAGE CLASH: <br className="hidden sm:inline" />
-            <span className="text-acid-chartreuse">LIVE TOURNAMENT ACCESS</span>
+            CODE WITH
+            <span className="text-acid-chartreuse"> COMALI</span>
           </h1>
 
           {/* Subtitle Description */}
-          <p 
-            className={`font-body-base text-sm sm:text-base text-gray-200 max-w-2xl leading-relaxed drop-shadow-md transition-all duration-700 delay-300 ease-out transform ${
-              hasScrolled ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
-            }`}
+          <p
+            className={`font-body-base text-sm sm:text-base text-gray-200 max-w-2xl leading-relaxed drop-shadow-md transition-all duration-700 delay-300 ease-out transform ${hasScrolled ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
+              }`}
           >
-            Register your official 2-player team identity, select your tactical avatar profile, and synchronize hardware debounce triggers for live stage confrontation.
+            Vannakm da maapla Code with comali la Irunthu....!!
           </p>
 
-          {/* Protocol Info */}
-          <div 
-            className={`flex items-center gap-4 text-white/80 font-label-mono-sm text-xs pt-2 border-t border-white/20 transition-all duration-700 delay-450 ease-out transform ${
-              hasScrolled ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 pointer-events-none'
-            }`}
-          >
-            <span>SQUAD PROTOCOL: 2 PLAYERS PER TEAM</span>
-            <span>•</span>
-            <span>DEBOUNCE ENGINE: ARMED</span>
-          </div>
         </div>
 
         {/* Animated Login Section Card at the Bottom */}
-        <div 
-          className={`bg-surface-container-lowest/95 backdrop-blur-md shadow-2xl rounded-2xl p-6 sm:p-10 flex flex-col gap-8 border-2 border-primary relative overflow-hidden transition-all duration-800 delay-600 ease-out transform ${
-            hasScrolled ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-16 scale-95 pointer-events-none'
-          }`}
+        <div
+          className={`bg-surface-container-lowest/95 backdrop-blur-md shadow-2xl rounded-2xl p-6 sm:p-10 flex flex-col gap-8 border-2 border-primary relative overflow-hidden transition-all duration-800 delay-600 ease-out transform ${hasScrolled ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-16 scale-95 pointer-events-none'
+            }`}
         >
           {/* Top Neon Edge */}
           <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-acid-chartreuse via-primary to-signal-emerald"></div>
@@ -175,7 +176,7 @@ export default function PortalAccess() {
                 ACCESS GATEWAY
               </span>
               <h2 className="font-headline-lg text-2xl font-bold text-primary">
-                {authMode === 'player' ? 'Contender Squad Registration' : 'Game Master Command'}
+                {authMode === 'player' ? 'Squad Registeration' : 'Game Master Command'}
               </h2>
             </div>
 
@@ -186,11 +187,10 @@ export default function PortalAccess() {
                   setAuthMode('player');
                   playTone(700, 0.08);
                 }}
-                className={`px-5 py-2.5 text-xs font-label-mono-sm tracking-wider uppercase transition-all duration-150 flex items-center gap-2 rounded-lg cursor-pointer ${
-                  authMode === 'player'
-                    ? 'bg-primary text-on-primary font-bold shadow-[2px_2px_0px_#CCFF00]'
-                    : 'text-on-surface-variant hover:text-primary'
-                }`}
+                className={`px-5 py-2.5 text-xs font-label-mono-sm tracking-wider uppercase transition-all duration-150 flex items-center gap-2 rounded-lg cursor-pointer ${authMode === 'player'
+                  ? 'bg-primary text-on-primary font-bold shadow-[2px_2px_0px_#CCFF00]'
+                  : 'text-on-surface-variant hover:text-primary'
+                  }`}
               >
                 <span className={`w-2 h-2 rounded-full ${authMode === 'player' ? 'bg-acid-chartreuse' : 'bg-outline-variant'}`}></span>
                 <span>Player Access</span>
@@ -202,11 +202,10 @@ export default function PortalAccess() {
                   setAuthMode('admin');
                   playTone(850, 0.08);
                 }}
-                className={`px-5 py-2.5 text-xs font-label-mono-sm tracking-wider uppercase transition-all duration-150 flex items-center gap-2 rounded-lg cursor-pointer ${
-                  authMode === 'admin'
-                    ? 'bg-primary text-on-primary font-bold shadow-[2px_2px_0px_#CCFF00]'
-                    : 'text-on-surface-variant hover:text-primary'
-                }`}
+                className={`px-5 py-2.5 text-xs font-label-mono-sm tracking-wider uppercase transition-all duration-150 flex items-center gap-2 rounded-lg cursor-pointer ${authMode === 'admin'
+                  ? 'bg-primary text-on-primary font-bold shadow-[2px_2px_0px_#CCFF00]'
+                  : 'text-on-surface-variant hover:text-primary'
+                  }`}
               >
                 <span className={`w-2 h-2 rounded-full ${authMode === 'admin' ? 'bg-acid-chartreuse' : 'bg-outline-variant'}`}></span>
                 <span>Game Master</span>
@@ -217,19 +216,17 @@ export default function PortalAccess() {
           {/* PLAYER ACCESS MODE FORM (With Profile Picture Avatar Selection) */}
           {authMode === 'player' ? (
             <div className="flex flex-col gap-8">
-              
+
               {/* AVATAR SELECTION DECK (FOR PLAYERS ONLY) */}
               <div className="flex flex-col gap-3 p-5 bg-surface-subtle rounded-xl border border-hairline-light">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-primary text-xl">face</span>
                     <span className="font-label-mono-sm text-xs uppercase font-bold text-primary">
-                      SELECT PROFILE PICTURE AVATAR (5 PREDEFINED OPTIONS)
+                      SELECT PROFILE PICTURE AVATAR
                     </span>
                   </div>
-                  <span className="font-label-mono-sm text-xs text-on-surface-variant">
-                    SELECTED: <strong className="text-primary">{selectedAvatarObj.name} ({selectedAvatarObj.callsign})</strong>
-                  </span>
+
                 </div>
 
                 {/* 5 Predefined Avatar Grid */}
@@ -244,11 +241,10 @@ export default function PortalAccess() {
                           setPlayerAvatar(av.id);
                           playTone(850, 0.08);
                         }}
-                        className={`p-3 rounded-xl flex flex-col items-center gap-2 transition-all cursor-pointer border-2 text-center relative ${
-                          isSelected
-                            ? 'border-primary bg-primary text-on-primary shadow-[3px_3px_0px_#CCFF00] scale-105'
-                            : 'border-hairline-light bg-surface-container-lowest hover:border-primary/50 text-on-surface'
-                        }`}
+                        className={`p-3 rounded-xl flex flex-col items-center gap-2 transition-all cursor-pointer border-2 text-center relative ${isSelected
+                          ? 'border-primary bg-primary text-on-primary shadow-[3px_3px_0px_#CCFF00] scale-105'
+                          : 'border-hairline-light bg-surface-container-lowest hover:border-primary/50 text-on-surface'
+                          }`}
                       >
                         {isSelected && (
                           <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-acid-chartreuse text-canvas-dark flex items-center justify-center shadow-md">
@@ -263,9 +259,8 @@ export default function PortalAccess() {
                         <span className="font-headline-md text-xs font-bold leading-tight line-clamp-1">
                           {av.name}
                         </span>
-                        <span className={`font-label-mono-sm text-[10px] uppercase font-bold ${
-                          isSelected ? 'text-acid-chartreuse' : 'text-on-surface-variant'
-                        }`}>
+                        <span className={`font-label-mono-sm text-[10px] uppercase font-bold ${isSelected ? 'text-acid-chartreuse' : 'text-on-surface-variant'
+                          }`}>
                           {av.callsign}
                         </span>
                       </button>
@@ -278,7 +273,7 @@ export default function PortalAccess() {
               <div className="flex flex-col gap-2">
                 <div className="flex justify-between items-baseline">
                   <label className="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
-                    TEAM NAME (DUAL CONTENDER SQUAD)
+                    TEAM NAME (DUAL SQUAD)
                   </label>
                   <span className="font-label-mono-sm text-xs text-signal-emerald font-bold">1 SQUAD = 2 PLAYERS</span>
                 </div>
@@ -301,7 +296,7 @@ export default function PortalAccess() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
                   <label className="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
-                    MEMBER 01 CALLSIGN
+                    MEMBER 01
                   </label>
                   <input
                     type="text"
@@ -314,7 +309,7 @@ export default function PortalAccess() {
 
                 <div className="flex flex-col gap-2">
                   <label className="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
-                    MEMBER 02 CALLSIGN
+                    MEMBER 02
                   </label>
                   <input
                     type="text"
@@ -326,37 +321,7 @@ export default function PortalAccess() {
                 </div>
               </div>
 
-              {/* Faction & Arena PIN */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-2">
-                  <label className="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
-                    DIVISION / FACTION
-                  </label>
-                  <select
-                    value={activeFaction}
-                    onChange={(e) => setActiveFaction(e.target.value)}
-                    className="w-full bg-surface-subtle text-primary font-body-base text-sm px-4 py-3 border border-hairline-light rounded-xl focus:outline-none focus:border-primary font-bold"
-                  >
-                    <option value="KINETIC">FACTION // KINETIC (PRIMARY)</option>
-                    <option value="VORTEX">FACTION // VORTEX (DEFENSIVE)</option>
-                    <option value="CYBER">FACTION // CYBER SPECTRE (TACTICAL)</option>
-                    <option value="NEO">FACTION // NEO PULSE (AGGRESSIVE)</option>
-                  </select>
-                </div>
 
-                <div className="flex flex-col gap-2">
-                  <label className="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
-                    ARENA SESSION PIN
-                  </label>
-                  <input
-                    type="text"
-                    value={arenaPin}
-                    onChange={(e) => setArenaPin(e.target.value)}
-                    placeholder="e.g. 794-20"
-                    className="w-full bg-surface-subtle text-primary font-label-mono-lg text-sm px-4 py-3 border border-hairline-light rounded-xl focus:outline-none focus:border-primary font-bold tracking-widest uppercase"
-                  />
-                </div>
-              </div>
 
               {/* Action Submit Button */}
               <button
@@ -391,17 +356,7 @@ export default function PortalAccess() {
                   />
                 </div>
 
-                <div className="flex flex-col gap-2">
-                  <label className="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
-                    SESSION TOKEN
-                  </label>
-                  <input
-                    type="text"
-                    value={sessionToken}
-                    onChange={(e) => setSessionToken(e.target.value)}
-                    className="w-full bg-surface-subtle text-primary font-body-base text-sm px-4 py-3 border border-hairline-light rounded-xl focus:outline-none focus:border-primary font-bold"
-                  />
-                </div>
+
               </div>
 
               <div className="flex flex-col gap-2">
@@ -415,13 +370,7 @@ export default function PortalAccess() {
                     onChange={(e) => setMasterKey(e.target.value)}
                     className="flex-1 bg-surface-subtle text-primary font-label-mono-lg text-sm px-4 py-3 border border-hairline-light rounded-xl focus:outline-none focus:border-primary font-bold tracking-widest"
                   />
-                  <button
-                    type="button"
-                    onClick={handleVerifyKey}
-                    className="px-5 py-3 bg-surface-container hover:bg-surface-container-high text-primary font-label-mono-sm text-xs font-bold uppercase rounded-xl border border-hairline-light cursor-pointer"
-                  >
-                    {keyVerified ? 'KEY VERIFIED ✓' : 'VERIFY KEY'}
-                  </button>
+
                 </div>
               </div>
 
