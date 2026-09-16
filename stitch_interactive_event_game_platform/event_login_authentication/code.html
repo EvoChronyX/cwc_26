@@ -204,9 +204,8 @@
         id="animBadge"
         class="inline-flex items-center gap-2 px-3.5 py-1.5 bg-acid-chartreuse text-canvas-dark rounded font-label-mono-sm text-xs uppercase font-bold tracking-wider shadow-sm transition-all duration-700 ease-out transform opacity-0 translate-y-8 pointer-events-none"
       >
-        <span>CHAMPIONSHIP STAGE</span>
-        <span>//</span>
-        <span>LIVE EVENT PORTAL</span>
+        <span>Let's Code &</span>
+        <span>get cooked</span>
       </div>
 
       <!-- Hero Title -->
@@ -214,8 +213,7 @@
         id="animTitle"
         class="font-display-hero text-3xl sm:text-5xl lg:text-6xl uppercase tracking-tight text-white font-extrabold leading-none drop-shadow-xl transition-all duration-700 delay-150 ease-out transform opacity-0 translate-y-10 pointer-events-none"
       >
-        STAGE CLASH: <br class="hidden sm:inline" />
-        <span class="text-acid-chartreuse">LIVE TOURNAMENT ACCESS</span>
+        CODE WITH <span class="text-acid-chartreuse">COMALI</span>
       </h1>
 
       <!-- Subtitle Description -->
@@ -223,18 +221,8 @@
         id="animDesc"
         class="font-body-base text-sm sm:text-base text-gray-200 max-w-2xl leading-relaxed drop-shadow-md transition-all duration-700 delay-300 ease-out transform opacity-0 translate-y-10 pointer-events-none"
       >
-        Register your official 2-player team identity, select your tactical avatar profile, and synchronize hardware debounce triggers for live stage confrontation.
+        Vannakm da maapla Code with comali la Irunthu....!!
       </p>
-
-      <!-- Protocol Info -->
-      <div 
-        id="animProto"
-        class="flex items-center gap-4 text-white/80 font-label-mono-sm text-xs pt-2 border-t border-white/20 transition-all duration-700 delay-450 ease-out transform opacity-0 translate-y-8 pointer-events-none"
-      >
-        <span>SQUAD PROTOCOL: 2 PLAYERS PER TEAM</span>
-        <span>•</span>
-        <span>DEBOUNCE ENGINE: ARMED</span>
-      </div>
     </div>
 
     <!-- Animated Login Section Card at the Bottom -->
@@ -253,7 +241,7 @@
             ACCESS GATEWAY
           </span>
           <h2 class="font-headline-lg text-2xl font-bold text-primary" id="authModeTitle">
-            Contender Squad Registration
+            Squad Registeration
           </h2>
         </div>
 
@@ -281,92 +269,124 @@
       </div>
 
       <!-- ========================================================================= -->
-      <!-- PLAYER FORM (WITH AVATAR SELECTION)                                       -->
+      <!-- PLAYER FORM (WITH ANIMATED AVATAR SLIDER & PASSWORD)                       -->
       <!-- ========================================================================= -->
       <div id="playerForm" class="flex flex-col gap-8">
         
-        <!-- FEATURE 2: 5 PREDEFINED AVATAR SELECTION DECK -->
+        <!-- AVATAR SELECTION DECK (ANIMATED HORIZONTAL SLIDER) -->
         <div class="flex flex-col gap-3 p-5 bg-surface-subtle rounded-xl border border-hairline-light">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div class="flex items-center justify-between gap-2">
             <div class="flex items-center gap-2">
               <span class="material-symbols-outlined text-primary text-xl">face</span>
               <span class="font-label-mono-sm text-xs uppercase font-bold text-primary">
-                SELECT PROFILE PICTURE AVATAR (5 PREDEFINED OPTIONS)
+                SELECT PROFILE PICTURE AVATAR
               </span>
             </div>
-            <span class="font-label-mono-sm text-xs text-on-surface-variant">
-              SELECTED: <strong class="text-primary" id="selectedAvatarLabel">Valkyrie Zero (VK-01)</strong>
-            </span>
+            <div class="flex items-center gap-2">
+              <span class="font-label-mono-sm text-[11px] text-on-surface-variant mr-1 hidden sm:inline font-bold">
+                SELECTED: <span class="text-primary" id="selectedAvatarLabel">Cat Duo</span>
+              </span>
+              <button
+                type="button"
+                onclick="slideAvatars('left')"
+                class="w-8 h-8 rounded-lg bg-surface-container hover:bg-primary hover:text-acid-chartreuse text-primary border border-hairline-light flex items-center justify-center cursor-pointer transition-all duration-150 active:scale-90"
+                title="Slide Left"
+              >
+                <span class="material-symbols-outlined text-lg">chevron_left</span>
+              </button>
+              <button
+                type="button"
+                onclick="slideAvatars('right')"
+                class="w-8 h-8 rounded-lg bg-surface-container hover:bg-primary hover:text-acid-chartreuse text-primary border border-hairline-light flex items-center justify-center cursor-pointer transition-all duration-150 active:scale-90"
+                title="Slide Right"
+              >
+                <span class="material-symbols-outlined text-lg">chevron_right</span>
+              </button>
+            </div>
           </div>
 
-          <!-- 5 Avatar Cards -->
-          <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2">
-            
-            <!-- Avatar 1 -->
-            <button
-              type="button"
-              onclick="selectAvatar('Valkyrie Zero', 'VK-01', this)"
-              class="avatar-card p-3 rounded-xl flex flex-col items-center gap-2 transition-all cursor-pointer border-2 text-center relative border-primary bg-primary text-on-primary shadow-[3px_3px_0px_#CCFF00] scale-105"
-            >
-              <div class="w-14 h-14 rounded-lg bg-[#050505] flex items-center justify-center border border-hairline-dark shadow-sm">
-                <span class="material-symbols-outlined text-3xl text-acid-chartreuse">smart_toy</span>
+          <!-- Animated Horizontal Slider with 11 Profile Pictures -->
+          <div 
+            id="avatarSlider"
+            class="flex items-center gap-4 overflow-x-auto scroll-smooth py-3 px-1 scrollbar-none snap-x snap-mandatory"
+            style="scrollbar-width: none; -ms-overflow-style: none;"
+          >
+            <button type="button" onclick="selectAvatar('Cat Duo', this)" class="avatar-card group flex-shrink-0 w-28 sm:w-32 p-3 rounded-xl flex flex-col items-center gap-2 transition-all duration-300 cursor-pointer border-2 text-center relative snap-start border-primary bg-primary text-on-primary shadow-[0_0_18px_rgba(204,255,0,0.5),3px_3px_0px_#CCFF00] scale-105">
+              <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-black border border-hairline-dark shadow-sm">
+                <img src="../assets/profile_pics/cat_duo.png" alt="Cat Duo" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"/>
               </div>
-              <span class="font-headline-md text-xs font-bold leading-tight">Valkyrie Zero</span>
-              <span class="font-label-mono-sm text-[10px] uppercase font-bold text-acid-chartreuse">VK-01</span>
+              <span class="font-headline-md text-xs font-bold leading-tight">Cat Duo</span>
             </button>
 
-            <!-- Avatar 2 -->
-            <button
-              type="button"
-              onclick="selectAvatar('Nexus Core', 'NX-09', this)"
-              class="avatar-card p-3 rounded-xl flex flex-col items-center gap-2 transition-all cursor-pointer border-2 text-center relative border-hairline-light bg-surface-container-lowest hover:border-primary/50 text-on-surface"
-            >
-              <div class="w-14 h-14 rounded-lg bg-[#0a1914] flex items-center justify-center border border-hairline-dark shadow-sm">
-                <span class="material-symbols-outlined text-3xl text-signal-emerald">android</span>
+            <button type="button" onclick="selectAvatar('Comedy Duo', this)" class="avatar-card group flex-shrink-0 w-28 sm:w-32 p-3 rounded-xl flex flex-col items-center gap-2 transition-all duration-300 cursor-pointer border-2 text-center relative snap-start border-hairline-light bg-surface-container-lowest hover:border-primary/60 hover:scale-102 text-on-surface">
+              <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-black border border-hairline-dark shadow-sm">
+                <img src="../assets/profile_pics/comedy.jpg" alt="Comedy Duo" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"/>
               </div>
-              <span class="font-headline-md text-xs font-bold leading-tight">Nexus Core</span>
-              <span class="font-label-mono-sm text-[10px] uppercase font-bold text-on-surface-variant">NX-09</span>
+              <span class="font-headline-md text-xs font-bold leading-tight">Comedy Duo</span>
             </button>
 
-            <!-- Avatar 3 -->
-            <button
-              type="button"
-              onclick="selectAvatar('Crimson Shinobi', 'CS-77', this)"
-              class="avatar-card p-3 rounded-xl flex flex-col items-center gap-2 transition-all cursor-pointer border-2 text-center relative border-hairline-light bg-surface-container-lowest hover:border-primary/50 text-on-surface"
-            >
-              <div class="w-14 h-14 rounded-lg bg-[#1a0809] flex items-center justify-center border border-hairline-dark shadow-sm">
-                <span class="material-symbols-outlined text-3xl text-sabotage-crimson">sports_kabaddi</span>
+            <button type="button" onclick="selectAvatar('Couple Duo', this)" class="avatar-card group flex-shrink-0 w-28 sm:w-32 p-3 rounded-xl flex flex-col items-center gap-2 transition-all duration-300 cursor-pointer border-2 text-center relative snap-start border-hairline-light bg-surface-container-lowest hover:border-primary/60 hover:scale-102 text-on-surface">
+              <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-black border border-hairline-dark shadow-sm">
+                <img src="../assets/profile_pics/couple.jpg" alt="Couple Duo" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"/>
               </div>
-              <span class="font-headline-md text-xs font-bold leading-tight">Crimson Shinobi</span>
-              <span class="font-label-mono-sm text-[10px] uppercase font-bold text-on-surface-variant">CS-77</span>
+              <span class="font-headline-md text-xs font-bold leading-tight">Couple Duo</span>
             </button>
 
-            <!-- Avatar 4 -->
-            <button
-              type="button"
-              onclick="selectAvatar('Cobalt Spectre', 'CB-44', this)"
-              class="avatar-card p-3 rounded-xl flex flex-col items-center gap-2 transition-all cursor-pointer border-2 text-center relative border-hairline-light bg-surface-container-lowest hover:border-primary/50 text-on-surface"
-            >
-              <div class="w-14 h-14 rounded-lg bg-[#0c0724] flex items-center justify-center border border-hairline-dark shadow-sm">
-                <span class="material-symbols-outlined text-3xl text-cyan-400">shield_person</span>
+            <button type="button" onclick="selectAvatar('Couple Duo 2', this)" class="avatar-card group flex-shrink-0 w-28 sm:w-32 p-3 rounded-xl flex flex-col items-center gap-2 transition-all duration-300 cursor-pointer border-2 text-center relative snap-start border-hairline-light bg-surface-container-lowest hover:border-primary/60 hover:scale-102 text-on-surface">
+              <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-black border border-hairline-dark shadow-sm">
+                <img src="../assets/profile_pics/couple_2.jpg" alt="Couple Duo 2" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"/>
               </div>
-              <span class="font-headline-md text-xs font-bold leading-tight">Cobalt Spectre</span>
-              <span class="font-label-mono-sm text-[10px] uppercase font-bold text-on-surface-variant">CB-44</span>
+              <span class="font-headline-md text-xs font-bold leading-tight">Couple Duo 2</span>
             </button>
 
-            <!-- Avatar 5 -->
-            <button
-              type="button"
-              onclick="selectAvatar('Acid Mecha', 'MC-88', this)"
-              class="avatar-card p-3 rounded-xl flex flex-col items-center gap-2 transition-all cursor-pointer border-2 text-center relative border-hairline-light bg-surface-container-lowest hover:border-primary/50 text-on-surface"
-            >
-              <div class="w-14 h-14 rounded-lg bg-[#1c1605] flex items-center justify-center border border-hairline-dark shadow-sm">
-                <span class="material-symbols-outlined text-3xl text-yellow-500">precision_manufacturing</span>
+            <button type="button" onclick="selectAvatar('Best Friends', this)" class="avatar-card group flex-shrink-0 w-28 sm:w-32 p-3 rounded-xl flex flex-col items-center gap-2 transition-all duration-300 cursor-pointer border-2 text-center relative snap-start border-hairline-light bg-surface-container-lowest hover:border-primary/60 hover:scale-102 text-on-surface">
+              <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-black border border-hairline-dark shadow-sm">
+                <img src="../assets/profile_pics/friend.jpeg" alt="Best Friends" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"/>
               </div>
-              <span class="font-headline-md text-xs font-bold leading-tight">Acid Mecha</span>
-              <span class="font-label-mono-sm text-[10px] uppercase font-bold text-on-surface-variant">MC-88</span>
+              <span class="font-headline-md text-xs font-bold leading-tight">Best Friends</span>
             </button>
 
+            <button type="button" onclick="selectAvatar('Squad Duo', this)" class="avatar-card group flex-shrink-0 w-28 sm:w-32 p-3 rounded-xl flex flex-col items-center gap-2 transition-all duration-300 cursor-pointer border-2 text-center relative snap-start border-hairline-light bg-surface-container-lowest hover:border-primary/60 hover:scale-102 text-on-surface">
+              <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-black border border-hairline-dark shadow-sm">
+                <img src="../assets/profile_pics/friend_2.jpeg" alt="Squad Duo" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"/>
+              </div>
+              <span class="font-headline-md text-xs font-bold leading-tight">Squad Duo</span>
+            </button>
+
+            <button type="button" onclick="selectAvatar('Crazy Duo', this)" class="avatar-card group flex-shrink-0 w-28 sm:w-32 p-3 rounded-xl flex flex-col items-center gap-2 transition-all duration-300 cursor-pointer border-2 text-center relative snap-start border-hairline-light bg-surface-container-lowest hover:border-primary/60 hover:scale-102 text-on-surface">
+              <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-black border border-hairline-dark shadow-sm">
+                <img src="../assets/profile_pics/friend_3.jpeg" alt="Crazy Duo" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"/>
+              </div>
+              <span class="font-headline-md text-xs font-bold leading-tight">Crazy Duo</span>
+            </button>
+
+            <button type="button" onclick="selectAvatar('Girls Squad', this)" class="avatar-card group flex-shrink-0 w-28 sm:w-32 p-3 rounded-xl flex flex-col items-center gap-2 transition-all cursor-pointer border-2 text-center relative snap-start border-hairline-light bg-surface-container-lowest hover:border-primary/60 hover:scale-102 text-on-surface">
+              <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-black border border-hairline-dark shadow-sm">
+                <img src="../assets/profile_pics/friend_girls.jpeg" alt="Girls Squad" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"/>
+              </div>
+              <span class="font-headline-md text-xs font-bold leading-tight">Girls Squad</span>
+            </button>
+
+            <button type="button" onclick="selectAvatar('Monkey Duo', this)" class="avatar-card group flex-shrink-0 w-28 sm:w-32 p-3 rounded-xl flex flex-col items-center gap-2 transition-all duration-300 cursor-pointer border-2 text-center relative snap-start border-hairline-light bg-surface-container-lowest hover:border-primary/60 hover:scale-102 text-on-surface">
+              <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-black border border-hairline-dark shadow-sm">
+                <img src="../assets/profile_pics/monkey_duo.png" alt="Monkey Duo" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"/>
+              </div>
+              <span class="font-headline-md text-xs font-bold leading-tight">Monkey Duo</span>
+            </button>
+
+            <button type="button" onclick="selectAvatar('Shinchan Duo', this)" class="avatar-card group flex-shrink-0 w-28 sm:w-32 p-3 rounded-xl flex flex-col items-center gap-2 transition-all duration-300 cursor-pointer border-2 text-center relative snap-start border-hairline-light bg-surface-container-lowest hover:border-primary/60 hover:scale-102 text-on-surface">
+              <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-black border border-hairline-dark shadow-sm">
+                <img src="../assets/profile_pics/shinchan_duo.png" alt="Shinchan Duo" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"/>
+              </div>
+              <span class="font-headline-md text-xs font-bold leading-tight">Shinchan Duo</span>
+            </button>
+
+            <button type="button" onclick="selectAvatar('Comali Duo', this)" class="avatar-card group flex-shrink-0 w-28 sm:w-32 p-3 rounded-xl flex flex-col items-center gap-2 transition-all duration-300 cursor-pointer border-2 text-center relative snap-start border-hairline-light bg-surface-container-lowest hover:border-primary/60 hover:scale-102 text-on-surface">
+              <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-black border border-hairline-dark shadow-sm">
+                <img src="../assets/profile_pics/yetho_duo.png" alt="Comali Duo" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"/>
+              </div>
+              <span class="font-headline-md text-xs font-bold leading-tight">Comali Duo</span>
+            </button>
           </div>
         </div>
 
@@ -374,7 +394,7 @@
         <div class="flex flex-col gap-2">
           <div class="flex justify-between items-baseline">
             <label class="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
-              TEAM NAME (DUAL CONTENDER SQUAD)
+              TEAM NAME (DUAL SQUAD)
             </label>
             <span class="font-label-mono-sm text-xs text-signal-emerald font-bold">1 SQUAD = 2 PLAYERS</span>
           </div>
@@ -397,7 +417,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div class="flex flex-col gap-2">
             <label class="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
-              MEMBER 01 CALLSIGN
+              MEMBER 01
             </label>
             <input
               type="text"
@@ -408,7 +428,7 @@
 
           <div class="flex flex-col gap-2">
             <label class="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
-              MEMBER 02 CALLSIGN
+              MEMBER 02
             </label>
             <input
               type="text"
@@ -418,29 +438,28 @@
           </div>
         </div>
 
-        <!-- Faction & Arena PIN -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div class="flex flex-col gap-2">
+        <!-- Player Password Field -->
+        <div class="flex flex-col gap-2">
+          <div class="flex justify-between items-baseline">
             <label class="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
-              DIVISION / FACTION
+              PASSWORD
             </label>
-            <select class="w-full bg-surface-subtle text-primary font-body-base text-sm px-4 py-3 border border-hairline-light rounded-xl focus:outline-none focus:border-primary font-bold">
-              <option>FACTION // KINETIC (PRIMARY)</option>
-              <option>FACTION // VORTEX (DEFENSIVE)</option>
-              <option>FACTION // CYBER SPECTRE (TACTICAL)</option>
-              <option>FACTION // NEO PULSE (AGGRESSIVE)</option>
-            </select>
+            <span class="font-label-mono-sm text-xs text-signal-emerald font-bold">SQUAD ACCESS KEY</span>
           </div>
-
-          <div class="flex flex-col gap-2">
-            <label class="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
-              ARENA SESSION PIN
-            </label>
+          <div class="relative">
             <input
-              type="text"
-              value="794-20"
-              class="w-full bg-surface-subtle text-primary font-label-mono-lg text-sm px-4 py-3 border border-hairline-light rounded-xl focus:outline-none focus:border-primary font-bold tracking-widest uppercase"
+              type="password"
+              id="playerPasswordInput"
+              placeholder="ENTER SQUAD ACCESS PASSWORD..."
+              class="w-full bg-surface-subtle text-primary font-label-mono-lg text-sm px-4 py-3 pr-12 border border-hairline-light rounded-xl focus:outline-none focus:border-primary font-bold tracking-widest"
             />
+            <button
+              type="button"
+              onclick="togglePasswordVisibility('playerPasswordInput', this)"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary cursor-pointer p-1"
+            >
+              <span class="material-symbols-outlined text-lg">visibility</span>
+            </button>
           </div>
         </div>
 
@@ -465,39 +484,40 @@
           </span>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div class="flex flex-col gap-2">
-            <label class="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
-              GAME MASTER IDENTIFIER
-            </label>
-            <input
-              type="text"
-              value="GM_ARBITER_07"
-              class="w-full bg-surface-subtle text-primary font-body-base text-sm px-4 py-3 border border-hairline-light rounded-xl focus:outline-none focus:border-primary font-bold"
-            />
-          </div>
-
-          <div class="flex flex-col gap-2">
-            <label class="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
-              SESSION TOKEN
-            </label>
-            <input
-              type="text"
-              value="STG-TOURNAMENT-2025-Q1"
-              class="w-full bg-surface-subtle text-primary font-body-base text-sm px-4 py-3 border border-hairline-light rounded-xl focus:outline-none focus:border-primary font-bold"
-            />
-          </div>
+        <div class="flex flex-col gap-2">
+          <label class="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
+            GAME MASTER IDENTIFIER
+          </label>
+          <input
+            type="text"
+            value="GM_ARBITER_07"
+            class="w-full bg-surface-subtle text-primary font-body-base text-sm px-4 py-3 border border-hairline-light rounded-xl focus:outline-none focus:border-primary font-bold"
+          />
         </div>
 
         <div class="flex flex-col gap-2">
-          <label class="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
-            MASTER SECURITY OVERRIDE KEY
-          </label>
-          <input
-            type="password"
-            value="••••••••••••••••••••"
-            class="w-full bg-surface-subtle text-primary font-label-mono-lg text-sm px-4 py-3 border border-hairline-light rounded-xl focus:outline-none focus:border-primary font-bold tracking-widest"
-          />
+          <div class="flex justify-between items-baseline">
+            <label class="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
+              PASSWORD
+            </label>
+            <span class="font-label-mono-sm text-xs text-sabotage-crimson font-bold">MASTER OVERRIDE KEY</span>
+          </div>
+          <div class="relative">
+            <input
+              type="password"
+              id="adminPasswordInput"
+              value="••••••••••••••••••••"
+              placeholder="ENTER MASTER SECURITY PASSWORD..."
+              class="w-full bg-surface-subtle text-primary font-label-mono-lg text-sm px-4 py-3 pr-12 border border-hairline-light rounded-xl focus:outline-none focus:border-primary font-bold tracking-widest"
+            />
+            <button
+              type="button"
+              onclick="togglePasswordVisibility('adminPasswordInput', this)"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary cursor-pointer p-1"
+            >
+              <span class="material-symbols-outlined text-lg">visibility</span>
+            </button>
+          </div>
         </div>
 
         <a
@@ -534,12 +554,39 @@
         pForm.classList.add('hidden');
         title.textContent = 'Game Master Command';
       }
-    function selectAvatar(name, callsign, btn) {
+    }
+
+    function slideAvatars(dir) {
+      const el = document.getElementById('avatarSlider');
+      if (el) {
+        el.scrollBy({ left: dir === 'left' ? -260 : 260, behavior: 'smooth' });
+      }
+    }
+
+    function togglePasswordVisibility(id, btn) {
+      const input = document.getElementById(id);
+      if (!input) return;
+      const icon = btn ? btn.querySelector('.material-symbols-outlined') : null;
+      if (input.type === 'password') {
+        input.type = 'text';
+        if (icon) icon.textContent = 'visibility_off';
+      } else {
+        input.type = 'password';
+        if (icon) icon.textContent = 'visibility';
+      }
+    }
+
+    function selectAvatar(name, btn) {
       document.querySelectorAll('.avatar-card').forEach(c => {
-        c.className = 'avatar-card p-3 rounded-xl flex flex-col items-center gap-2 transition-all cursor-pointer border-2 text-center relative border-hairline-light bg-surface-container-lowest hover:border-primary/50 text-on-surface';
+        c.className = 'avatar-card group flex-shrink-0 w-28 sm:w-32 p-3 rounded-xl flex flex-col items-center gap-2 transition-all duration-300 cursor-pointer border-2 text-center relative snap-start border-hairline-light bg-surface-container-lowest hover:border-primary/60 hover:scale-102 text-on-surface';
       });
-      btn.className = 'avatar-card p-3 rounded-xl flex flex-col items-center gap-2 transition-all cursor-pointer border-2 text-center relative border-primary bg-primary text-on-primary shadow-[3px_3px_0px_#CCFF00] scale-105';
-      document.getElementById('selectedAvatarLabel').textContent = name + ' (' + callsign + ')';
+      if (btn) {
+        btn.className = 'avatar-card group flex-shrink-0 w-28 sm:w-32 p-3 rounded-xl flex flex-col items-center gap-2 transition-all duration-300 cursor-pointer border-2 text-center relative snap-start border-primary bg-primary text-on-primary shadow-[0_0_18px_rgba(204,255,0,0.5),3px_3px_0px_#CCFF00] scale-105';
+      }
+      const label = document.getElementById('selectedAvatarLabel');
+      if (label) {
+        label.textContent = name;
+      }
     }
 
     // Scroll Reveal Handling

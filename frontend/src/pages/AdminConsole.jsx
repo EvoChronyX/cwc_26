@@ -129,31 +129,10 @@ export default function AdminConsole() {
         </nav>
 
         {/* Bottom Telemetry Latency Card */}
-        <div className="px-space-md pt-space-md mt-auto flex flex-col gap-3">
+        <div className="px-space-md pt-space-md mt-auto">
           <div className="bg-surface-subtle p-space-sm rounded-lg flex flex-col gap-space-2xs border border-hairline-light">
             <span className="font-label-mono-sm text-label-mono-sm uppercase text-on-surface-variant">TELEMETRY LATENCY</span>
             <span className="font-label-mono-lg text-label-mono-lg text-primary font-bold">14ms // STABLE</span>
-          </div>
-
-          {/* Quick Page View Switcher in Sidebar */}
-          <div className="pt-2 border-t border-hairline-light flex flex-col gap-1">
-            <span className="font-label-mono-sm text-[10px] uppercase text-on-surface-variant tracking-wider">NAVIGATION</span>
-            <button
-              type="button"
-              onClick={() => setCurrentView('arena')}
-              className="flex items-center gap-2 text-xs font-label-mono-sm text-on-surface-variant hover:text-primary py-1.5 px-2 rounded hover:bg-surface-subtle text-left cursor-pointer transition-colors"
-            >
-              <span className="material-symbols-outlined text-[16px]">swords</span>
-              Namma Area
-            </button>
-            <button
-              type="button"
-              onClick={() => setCurrentView('portal')}
-              className="flex items-center gap-2 text-xs font-label-mono-sm text-on-surface-variant hover:text-primary py-1.5 px-2 rounded hover:bg-surface-subtle text-left cursor-pointer transition-colors"
-            >
-              <span className="material-symbols-outlined text-[16px]">vpn_key</span>
-              Portal Access / Login
-            </button>
           </div>
         </div>
       </aside>

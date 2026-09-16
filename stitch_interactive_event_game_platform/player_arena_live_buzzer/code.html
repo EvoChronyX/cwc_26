@@ -183,36 +183,6 @@
       </button>
     </nav>
 
-    <!-- Sidebar Telemetry Footer -->
-    <div class="px-space-md pt-space-md mt-auto">
-      <div class="bg-surface-subtle p-space-sm rounded-lg flex flex-col gap-1 border border-hairline-light">
-        <span class="font-label-mono-sm text-label-mono-sm uppercase text-on-surface-variant">ACTIVE SQUAD</span>
-        <span class="font-label-mono-lg text-sm text-primary font-bold">TEAM KINETIC</span>
-        <div class="flex items-center justify-between pt-1 border-t border-hairline-light mt-1">
-          <span class="font-label-mono-sm text-xs text-on-surface-variant">Lane #01</span>
-          <span class="font-label-mono-sm text-xs text-signal-emerald font-bold" id="sidebarScore">1,450 PTS</span>
-        </div>
-      </div>
-
-      <!-- Quick Switcher in Sidebar -->
-      <div class="pt-2 border-t border-hairline-light flex flex-col gap-1">
-        <span class="font-label-mono-sm text-[10px] uppercase text-on-surface-variant tracking-wider">NAVIGATION</span>
-        <a
-          href="../admin_console_control_center/code.html"
-          class="flex items-center gap-2 text-xs font-label-mono-sm text-on-surface-variant hover:text-primary py-1.5 px-2 rounded hover:bg-surface-subtle transition-colors"
-        >
-          <span class="material-symbols-outlined text-[16px]">tune</span>
-          Admin Console
-        </a>
-        <a
-          href="../event_login_authentication/code.html"
-          class="flex items-center gap-2 text-xs font-label-mono-sm text-on-surface-variant hover:text-primary py-1.5 px-2 rounded hover:bg-surface-subtle transition-colors"
-        >
-          <span class="material-symbols-outlined text-[16px]">vpn_key</span>
-          Portal Access / Login
-        </a>
-      </div>
-    </div>
   </aside>
 
   <!-- MAIN WORKSPACE -->
@@ -286,94 +256,207 @@
 
         <!-- Team Dossier Hero Card (1 Team = 2 Players) -->
         <div class="w-full bg-surface-container-lowest rounded-2xl p-6 md:p-8 shadow-sm border border-hairline-light">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-6 mb-6 border-b border-hairline-light gap-4">
-            <div class="flex items-center gap-3">
-              <div class="w-12 h-12 rounded-xl bg-primary text-on-primary flex items-center justify-center font-headline-md text-headline-md font-bold shadow-[2px_2px_0px_#CCFF00]">
-                T1
-              </div>
-              <div>
-                <div class="flex items-center gap-2">
-                  <h2 class="font-headline-lg text-headline-lg font-bold text-primary tracking-tight">
-                    TEAM KINETIC
-                  </h2>
-                  <span class="bg-acid-chartreuse text-canvas-dark text-[10px] font-bold px-2 py-0.5 rounded uppercase">
-                    YOUR TEAM
+          <div class="flex flex-col md:flex-row items-stretch gap-6 md:gap-8">
+            <!-- Left Area (60% width): Team Info & Player Names -->
+            <div class="w-full md:w-[60%] flex flex-col justify-between gap-6">
+              <!-- Team Header -->
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-hairline-light gap-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-12 h-12 rounded-xl bg-primary text-on-primary flex items-center justify-center font-headline-md text-headline-md font-bold shadow-[2px_2px_0px_#CCFF00] shrink-0">
+                    T1
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h2 class="font-headline-lg text-headline-lg font-bold text-primary tracking-tight">
+                        TEAM KINETIC
+                      </h2>
+                      <span class="bg-acid-chartreuse text-canvas-dark text-[10px] font-bold px-2 py-0.5 rounded uppercase">
+                        YOUR TEAM
+                      </span>
+                    </div>
+                    <span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase">
+                      Lane #01 // DIVISION: KINETIC
+                    </span>
+                  </div>
+                </div>
+                <div class="flex items-center">
+                  <span class="px-3 py-1 bg-surface-subtle rounded-full font-label-mono-sm text-xs text-primary font-bold border border-hairline-light">
+                    STATUS: ONLINE &amp; SYNCHRONIZED
                   </span>
                 </div>
-                <span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase">
-                  Lane #01 // DIVISION: KINETIC
-                </span>
               </div>
-            </div>
-            <div class="flex items-center gap-3">
-              <span class="px-3 py-1 bg-surface-subtle rounded-full font-label-mono-sm text-label-mono-sm text-primary font-bold border border-hairline-light">
-                WIN RATE: 78%
-              </span>
-              <span class="px-3 py-1 bg-signal-emerald/20 text-on-surface rounded-full font-label-mono-sm text-label-mono-sm uppercase font-bold">
-                RANK #01
-              </span>
-            </div>
-          </div>
 
-          <!-- 2 Squad Members Grid -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="p-4 bg-surface-subtle rounded-xl border border-hairline-light flex flex-col gap-2">
-              <div class="flex items-center justify-between">
-                <span class="font-label-mono-sm text-xs text-on-surface-variant uppercase font-bold">TEAM MEMBER 01</span>
-                <span class="material-symbols-outlined text-signal-emerald text-sm">verified</span>
-              </div>
-              <span class="font-headline-md text-lg font-bold text-primary">Alex Vance</span>
-              <span class="font-label-mono-sm text-xs text-on-surface-variant">HANDLE: VALKYRIE_01</span>
-              <div class="mt-2 flex items-center justify-between text-xs font-label-mono-sm text-on-surface-variant border-t border-hairline-light pt-2">
-                <span>ROLE: PRIMARY BUZZER</span>
-                <span class="text-signal-emerald font-bold">READY</span>
+              <!-- 2-Player Squad Members -->
+              <div class="bg-surface-subtle p-5 rounded-xl border border-hairline-light flex flex-col gap-3">
+                <div class="flex items-center justify-between">
+                  <span class="font-label-mono-sm text-xs text-on-surface-variant uppercase font-bold">
+                    2-PLAYER SQUAD MEMBERS
+                  </span>
+                  <span class="font-label-mono-sm text-[11px] text-signal-emerald font-bold">
+                    ACTIVE PAIR
+                  </span>
+                </div>
+                <div class="flex flex-col gap-2.5">
+                  <div class="flex items-center justify-between p-3 bg-surface-container-lowest rounded-lg border border-hairline-light">
+                    <div class="flex items-center gap-2.5">
+                      <span class="material-symbols-outlined text-primary text-lg">person</span>
+                      <span class="font-body-base text-sm font-semibold text-primary">
+                        Player 1: Alex Vance
+                      </span>
+                    </div>
+                    <span class="font-label-mono-sm text-[10px] bg-primary text-on-primary px-2 py-0.5 rounded font-bold">
+                      POD 01
+                    </span>
+                  </div>
+                  <div class="flex items-center justify-between p-3 bg-surface-container-lowest rounded-lg border border-hairline-light">
+                    <div class="flex items-center gap-2.5">
+                      <span class="material-symbols-outlined text-primary text-lg">person</span>
+                      <span class="font-body-base text-sm font-semibold text-primary">
+                        Player 2: Sarah Connor
+                      </span>
+                    </div>
+                    <span class="font-label-mono-sm text-[10px] bg-cobalt-deep text-on-primary px-2 py-0.5 rounded font-bold">
+                      POD 02
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div class="p-4 bg-surface-subtle rounded-xl border border-hairline-light flex flex-col gap-2">
-              <div class="flex items-center justify-between">
-                <span class="font-label-mono-sm text-xs text-on-surface-variant uppercase font-bold">TEAM MEMBER 02</span>
-                <span class="material-symbols-outlined text-signal-emerald text-sm">verified</span>
+            <!-- Right Area (40% width from right to left): Bigger Profile Picture -->
+            <div class="w-full md:w-[40%] flex flex-col items-center justify-center relative rounded-2xl overflow-hidden border-2 border-primary bg-black p-3 shadow-[4px_4px_0px_#CCFF00] min-h-[240px] sm:min-h-[280px]">
+              <div class="w-full h-full relative rounded-xl overflow-hidden flex items-center justify-center bg-surface-dark group">
+                <img
+                  src="../assets/profile_pics/cat_duo.png"
+                  alt="Squad Profile Pic"
+                  class="w-full h-full max-h-[260px] md:max-h-[300px] object-cover rounded-xl shadow-inner group-hover:scale-105 transition-transform duration-500"
+                />
+                <div class="absolute bottom-2.5 left-2.5 right-2.5 bg-black/75 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/15 flex items-center justify-between">
+                  <span class="font-label-mono-sm text-[11px] text-acid-chartreuse font-bold uppercase tracking-wider">
+                    SQUAD PROFILE PIC
+                  </span>
+                  <span class="font-label-mono-sm text-[10px] text-white/90 uppercase font-bold">
+                    Cat Duo
+                  </span>
+                </div>
               </div>
-              <span class="font-headline-md text-lg font-bold text-primary">Sarah Connor</span>
-              <span class="font-label-mono-sm text-xs text-on-surface-variant">HANDLE: NEXUS_CORE</span>
-              <div class="mt-2 flex items-center justify-between text-xs font-label-mono-sm text-on-surface-variant border-t border-hairline-light pt-2">
-                <span>ROLE: TACTICAL SPECIALIST</span>
-                <span class="text-signal-emerald font-bold">READY</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Scoring Breakdown Stats Bar -->
-          <div class="mt-6 pt-6 border-t border-hairline-light grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div class="flex flex-col">
-              <span class="font-label-mono-sm text-xs text-on-surface-variant uppercase">ROUND 01</span>
-              <span class="font-label-mono-lg text-lg font-bold text-primary">450 PTS</span>
-            </div>
-            <div class="flex flex-col">
-              <span class="font-label-mono-sm text-xs text-on-surface-variant uppercase">ROUND 02</span>
-              <span class="font-label-mono-lg text-lg font-bold text-primary">600 PTS</span>
-            </div>
-            <div class="flex flex-col">
-              <span class="font-label-mono-sm text-xs text-on-surface-variant uppercase">ROUND 03 LIVE</span>
-              <span class="font-label-mono-lg text-lg font-bold text-signal-emerald">400 PTS</span>
-            </div>
-            <div class="flex flex-col">
-              <span class="font-label-mono-sm text-xs text-on-surface-variant uppercase">TOTAL SCORE</span>
-              <span class="font-label-mono-lg text-lg font-bold text-primary">1,450 PTS</span>
             </div>
           </div>
         </div>
 
-        <!-- Live Tournament Standings Table -->
-        <div class="w-full bg-surface-container-lowest rounded-2xl p-6 md:p-8 shadow-sm border border-hairline-light">
-          <div class="flex items-center justify-between pb-4 mb-4 border-b border-hairline-light">
-            <div>
-              <span class="font-label-mono-sm text-label-mono-sm uppercase text-on-surface-variant">TOURNAMENT MATRIX</span>
-              <h3 class="font-headline-lg text-xl font-bold text-primary">Division Standings Leaderboard</h3>
+        <!-- Live Tournament Standings with Top 3 Hierarchy Podium -->
+        <div class="w-full bg-surface-container-lowest rounded-2xl p-6 md:p-8 shadow-sm border border-hairline-light flex flex-col gap-6">
+          
+          <!-- Leaderboard Header matching the hierarchy reference -->
+          <div class="flex flex-col items-center justify-center text-center pt-2 pb-4">
+            <h2 class="font-black text-3xl sm:text-4xl text-acid-chartreuse tracking-wider uppercase drop-shadow-[0_0_15px_rgba(204,255,0,0.3)]">
+              LEADERBOARD
+            </h2>
+            <p class="font-body-base text-sm sm:text-base text-on-surface-variant mt-1.5">
+              Compete with fellow coders and climb to the top of the rankings
+            </p>
+          </div>
+
+          <!-- Top 3 Hierarchy Podium Layout -->
+          <div class="w-full flex flex-col sm:flex-row items-end justify-center gap-4 sm:gap-6 md:gap-8 pt-4 pb-6 px-2">
+            
+            <!-- RANK 2 (Left) -->
+            <div class="flex-1 max-w-[240px] w-full flex flex-col items-center order-2 sm:order-1">
+              <div class="relative mb-3">
+                <div class="w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-[#8A99AD] bg-black p-1 shadow-lg overflow-hidden flex items-center justify-center">
+                  <img
+                    src="../assets/profile_pics/comedy.jpg"
+                    alt="Team Vortex"
+                    class="w-full h-full object-cover rounded-full"
+                  />
+                </div>
+                <div class="absolute -top-1 -right-1 w-8 h-8 rounded-full bg-[#8A99AD] text-black font-black flex items-center justify-center text-sm shadow-md border-2 border-black">
+                  2
+                </div>
+              </div>
+              <div class="w-full bg-surface-subtle border-2 border-[#8A99AD]/60 rounded-2xl p-4 flex flex-col items-center justify-center text-center shadow-md">
+                <h3 class="font-bold text-primary text-base sm:text-lg truncate max-w-full">
+                  TEAM VORTEX
+                </h3>
+                <span class="font-black text-2xl sm:text-3xl text-primary mt-2">
+                  1,200
+                </span>
+                <span class="font-label-mono-sm text-[11px] text-on-surface-variant uppercase tracking-widest font-bold mt-0.5">
+                  POINTS
+                </span>
+              </div>
             </div>
-            <span class="px-3 py-1 bg-surface-subtle font-label-mono-sm text-xs rounded-full font-bold uppercase">
-              4 TEAMS CONNECTED
+
+            <!-- RANK 1 (Center - Elevated & Bigger) -->
+            <div class="flex-1 max-w-[270px] w-full flex flex-col items-center order-1 sm:order-2 -translate-y-0 sm:-translate-y-6">
+              <div class="relative mb-3">
+                <div class="w-32 h-32 sm:w-36 sm:h-36 rounded-full border-4 border-acid-chartreuse bg-black p-1 shadow-[0_0_35px_rgba(204,255,0,0.5)] overflow-hidden flex items-center justify-center">
+                  <img
+                    src="../assets/profile_pics/cat_duo.png"
+                    alt="Team Kinetic"
+                    class="w-full h-full object-cover rounded-full"
+                  />
+                </div>
+                <div class="absolute -top-1.5 -right-1.5 w-10 h-10 rounded-full bg-acid-chartreuse text-canvas-dark font-black flex items-center justify-center text-lg shadow-lg border-2 border-black animate-pulse">
+                  1
+                </div>
+              </div>
+              <div class="w-full bg-surface-subtle border-2 border-acid-chartreuse rounded-2xl p-5 sm:p-6 flex flex-col items-center justify-center text-center shadow-[0_0_30px_rgba(204,255,0,0.25),4px_4px_0px_#CCFF00]">
+                <h3 class="font-black text-acid-chartreuse text-lg sm:text-xl truncate max-w-full">
+                  TEAM KINETIC
+                </h3>
+                <span class="bg-acid-chartreuse text-canvas-dark text-[10px] font-bold px-2 py-0.5 rounded uppercase mt-0.5">
+                  YOUR TEAM
+                </span>
+                <span class="font-black text-3xl sm:text-4xl text-primary mt-2 tracking-tight">
+                  1,450
+                </span>
+                <span class="font-label-mono-sm text-xs text-acid-chartreuse uppercase tracking-widest font-bold mt-0.5">
+                  POINTS
+                </span>
+              </div>
+            </div>
+
+            <!-- RANK 3 (Right) -->
+            <div class="flex-1 max-w-[240px] w-full flex flex-col items-center order-3">
+              <div class="relative mb-3">
+                <div class="w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-[#FF8C38] bg-black p-1 shadow-lg overflow-hidden flex items-center justify-center">
+                  <img
+                    src="../assets/profile_pics/couple.jpg"
+                    alt="Team Null Pointer"
+                    class="w-full h-full object-cover rounded-full"
+                  />
+                </div>
+                <div class="absolute -top-1 -right-1 w-8 h-8 rounded-full bg-[#FF8C38] text-black font-black flex items-center justify-center text-sm shadow-md border-2 border-black">
+                  3
+                </div>
+              </div>
+              <div class="w-full bg-surface-subtle border-2 border-[#FF8C38]/60 rounded-2xl p-4 flex flex-col items-center justify-center text-center shadow-md">
+                <h3 class="font-bold text-primary text-base sm:text-lg truncate max-w-full">
+                  TEAM NULL POINTER
+                </h3>
+                <span class="font-black text-2xl sm:text-3xl text-[#FF8C38] mt-2">
+                  950
+                </span>
+                <span class="font-label-mono-sm text-[11px] text-on-surface-variant uppercase tracking-widest font-bold mt-0.5">
+                  POINTS
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Complete Division Standings Subheading -->
+          <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pt-4 pb-2 border-t border-hairline-light">
+            <div>
+              <span class="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold tracking-widest">
+                COMPLETE DIVISION STANDINGS
+              </span>
+              <h3 class="font-headline-md text-primary uppercase font-bold tracking-tight">
+                All Connected Squads
+              </h3>
+            </div>
+            <span class="bg-primary text-on-primary px-3 py-1 rounded-full font-label-mono-sm text-label-mono-sm uppercase font-bold">
+              SORTED BY: TOTAL SCORE (PTS)
             </span>
           </div>
 

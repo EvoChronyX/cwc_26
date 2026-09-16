@@ -16,6 +16,8 @@ export default function PortalAccess() {
     setP2Handle,
     playerAvatar,
     setPlayerAvatar,
+    playerPassword,
+    setPlayerPassword,
     activeFaction,
     setActiveFaction,
     arenaPin,
@@ -27,11 +29,22 @@ export default function PortalAccess() {
   const [gmId, setGmId] = useState('GM_ARBITER_07');
   const [sessionToken, setSessionToken] = useState('STG-TOURNAMENT-2025-Q1');
   const [masterKey, setMasterKey] = useState('••••••••••••••••••••');
+  const [showPlayerPassword, setShowPlayerPassword] = useState(false);
+  const [showMasterPassword, setShowMasterPassword] = useState(false);
   const [keyVerified, setKeyVerified] = useState(false);
 
   // Scroll detection for animated appearance
   const [hasScrolled, setHasScrolled] = useState(false);
   const contentRef = useRef(null);
+  const avatarSliderRef = useRef(null);
+
+  const slideAvatars = (direction) => {
+    playTone(600, 0.05);
+    if (avatarSliderRef.current) {
+      const scrollAmount = direction === 'left' ? -260 : 260;
+      avatarSliderRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -217,20 +230,42 @@ export default function PortalAccess() {
           {authMode === 'player' ? (
             <div className="flex flex-col gap-8">
 
-              {/* AVATAR SELECTION DECK (FOR PLAYERS ONLY) */}
+              {/* AVATAR SELECTION DECK (ANIMATED HORIZONTAL SLIDER WITH LOCAL PROFILE PICTURES) */}
               <div className="flex flex-col gap-3 p-5 bg-surface-subtle rounded-xl border border-hairline-light">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-primary text-xl">face</span>
                     <span className="font-label-mono-sm text-xs uppercase font-bold text-primary">
                       SELECT PROFILE PICTURE AVATAR
                     </span>
                   </div>
+                  <div className="flex items-center gap-2">
 
+                    <button
+                      type="button"
+                      onClick={() => slideAvatars('left')}
+                      className="w-8 h-8 rounded-lg bg-surface-container hover:bg-primary hover:text-acid-chartreuse text-primary border border-hairline-light flex items-center justify-center cursor-pointer transition-all duration-150 active:scale-90"
+                      title="Slide Left"
+                    >
+                      <span className="material-symbols-outlined text-lg">chevron_left</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => slideAvatars('right')}
+                      className="w-8 h-8 rounded-lg bg-surface-container hover:bg-primary hover:text-acid-chartreuse text-primary border border-hairline-light flex items-center justify-center cursor-pointer transition-all duration-150 active:scale-90"
+                      title="Slide Right"
+                    >
+                      <span className="material-symbols-outlined text-lg">chevron_right</span>
+                    </button>
+                  </div>
                 </div>
 
-                {/* 5 Predefined Avatar Grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2">
+                {/* Animated Horizontal Slider with 11 Profile Pictures */}
+                <div
+                  ref={avatarSliderRef}
+                  className="flex items-center gap-4 overflow-x-auto scroll-smooth py-3 px-1 scrollbar-none snap-x snap-mandatory"
+                  style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                >
                   {PREDEFINED_AVATARS.map((av) => {
                     const isSelected = playerAvatar === av.id;
                     return (
@@ -241,28 +276,24 @@ export default function PortalAccess() {
                           setPlayerAvatar(av.id);
                           playTone(850, 0.08);
                         }}
-                        className={`p-3 rounded-xl flex flex-col items-center gap-2 transition-all cursor-pointer border-2 text-center relative ${isSelected
-                          ? 'border-primary bg-primary text-on-primary shadow-[3px_3px_0px_#CCFF00] scale-105'
-                          : 'border-hairline-light bg-surface-container-lowest hover:border-primary/50 text-on-surface'
-                          }`}
+                        className={`group flex-shrink-0 w-28 sm:w-32 p-3 rounded-xl flex flex-col items-center gap-2 transition-all duration-300 cursor-pointer border-2 text-center relative snap-start ${
+                          isSelected
+                            ? 'border-primary bg-primary text-on-primary shadow-[0_0_18px_rgba(204,255,0,0.5),3px_3px_0px_#CCFF00] scale-105'
+                            : 'border-hairline-light bg-surface-container-lowest hover:border-primary/60 hover:scale-102 text-on-surface'
+                        }`}
                       >
                         {isSelected && (
-                          <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-acid-chartreuse text-canvas-dark flex items-center justify-center shadow-md">
-                            <span className="material-symbols-outlined text-sm font-bold">check</span>
+                          <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-acid-chartreuse text-canvas-dark flex items-center justify-center shadow-md animate-pulse">
+                            <span className="material-symbols-outlined text-sm font-black">check</span>
                           </div>
                         )}
-                        <img
-                          src={av.svg}
-                          alt={av.name}
-                          className="w-14 h-14 rounded-lg object-cover bg-black border border-hairline-dark shadow-sm"
-                        />
-                        <span className="font-headline-md text-xs font-bold leading-tight line-clamp-1">
-                          {av.name}
-                        </span>
-                        <span className={`font-label-mono-sm text-[10px] uppercase font-bold ${isSelected ? 'text-acid-chartreuse' : 'text-on-surface-variant'
-                          }`}>
-                          {av.callsign}
-                        </span>
+                        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-black border border-hairline-dark shadow-sm">
+                          <img
+                            src={av.src || av.svg}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                          />
+                        </div>
+
                       </button>
                     );
                   })}
@@ -321,7 +352,34 @@ export default function PortalAccess() {
                 </div>
               </div>
 
-
+              {/* Player Password Field */}
+              <div className="flex flex-col gap-2">
+                <div className="flex justify-between items-baseline">
+                  <label className="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
+                    PASSWORD
+                  </label>
+                  <span className="font-label-mono-sm text-xs text-signal-emerald font-bold">SQUAD ACCESS KEY</span>
+                </div>
+                <div className="relative">
+                  <input
+                    type={showPlayerPassword ? 'text' : 'password'}
+                    value={playerPassword}
+                    onChange={(e) => setPlayerPassword(e.target.value)}
+                    placeholder="ENTER SQUAD ACCESS PASSWORD..."
+                    className="w-full bg-surface-subtle text-primary font-label-mono-lg text-sm px-4 py-3 pr-12 border border-hairline-light rounded-xl focus:outline-none focus:border-primary font-bold tracking-widest"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPlayerPassword(!showPlayerPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary cursor-pointer p-1"
+                    title={showPlayerPassword ? 'Hide password' : 'Show password'}
+                  >
+                    <span className="material-symbols-outlined text-lg">
+                      {showPlayerPassword ? 'visibility_off' : 'visibility'}
+                    </span>
+                  </button>
+                </div>
+              </div>
 
               {/* Action Submit Button */}
               <button
@@ -336,41 +394,45 @@ export default function PortalAccess() {
           ) : (
             /* GAME MASTER / ADMIN LOGIN FORM */
             <div className="flex flex-col gap-6">
-              <div className="p-4 bg-sabotage-crimson/10 border border-sabotage-crimson/30 rounded-xl flex items-center gap-3">
-                <span className="material-symbols-outlined text-sabotage-crimson text-2xl font-bold">admin_panel_settings</span>
-                <span className="font-label-mono-sm text-xs text-primary font-bold uppercase">
-                  RESTRICTED TOURNAMENT MASTER NERVE CENTER • DUAL AUTHORIZATION REQUIRED
-                </span>
-              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-2">
-                  <label className="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
-                    GAME MASTER IDENTIFIER
-                  </label>
-                  <input
-                    type="text"
-                    value={gmId}
-                    onChange={(e) => setGmId(e.target.value)}
-                    className="w-full bg-surface-subtle text-primary font-body-base text-sm px-4 py-3 border border-hairline-light rounded-xl focus:outline-none focus:border-primary font-bold"
-                  />
-                </div>
-
-
-              </div>
 
               <div className="flex flex-col gap-2">
                 <label className="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
-                  MASTER SECURITY OVERRIDE KEY
+                  GAME MASTER IDENTIFIER
                 </label>
-                <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={gmId}
+                  onChange={(e) => setGmId(e.target.value)}
+                  className="w-full bg-surface-subtle text-primary font-body-base text-sm px-4 py-3 border border-hairline-light rounded-xl focus:outline-none focus:border-primary font-bold"
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <div className="flex justify-between items-baseline">
+                  <label className="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
+                    PASSWORD
+                  </label>
+                  <span className="font-label-mono-sm text-xs text-sabotage-crimson font-bold">MASTER OVERRIDE KEY</span>
+                </div>
+                <div className="relative">
                   <input
-                    type="password"
+                    type={showMasterPassword ? 'text' : 'password'}
                     value={masterKey}
                     onChange={(e) => setMasterKey(e.target.value)}
-                    className="flex-1 bg-surface-subtle text-primary font-label-mono-lg text-sm px-4 py-3 border border-hairline-light rounded-xl focus:outline-none focus:border-primary font-bold tracking-widest"
+                    placeholder="ENTER MASTER SECURITY PASSWORD..."
+                    className="w-full bg-surface-subtle text-primary font-label-mono-lg text-sm px-4 py-3 pr-12 border border-hairline-light rounded-xl focus:outline-none focus:border-primary font-bold tracking-widest"
                   />
-
+                  <button
+                    type="button"
+                    onClick={() => setShowMasterPassword(!showMasterPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary cursor-pointer p-1"
+                    title={showMasterPassword ? 'Hide password' : 'Show password'}
+                  >
+                    <span className="material-symbols-outlined text-lg">
+                      {showMasterPassword ? 'visibility_off' : 'visibility'}
+                    </span>
+                  </button>
                 </div>
               </div>
 

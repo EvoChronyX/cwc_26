@@ -39,6 +39,7 @@ export function GameProvider({ children }) {
   const [p1Handle, setP1Handle] = useState('VALKYRIE_01');
   const [p2Handle, setP2Handle] = useState('NEXUS_CORE');
   const [playerAvatar, setPlayerAvatar] = useState('avatar-1');
+  const [playerPassword, setPlayerPassword] = useState('');
   const [activeFaction, setActiveFaction] = useState('KINETIC');
   const [arenaPin, setArenaPin] = useState('794-20');
 
@@ -469,6 +470,8 @@ export function GameProvider({ children }) {
         setP2Handle,
         playerAvatar,
         setPlayerAvatar,
+        playerPassword,
+        setPlayerPassword,
         activeFaction,
         setActiveFaction,
         arenaPin,

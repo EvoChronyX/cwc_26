@@ -45,6 +45,21 @@ export default function PlayerArena() {
 
   const rivalTeams = teams.filter((t) => t.id !== 1);
 
+  // Top 3 Leaderboard hierarchy sorting & avatar mapping
+  const sortedTeams = [...teams].sort((a, b) => b.score - a.score);
+  const rank1 = sortedTeams[0] || currentTeam;
+  const rank2 = sortedTeams[1] || teams[1] || currentTeam;
+  const rank3 = sortedTeams[2] || teams[2] || currentTeam;
+
+  const getTeamAvatar = (team) => {
+    if (!team) return PREDEFINED_AVATARS[0].src;
+    if (team.id === 1) {
+      return selectedAvatarObj.src || selectedAvatarObj.svg;
+    }
+    const idx = (team.id) % PREDEFINED_AVATARS.length;
+    return PREDEFINED_AVATARS[idx].src || PREDEFINED_AVATARS[idx].svg;
+  };
+
   return (
     <div className="w-full min-h-screen bg-background flex">
       
@@ -112,79 +127,12 @@ export default function PlayerArena() {
             Power-up Pothys
           </button>
         </nav>
-
-        {/* Sidebar Telemetry Footer & Selected Avatar */}
-        <div className="px-space-md pt-space-md mt-auto flex flex-col gap-3">
-          <div className="bg-surface-subtle p-space-sm rounded-lg flex flex-col gap-2 border border-hairline-light">
-            <span className="font-label-mono-sm text-label-mono-sm uppercase text-on-surface-variant">ACTIVE SQUAD</span>
-            <div className="flex items-center gap-3">
-              <img
-                src={selectedAvatarObj.svg}
-                alt={selectedAvatarObj.name}
-                className="w-10 h-10 rounded-lg border-2 border-primary object-cover shadow-sm bg-black shrink-0"
-              />
-              <div className="flex flex-col min-w-0">
-                <span className="font-label-mono-lg text-sm text-primary font-bold truncate">{currentTeam.teamName}</span>
-                <span className="font-label-mono-sm text-[10px] text-acid-chartreuse font-bold uppercase">{selectedAvatarObj.name}</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between pt-1 border-t border-hairline-light mt-1">
-              <span className="font-label-mono-sm text-xs text-on-surface-variant">{currentTeam.lane}</span>
-              <span className="font-label-mono-sm text-xs text-signal-emerald font-bold">{currentTeam.score} PTS</span>
-            </div>
-          </div>
-
-          {/* Quick Page View Switcher in Sidebar */}
-          <div className="pt-2 border-t border-hairline-light flex flex-col gap-1">
-            <span className="font-label-mono-sm text-[10px] uppercase text-on-surface-variant tracking-wider">NAVIGATION</span>
-            <button
-              type="button"
-              onClick={() => setCurrentView('admin')}
-              className="flex items-center gap-2 text-xs font-label-mono-sm text-on-surface-variant hover:text-primary py-1.5 px-2 rounded hover:bg-surface-subtle text-left cursor-pointer transition-colors"
-            >
-              <span className="material-symbols-outlined text-[16px]">tune</span>
-              Admin Console
-            </button>
-            <button
-              type="button"
-              onClick={() => setCurrentView('portal')}
-              className="flex items-center gap-2 text-xs font-label-mono-sm text-on-surface-variant hover:text-primary py-1.5 px-2 rounded hover:bg-surface-subtle text-left cursor-pointer transition-colors"
-            >
-              <span className="material-symbols-outlined text-[16px]">vpn_key</span>
-              Portal Access / Login
-            </button>
-          </div>
-        </div>
       </aside>
 
       {/* Main Area */}
       <div className="pl-64 w-full min-h-screen">
         
-        {/* Top Transmission Status Ribbon (No horizontal navbar above) */}
-        <section className="w-full bg-canvas-dark text-on-primary px-4 sm:px-8 py-3 flex flex-wrap items-center justify-between gap-4 border-b border-hairline-dark">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-signal-emerald animate-ping"></span>
-              <span className="font-label-mono-sm text-label-mono-sm uppercase text-signal-emerald tracking-widest">
-                TRANSMISSION: 8.4ms LATENCY
-              </span>
-            </div>
-            <div className="hidden sm:flex items-center gap-2">
-              <span className="font-label-mono-sm text-label-mono-sm text-on-primary-container">MATCH ID:</span>
-              <span className="font-label-mono-sm text-label-mono-sm text-acid-chartreuse font-bold">#ARENA-FINALS-994</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1 bg-surface-dark px-3 py-1 rounded-full">
-              <span className="font-label-mono-sm text-label-mono-sm text-on-primary-container">SPECTATORS:</span>
-              <span className="font-label-mono-sm text-label-mono-sm text-on-primary font-bold">1,842 LIVE</span>
-            </div>
-            <div className="flex items-center gap-2 bg-secondary-container text-on-secondary-fixed px-3 py-1 rounded-full">
-              <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-              <span className="font-label-mono-sm text-label-mono-sm uppercase font-bold tracking-wider">SYNC ENGINE: ACTIVE</span>
-            </div>
-          </div>
-        </section>
+
 
         {/* Content Workspace */}
         <main className="w-full p-4 sm:p-6 md:p-10 flex flex-col gap-8 max-w-7xl mx-auto">
@@ -229,109 +177,226 @@ export default function PlayerArena() {
 
               {/* Team Dossier Hero Card */}
               <div className="w-full bg-surface-container-lowest rounded-2xl p-6 md:p-8 shadow-sm border border-hairline-light">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 mb-6 border-b border-hairline-light gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-primary text-on-primary flex items-center justify-center font-headline-md text-headline-md font-bold shadow-[2px_2px_0px_#CCFF00]">
-                      T1
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h2 className="font-headline-lg text-headline-lg font-bold text-primary tracking-tight">
-                          {currentTeam.teamName}
-                        </h2>
-                        <span className="bg-acid-chartreuse text-canvas-dark text-[10px] font-bold px-2 py-0.5 rounded uppercase">
-                          YOUR TEAM
+                <div className="flex flex-col md:flex-row items-stretch gap-6 md:gap-8">
+                  {/* Left Area (60% width): Team Info & Player Names */}
+                  <div className="w-full md:w-[60%] flex flex-col justify-between gap-6">
+                    {/* Team Header */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-hairline-light gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-xl bg-primary text-on-primary flex items-center justify-center font-headline-md text-headline-md font-bold shadow-[2px_2px_0px_#CCFF00] shrink-0">
+                          T1
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h2 className="font-headline-lg text-headline-lg font-bold text-primary tracking-tight">
+                              {currentTeam.teamName}
+                            </h2>
+                            <span className="bg-acid-chartreuse text-canvas-dark text-[10px] font-bold px-2 py-0.5 rounded uppercase">
+                              YOUR TEAM
+                            </span>
+                          </div>
+                          <span className="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase">
+                            {currentTeam.lane} // DIVISION: {activeFaction}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center">
+                        <span className="px-3 py-1 bg-surface-subtle rounded-full font-label-mono-sm text-xs text-primary font-bold border border-hairline-light">
+                          STATUS: ONLINE &amp; SYNCHRONIZED
                         </span>
                       </div>
-                      <span className="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase">
-                        {currentTeam.lane} // DIVISION: {activeFaction}
-                      </span>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="px-3 py-1 bg-surface-subtle rounded-full font-label-mono-sm text-label-mono-sm text-primary font-bold border border-hairline-light">
-                      STATUS: ONLINE &amp; SYNCHRONIZED
-                    </span>
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Squad Members */}
-                  <div className="bg-surface-subtle p-5 rounded-xl border border-hairline-light flex flex-col gap-3">
-                    <span className="font-label-mono-sm text-xs text-on-surface-variant uppercase font-bold">
-                      2-PLAYER SQUAD MEMBERS
-                    </span>
-                    <div className="flex flex-col gap-2">
-                      <div className="flex items-center justify-between p-2 bg-surface-container-lowest rounded border border-hairline-light">
-                        <span className="font-body-base text-sm font-semibold text-primary">Player 1: {currentTeam.p1 || p1Handle}</span>
-                        <span className="font-label-mono-sm text-[10px] bg-primary text-on-primary px-1.5 py-0.5 rounded">POD 01</span>
+                    {/* 2-Player Squad Members */}
+                    <div className="bg-surface-subtle p-5 rounded-xl border border-hairline-light flex flex-col gap-3">
+                      <div className="flex items-center justify-between">
+                        <span className="font-label-mono-sm text-xs text-on-surface-variant uppercase font-bold">
+                          2-PLAYER SQUAD MEMBERS
+                        </span>
+                        <span className="font-label-mono-sm text-[11px] text-signal-emerald font-bold">
+                          ACTIVE PAIR
+                        </span>
                       </div>
-                      <div className="flex items-center justify-between p-2 bg-surface-container-lowest rounded border border-hairline-light">
-                        <span className="font-body-base text-sm font-semibold text-primary">Player 2: {currentTeam.p2 || p2Handle}</span>
-                        <span className="font-label-mono-sm text-[10px] bg-cobalt-deep text-on-primary px-1.5 py-0.5 rounded">POD 02</span>
+                      <div className="flex flex-col gap-2.5">
+                        <div className="flex items-center justify-between p-3 bg-surface-container-lowest rounded-lg border border-hairline-light">
+                          <div className="flex items-center gap-2.5">
+                            <span className="material-symbols-outlined text-primary text-lg">person</span>
+                            <span className="font-body-base text-sm font-semibold text-primary">
+                              Player 1: {currentTeam.p1 || p1Handle}
+                            </span>
+                          </div>
+                          <span className="font-label-mono-sm text-[10px] bg-primary text-on-primary px-2 py-0.5 rounded font-bold">
+                            POD 01
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-surface-container-lowest rounded-lg border border-hairline-light">
+                          <div className="flex items-center gap-2.5">
+                            <span className="material-symbols-outlined text-primary text-lg">person</span>
+                            <span className="font-body-base text-sm font-semibold text-primary">
+                              Player 2: {currentTeam.p2 || p2Handle}
+                            </span>
+                          </div>
+                          <span className="font-label-mono-sm text-[10px] bg-cobalt-deep text-on-primary px-2 py-0.5 rounded font-bold">
+                            POD 02
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Performance Metrics */}
-                  <div className="bg-surface-subtle p-5 rounded-xl border border-hairline-light flex flex-col justify-between">
-                    <span className="font-label-mono-sm text-xs text-on-surface-variant uppercase font-bold">
-                      ARENA PERFORMANCE
-                    </span>
-                    <div className="flex items-baseline justify-between mt-2">
-                      <span className="font-label-mono-sm text-sm text-on-surface-variant">WIN STREAK</span>
-                      <span className="font-headline-md font-bold text-primary">{currentTeam.streak} Questions</span>
+                  {/* Right Area (40% width from right to left): Bigger Profile Picture */}
+                  <div className="w-full md:w-[40%] flex flex-col items-center justify-center relative rounded-2xl overflow-hidden border-2 border-primary bg-black p-3 shadow-[4px_4px_0px_#CCFF00] min-h-[240px] sm:min-h-[280px]">
+                    <div className="w-full h-full relative rounded-xl overflow-hidden flex items-center justify-center bg-surface-dark group">
+                      <img
+                        src={selectedAvatarObj.src || selectedAvatarObj.svg}
+                        alt={selectedAvatarObj.name}
+                        className="w-full h-full max-h-[260px] md:max-h-[300px] object-cover rounded-xl shadow-inner group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <div className="absolute bottom-2.5 left-2.5 right-2.5 bg-black/75 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/15 flex items-center justify-between">
+                        <span className="font-label-mono-sm text-[11px] text-acid-chartreuse font-bold uppercase tracking-wider">
+                          SQUAD PROFILE PIC
+                        </span>
+                        <span className="font-label-mono-sm text-[10px] text-white/90 uppercase font-bold">
+                          {selectedAvatarObj.name}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-baseline justify-between mt-2">
-                      <span className="font-label-mono-sm text-sm text-on-surface-variant">BUZZ ACCURACY</span>
-                      <span className="font-headline-md font-bold text-signal-emerald">{currentTeam.winRate}</span>
-                    </div>
-                  </div>
-
-                  {/* Active Disruptions */}
-                  <div className="bg-surface-subtle p-5 rounded-xl border border-hairline-light flex flex-col justify-between">
-                    <span className="font-label-mono-sm text-xs text-on-surface-variant uppercase font-bold">
-                      DEFENSIVE STATUS
-                    </span>
-                    <div className="mt-2">
-                      {currentTeam.activeSabotages.length > 0 ? (
-                        <div className="p-3 bg-error-container rounded border border-sabotage-crimson text-sabotage-crimson font-body-base text-xs font-bold flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-sabotage-crimson animate-ping"></span>
-                          Under Attack: {currentTeam.activeSabotages.join(', ')}
-                        </div>
-                      ) : (
-                        <div className="p-3 bg-signal-emerald/10 text-secondary rounded font-body-base text-xs font-bold flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-signal-emerald"></span>
-                          Shields Nominal // No Active Disruptions
-                        </div>
-                      )}
-                    </div>
-                    <span className="font-label-mono-sm text-[10px] text-on-surface-variant uppercase mt-2">
-                      Report disruptions to Game Master on Thalaivar Page.
-                    </span>
                   </div>
                 </div>
               </div>
 
-              {/* Live Team Leaderboard */}
-              <div className="w-full bg-surface-container-lowest rounded-2xl p-6 md:p-8 shadow-sm border border-hairline-light">
-                <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-6 gap-4 pb-4 border-b border-hairline-light">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="w-2 h-2 rounded-full bg-signal-emerald"></span>
-                      <span className="font-label-mono-sm text-label-mono-sm uppercase text-on-surface-variant font-bold tracking-widest">
-                        GLOBAL BRACKET STANDINGS
+              {/* Live Team Leaderboard with Top 3 Hierarchy Podium */}
+              <div className="w-full bg-surface-container-lowest rounded-2xl p-6 md:p-8 shadow-sm border border-hairline-light flex flex-col gap-6">
+                
+                {/* Leaderboard Header matching the hierarchy reference */}
+                <div className="flex flex-col items-center justify-center text-center pt-2 pb-4">
+                  <h2 className="font-black text-3xl sm:text-4xl text-acid-chartreuse tracking-wider uppercase drop-shadow-[0_0_15px_rgba(204,255,0,0.3)]">
+                    LEADERBOARD
+                  </h2>
+                  <p className="font-body-base text-sm sm:text-base text-on-surface-variant mt-1.5">
+                    Compete with fellow coders and climb to the top of the rankings
+                  </p>
+                </div>
+
+                {/* Top 3 Hierarchy Podium Layout */}
+                <div className="w-full flex flex-col sm:flex-row items-end justify-center gap-4 sm:gap-6 md:gap-8 pt-4 pb-6 px-2">
+                  
+                  {/* RANK 2 (Left) */}
+                  <div className="flex-1 max-w-[240px] w-full flex flex-col items-center order-2 sm:order-1">
+                    {/* Circular Avatar + Badge 2 */}
+                    <div className="relative mb-3">
+                      <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-[#8A99AD] bg-black p-1 shadow-lg overflow-hidden flex items-center justify-center">
+                        <img
+                          src={getTeamAvatar(rank2)}
+                          alt={rank2.teamName}
+                          className="w-full h-full object-cover rounded-full"
+                        />
+                      </div>
+                      <div className="absolute -top-1 -right-1 w-8 h-8 rounded-full bg-[#8A99AD] text-black font-black flex items-center justify-center text-sm shadow-md border-2 border-black">
+                        2
+                      </div>
+                    </div>
+                    {/* Rank 2 Card */}
+                    <div className="w-full bg-surface-subtle border-2 border-[#8A99AD]/60 rounded-2xl p-4 flex flex-col items-center justify-center text-center shadow-md">
+                      <h3 className="font-bold text-primary text-base sm:text-lg truncate max-w-full">
+                        {rank2.teamName}
+                      </h3>
+                      {rank2.id === 1 && (
+                        <span className="bg-acid-chartreuse text-canvas-dark text-[9px] font-bold px-1.5 py-0.2 rounded uppercase mt-0.5">
+                          YOU
+                        </span>
+                      )}
+                      <span className="font-black text-2xl sm:text-3xl text-primary mt-2">
+                        {rank2.score.toLocaleString()}
+                      </span>
+                      <span className="font-label-mono-sm text-[11px] text-on-surface-variant uppercase tracking-widest font-bold mt-0.5">
+                        POINTS
                       </span>
                     </div>
-                    <h2 className="font-headline-lg text-headline-lg text-primary uppercase font-bold tracking-tight">
-                      Live Tournament Team Leaderboard
-                    </h2>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className="bg-primary text-on-primary px-3 py-1 rounded-full font-label-mono-sm text-label-mono-sm uppercase font-bold">
-                      SORTED BY: TOTAL SCORE (PTS)
+
+                  {/* RANK 1 (Center - Elevated & Bigger) */}
+                  <div className="flex-1 max-w-[270px] w-full flex flex-col items-center order-1 sm:order-2 -translate-y-0 sm:-translate-y-6">
+                    {/* Circular Avatar + Badge 1 with Chartreuse Glow */}
+                    <div className="relative mb-3">
+                      <div className="w-32 h-32 sm:w-36 sm:h-36 rounded-full border-4 border-acid-chartreuse bg-black p-1 shadow-[0_0_35px_rgba(204,255,0,0.5)] overflow-hidden flex items-center justify-center">
+                        <img
+                          src={getTeamAvatar(rank1)}
+                          alt={rank1.teamName}
+                          className="w-full h-full object-cover rounded-full"
+                        />
+                      </div>
+                      <div className="absolute -top-1.5 -right-1.5 w-10 h-10 rounded-full bg-acid-chartreuse text-canvas-dark font-black flex items-center justify-center text-lg shadow-lg border-2 border-black animate-pulse">
+                        1
+                      </div>
+                    </div>
+                    {/* Rank 1 Card */}
+                    <div className="w-full bg-surface-subtle border-2 border-acid-chartreuse rounded-2xl p-5 sm:p-6 flex flex-col items-center justify-center text-center shadow-[0_0_30px_rgba(204,255,0,0.25),4px_4px_0px_#CCFF00]">
+                      <h3 className="font-black text-acid-chartreuse text-lg sm:text-xl truncate max-w-full">
+                        {rank1.teamName}
+                      </h3>
+                      {rank1.id === 1 && (
+                        <span className="bg-acid-chartreuse text-canvas-dark text-[10px] font-bold px-2 py-0.5 rounded uppercase mt-0.5">
+                          YOUR TEAM
+                        </span>
+                      )}
+                      <span className="font-black text-3xl sm:text-4xl text-primary mt-2 tracking-tight">
+                        {rank1.score.toLocaleString()}
+                      </span>
+                      <span className="font-label-mono-sm text-xs text-acid-chartreuse uppercase tracking-widest font-bold mt-0.5">
+                        POINTS
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* RANK 3 (Right) */}
+                  <div className="flex-1 max-w-[240px] w-full flex flex-col items-center order-3">
+                    {/* Circular Avatar + Badge 3 */}
+                    <div className="relative mb-3">
+                      <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-[#FF8C38] bg-black p-1 shadow-lg overflow-hidden flex items-center justify-center">
+                        <img
+                          src={getTeamAvatar(rank3)}
+                          alt={rank3.teamName}
+                          className="w-full h-full object-cover rounded-full"
+                        />
+                      </div>
+                      <div className="absolute -top-1 -right-1 w-8 h-8 rounded-full bg-[#FF8C38] text-black font-black flex items-center justify-center text-sm shadow-md border-2 border-black">
+                        3
+                      </div>
+                    </div>
+                    {/* Rank 3 Card */}
+                    <div className="w-full bg-surface-subtle border-2 border-[#FF8C38]/60 rounded-2xl p-4 flex flex-col items-center justify-center text-center shadow-md">
+                      <h3 className="font-bold text-primary text-base sm:text-lg truncate max-w-full">
+                        {rank3.teamName}
+                      </h3>
+                      {rank3.id === 1 && (
+                        <span className="bg-acid-chartreuse text-canvas-dark text-[9px] font-bold px-1.5 py-0.2 rounded uppercase mt-0.5">
+                          YOU
+                        </span>
+                      )}
+                      <span className="font-black text-2xl sm:text-3xl text-[#FF8C38] mt-2">
+                        {rank3.score.toLocaleString()}
+                      </span>
+                      <span className="font-label-mono-sm text-[11px] text-on-surface-variant uppercase tracking-widest font-bold mt-0.5">
+                        POINTS
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Complete Division Standings Subheading */}
+                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pt-4 pb-2 border-t border-hairline-light">
+                  <div>
+                    <span className="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold tracking-widest">
+                      COMPLETE DIVISION STANDINGS
                     </span>
+                    <h3 className="font-headline-md text-primary uppercase font-bold tracking-tight">
+                      All Connected Squads
+                    </h3>
                   </div>
+                  <span className="bg-primary text-on-primary px-3 py-1 rounded-full font-label-mono-sm text-label-mono-sm uppercase font-bold">
+                    SORTED BY: TOTAL SCORE (PTS)
+                  </span>
                 </div>
 
                 <div className="w-full overflow-x-auto">
