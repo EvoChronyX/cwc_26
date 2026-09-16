@@ -7,52 +7,51 @@ export default function AdminConsole() {
     setCurrentView,
     adminSubTab,
     setAdminSubTab,
-    players,
+    teams,
     buzzersArmed,
     buzzerQueue,
     queueIndex,
     currentBuzzerWinner,
     advanceToNextPlayer,
     auditLogs,
-    adjustPlayerScore,
-    setPlayerCustomScore,
+    adjustTeamScore,
     armBuzzers,
     lockBuzzers,
     resetBuzzers,
     awardFastestAnswer,
-    removeSabotageFromPlayer,
+    removeSabotageFromTeam,
     clearLogs,
     playTone
   } = useGame();
 
   // Sabotage Neutralizer States in Thalaivar Page
-  const [selectedNeutralizePlayerId, setSelectedNeutralizePlayerId] = useState(2); // default Elena Rostova
+  const [selectedNeutralizeTeamId, setSelectedNeutralizeTeamId] = useState(2); // default Team Vortex
   const [selectedNeutralizeSabotage, setSelectedNeutralizeSabotage] = useState('');
 
-  // Total Comalies Custom Inputs state per player
+  // Total Comalies Custom Inputs state per team
   const [customScoreDeltas, setCustomScoreDeltas] = useState({});
 
   // Kanaku Valaku filter category
   const [logFilter, setLogFilter] = useState('ALL');
 
-  const selectedNeutralizePlayer = players.find((p) => p.id === Number(selectedNeutralizePlayerId)) || players[0];
+  const selectedNeutralizeTeam = teams.find((t) => t.id === Number(selectedNeutralizeTeamId)) || teams[0];
 
   const handleNeutralizeSabotage = () => {
-    if (!selectedNeutralizePlayer) return;
-    const sabotageToRemove = selectedNeutralizeSabotage || (selectedNeutralizePlayer.activeSabotages[0] || 'ALL DISRUPTIONS');
-    removeSabotageFromPlayer(selectedNeutralizePlayer.id, sabotageToRemove);
+    if (!selectedNeutralizeTeam) return;
+    const sabotageToRemove = selectedNeutralizeSabotage || (selectedNeutralizeTeam.activeSabotages[0] || 'ALL DISRUPTIONS');
+    removeSabotageFromTeam(selectedNeutralizeTeam.id, sabotageToRemove);
   };
 
-  const handleCustomDeltaChange = (playerId, val) => {
-    setCustomScoreDeltas((prev) => ({ ...prev, [playerId]: val }));
+  const handleCustomDeltaChange = (teamId, val) => {
+    setCustomScoreDeltas((prev) => ({ ...prev, [teamId]: val }));
   };
 
-  const handleApplyCustomScore = (playerId) => {
-    const val = parseInt(customScoreDeltas[playerId], 10);
+  const handleApplyCustomScore = (teamId) => {
+    const val = parseInt(customScoreDeltas[teamId], 10);
     if (!isNaN(val)) {
-      adjustPlayerScore(playerId, val);
+      adjustTeamScore(teamId, val);
       playTone(900, 0.1);
-      setCustomScoreDeltas((prev) => ({ ...prev, [playerId]: '' }));
+      setCustomScoreDeltas((prev) => ({ ...prev, [teamId]: '' }));
     }
   };
 
@@ -62,10 +61,10 @@ export default function AdminConsole() {
   });
 
   return (
-    <div className="w-full min-h-screen bg-background flex flex-col md:flex-row">
+    <div className="w-full min-h-screen bg-background flex">
       
       {/* Left Sidebar */}
-      <aside className="w-full md:w-64 bg-surface-container-low z-30 flex flex-col pt-20 md:pt-space-md pb-space-lg md:fixed md:top-0 md:left-0 md:h-full border-r border-hairline-light">
+      <aside className="fixed left-0 top-0 h-full w-64 bg-surface-container-low z-50 flex flex-col pt-space-md pb-space-lg border-r border-hairline-light">
         <div className="px-space-md mb-6 flex flex-col gap-space-2xs">
           <span className="font-label-mono-sm text-label-mono-sm uppercase text-on-surface-variant tracking-wider">
             SYSTEM TELEMETRY
@@ -139,10 +138,10 @@ export default function AdminConsole() {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 md:pl-64 w-full">
+      <div className="pl-64 w-full min-h-screen">
         
         {/* Top Header */}
-        <header className="fixed top-0 left-0 md:left-64 right-0 h-16 bg-surface/90 backdrop-blur-md z-40 flex items-center justify-between px-4 sm:px-8 border-b border-hairline-light">
+        <header className="fixed top-0 left-64 right-0 h-16 bg-surface/90 backdrop-blur-md z-40 flex items-center justify-between px-4 sm:px-8 border-b border-hairline-light">
           <div className="flex items-center gap-space-md">
             <ClashLogo className="h-7 sm:h-8 w-auto" />
             <span className="font-headline-md text-headline-md tracking-tight font-bold text-primary hidden sm:inline-block">
@@ -161,7 +160,7 @@ export default function AdminConsole() {
                 onClick={() => setCurrentView('arena')}
                 className="font-body-base text-sm text-on-surface-variant hover:text-on-surface transition-colors px-3 py-1 cursor-pointer"
               >
-                Player Arena
+                Namma Area
               </button>
               <button
                 type="button"
@@ -200,7 +199,7 @@ export default function AdminConsole() {
                     <span className="px-3 py-1 bg-surface-subtle font-label-mono-sm text-label-mono-sm uppercase text-on-surface tracking-wider rounded-full">
                       THALAIVAR CONSOLE // OVERVIEW
                     </span>
-                    <span className="px-3 py-1 bg-signal-emerald/20 text-on-surface font-label-mono-sm text-label-mono-sm uppercase tracking-wider rounded-full flex items-center gap-1.5">
+                    <span className="px-3 py-1 bg-signal-emerald/20 text-on-surface font-label-mono-sm text-label-mono-sm uppercase tracking-wider rounded-full flex items-center gap-1.5 font-bold">
                       <span className="w-1.5 h-1.5 rounded-full bg-signal-emerald"></span> Host Master Active
                     </span>
                   </div>
@@ -208,7 +207,7 @@ export default function AdminConsole() {
                     Executive Arena Orchestration
                   </h1>
                   <p className="font-body-base text-body-base text-on-surface-variant">
-                    Direct hardware buzzer triage with sequential queue resolution, and instant administrative sabotage neutralization.
+                    Direct hardware buzzer triage with sequential queue resolution, and instant administrative sabotage neutralization for all connected teams.
                   </p>
                 </div>
 
@@ -228,7 +227,7 @@ export default function AdminConsole() {
               </div>
 
               {/* Subsystem 01: Buzzer Master Command */}
-              <div className="bg-surface-container-lowest p-6 md:p-8 rounded-xl shadow-sm flex flex-col gap-6">
+              <div className="bg-surface-container-lowest p-6 md:p-8 rounded-xl shadow-sm flex flex-col gap-6 border border-hairline-light">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-hairline-light">
                   <div>
                     <span className="font-label-mono-sm text-label-mono-sm uppercase text-on-surface-variant block mb-1">
@@ -306,7 +305,7 @@ export default function AdminConsole() {
                     </div>
                   </div>
 
-                  {/* Validated Lock-In Card with Enlarged Grant Floor & Next Player Buttons */}
+                  {/* Validated Lock-In Card with Team Name and Enlarged Buttons */}
                   <div className="lg:col-span-2 bg-canvas-dark text-on-primary p-6 rounded-xl flex flex-col justify-between relative overflow-hidden shadow-lg border border-hairline-dark">
                     <div className="absolute right-0 top-0 translate-x-4 -translate-y-4 opacity-10 pointer-events-none">
                       <span className="font-headline-xl text-headline-xl font-extrabold text-white text-[120px]">
@@ -325,7 +324,7 @@ export default function AdminConsole() {
                           </span>
                         </div>
                         <h3 className="font-headline-lg text-headline-lg font-bold text-white tracking-tight">
-                          {currentBuzzerWinner.name} <span className="text-acid-chartreuse">// {currentBuzzerWinner.handle}</span>
+                          {currentBuzzerWinner.teamName} <span className="text-acid-chartreuse">// {currentBuzzerWinner.name}</span>
                         </h3>
                         <p className="font-body-sm text-body-sm text-surface-variant mt-1">
                           Microsecond circuit lock registered at {currentBuzzerWinner.timestamp}
@@ -346,7 +345,7 @@ export default function AdminConsole() {
                       <div className="flex items-center gap-2">
                         <span className="w-2.5 h-2.5 rounded-full bg-signal-emerald animate-pulse"></span>
                         <span className="font-label-mono-sm text-label-mono-sm uppercase text-surface-variant">
-                          Contender Ready for Arbitrage
+                          Contending Team Ready for Arbitrage
                         </span>
                       </div>
 
@@ -354,7 +353,7 @@ export default function AdminConsole() {
                         {/* Enlarged "Grant Floor" Button */}
                         <button
                           type="button"
-                          onClick={() => awardFastestAnswer(currentBuzzerWinner.playerId)}
+                          onClick={() => awardFastestAnswer(currentBuzzerWinner.teamId)}
                           className="px-8 py-4 bg-acid-chartreuse text-canvas-dark font-headline-md text-headline-md uppercase font-bold tracking-wider hover:bg-white hover:scale-105 active:scale-95 transition-all duration-150 cursor-pointer shadow-[4px_4px_0px_#050505] flex items-center gap-2"
                         >
                           <span className="material-symbols-outlined text-xl">workspace_premium</span>
@@ -397,33 +396,33 @@ export default function AdminConsole() {
                       Emergency Sabotage Neutralizer
                     </h2>
                     <p className="font-body-base text-body-base text-on-surface-variant mt-1">
-                      Instantly defuse and strip accidental or hostile sabotages from any connected contender across the tournament floor.
+                      Instantly defuse and strip accidental or hostile sabotages from any connected contender team across the tournament floor.
                     </p>
                   </div>
                   <span className="material-symbols-outlined text-4xl text-sabotage-crimson">health_and_safety</span>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
-                  {/* Select Target Contender */}
+                  {/* Select Target Team */}
                   <div className="md:col-span-4 flex flex-col gap-2">
-                    <label className="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase" htmlFor="target-player-select">
-                      Select Targeted Contender:
+                    <label className="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase" htmlFor="target-team-select">
+                      Select Targeted Team:
                     </label>
                     <select
-                      id="target-player-select"
+                      id="target-team-select"
                       className="w-full bg-surface-subtle text-primary font-headline-md text-headline-md px-4 py-3.5 border-2 border-primary rounded-none focus:outline-none focus:border-cobalt-deep uppercase font-bold cursor-pointer"
-                      value={selectedNeutralizePlayerId}
-                      onChange={(e) => setSelectedNeutralizePlayerId(Number(e.target.value))}
+                      value={selectedNeutralizeTeamId}
+                      onChange={(e) => setSelectedNeutralizeTeamId(Number(e.target.value))}
                     >
-                      {players.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name} ({p.handle} - {p.lane})
+                      {teams.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.teamName} ({t.p1} &amp; {t.p2} - {t.lane})
                         </option>
                       ))}
                     </select>
                   </div>
 
-                  {/* Active Sabotages on this Contender */}
+                  {/* Active Sabotages on this Team */}
                   <div className="md:col-span-4 flex flex-col gap-2">
                     <label className="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase" htmlFor="target-sabotage-select">
                       Select Active Disruption:
@@ -434,8 +433,8 @@ export default function AdminConsole() {
                       value={selectedNeutralizeSabotage}
                       onChange={(e) => setSelectedNeutralizeSabotage(e.target.value)}
                     >
-                      {selectedNeutralizePlayer.activeSabotages.length > 0 ? (
-                        selectedNeutralizePlayer.activeSabotages.map((sab) => (
+                      {selectedNeutralizeTeam.activeSabotages.length > 0 ? (
+                        selectedNeutralizeTeam.activeSabotages.map((sab) => (
                           <option key={sab} value={sab}>
                             ⚠️ {sab} (ACTIVE DISRUPTION)
                           </option>
@@ -459,25 +458,25 @@ export default function AdminConsole() {
                   </div>
                 </div>
 
-                {/* Status Notice of Selected Contender */}
+                {/* Status Notice */}
                 <div className="p-4 bg-surface-subtle rounded-lg flex items-center justify-between border border-hairline-light">
                   <div className="flex items-center gap-3">
                     <span className={`w-3 h-3 rounded-full ${
-                      selectedNeutralizePlayer.activeSabotages.length > 0 ? 'bg-sabotage-crimson animate-ping' : 'bg-signal-emerald'
+                      selectedNeutralizeTeam.activeSabotages.length > 0 ? 'bg-sabotage-crimson animate-ping' : 'bg-signal-emerald'
                     }`}></span>
                     <span className="font-body-base text-body-base text-primary">
-                      Status for <strong>{selectedNeutralizePlayer.name}</strong>:{' '}
-                      {selectedNeutralizePlayer.activeSabotages.length > 0 ? (
+                      Status for <strong>{selectedNeutralizeTeam.teamName}</strong> ({selectedNeutralizeTeam.p1} &amp; {selectedNeutralizeTeam.p2}):{' '}
+                      {selectedNeutralizeTeam.activeSabotages.length > 0 ? (
                         <span className="text-sabotage-crimson font-bold">
-                          Impacted by {selectedNeutralizePlayer.activeSabotages.join(', ')}
+                          Impacted by {selectedNeutralizeTeam.activeSabotages.join(', ')}
                         </span>
                       ) : (
                         <span className="text-signal-emerald font-bold">Shields nominal. No active disruptions.</span>
                       )}
                     </span>
                   </div>
-                  <span className="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase">
-                    SCORE: {selectedNeutralizePlayer.score.toLocaleString()} PTS
+                  <span className="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase font-bold">
+                    SCORE: {selectedNeutralizeTeam.score.toLocaleString()} PTS
                   </span>
                 </div>
               </div>
@@ -486,7 +485,7 @@ export default function AdminConsole() {
           )}
 
           {/* ========================================================================= */}
-          {/* TAB 2: TOTAL COMALIES (Table of Connected Players & Live Scoring Deck)  */}
+          {/* TAB 2: TOTAL COMALIES (Table of Connected Teams & Live Scoring Deck)     */}
           {/* ========================================================================= */}
           {adminSubTab === 'total-comalies' && (
             <div className="flex flex-col gap-8">
@@ -499,20 +498,20 @@ export default function AdminConsole() {
                       TOTAL COMALIES
                     </span>
                     <span className="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase">
-                      // CONNECTED PLAYERS &amp; TEAMS SCORING
+                      // CONNECTED TEAMS (2 PLAYERS PER SQUAD)
                     </span>
                   </div>
                   <h1 className="font-headline-xl text-headline-xl text-primary font-bold tracking-tight">
-                    Active Tournament Roster
+                    Active Tournament Teams Roster
                   </h1>
                   <p className="font-body-base text-body-base text-on-surface-variant">
-                    Direct live score manipulation for all connected players, team status monitors, and custom manual adjustment entries.
+                    Direct live score manipulation for all connected 2-player teams, team status monitors, and custom manual adjustment entries.
                   </p>
                 </div>
 
                 <div className="flex items-center gap-3">
                   <div className="bg-surface-subtle px-4 py-2 rounded-lg font-label-mono-sm text-label-mono-sm text-primary font-bold border border-hairline-light">
-                    CONNECTED CONTENDERS: {players.length}
+                    CONNECTED TEAMS: {teams.length}
                   </div>
                 </div>
               </div>
@@ -523,7 +522,7 @@ export default function AdminConsole() {
                   <table className="w-full text-left border-collapse min-w-[850px]">
                     <thead>
                       <tr className="bg-surface-subtle font-label-mono-sm text-label-mono-sm uppercase text-on-surface-variant border-b border-hairline-light">
-                        <th className="py-4 px-6">Contender</th>
+                        <th className="py-4 px-6">Team Identity</th>
                         <th className="py-4 px-6">Lane / Tag</th>
                         <th className="py-4 px-6">Disruptions</th>
                         <th className="py-4 px-6">Current Score</th>
@@ -532,18 +531,18 @@ export default function AdminConsole() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-surface-subtle font-body-base text-body-base">
-                      {players.map((player) => (
-                        <tr key={player.id} className="hover:bg-surface-subtle/50 transition-colors">
-                          {/* Contender Name & Handle */}
+                      {teams.map((team) => (
+                        <tr key={team.id} className="hover:bg-surface-subtle/50 transition-colors">
+                          {/* Team Name & 2 Squad Members */}
                           <td className="py-5 px-6">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-lg bg-primary text-on-primary flex items-center justify-center font-bold text-sm shadow-[1px_1px_0px_#CCFF00]">
-                                P{player.id}
+                                T{team.id}
                               </div>
                               <div>
-                                <div className="font-bold text-primary text-base">{player.name}</div>
+                                <div className="font-bold text-primary text-base">{team.teamName}</div>
                                 <span className="font-label-mono-sm text-xs text-on-surface-variant uppercase">
-                                  {player.handle}
+                                  {team.p1} &amp; {team.p2}
                                 </span>
                               </div>
                             </div>
@@ -552,16 +551,16 @@ export default function AdminConsole() {
                           {/* Lane & Tag */}
                           <td className="py-5 px-6">
                             <span className="px-2.5 py-1 bg-surface-subtle rounded font-label-mono-sm text-xs font-bold text-primary border border-hairline-light">
-                              {player.lane}
+                              {team.lane}
                             </span>
                           </td>
 
                           {/* Active Sabotages */}
                           <td className="py-5 px-6">
-                            {player.activeSabotages.length > 0 ? (
+                            {team.activeSabotages.length > 0 ? (
                               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-error-container text-sabotage-crimson rounded-full font-label-mono-sm text-xs font-bold">
                                 <span className="w-1.5 h-1.5 rounded-full bg-sabotage-crimson animate-ping"></span>
-                                {player.activeSabotages.join(', ')}
+                                {team.activeSabotages.join(', ')}
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-signal-emerald/10 text-secondary font-label-mono-sm text-xs font-bold rounded-full">
@@ -574,7 +573,7 @@ export default function AdminConsole() {
                           <td className="py-5 px-6">
                             <div className="flex items-baseline gap-1">
                               <span className="font-headline-lg text-headline-lg font-bold text-primary">
-                                {player.score.toLocaleString()}
+                                {team.score.toLocaleString()}
                               </span>
                               <span className="font-label-mono-sm text-xs text-on-surface-variant">PTS</span>
                             </div>
@@ -587,7 +586,7 @@ export default function AdminConsole() {
                                 <button
                                   key={delta}
                                   type="button"
-                                  onClick={() => adjustPlayerScore(player.id, delta)}
+                                  onClick={() => adjustTeamScore(team.id, delta)}
                                   className={`px-2.5 py-1.5 rounded font-label-mono-sm text-xs font-bold transition-all cursor-pointer ${
                                     delta > 0
                                       ? 'bg-surface-subtle hover:bg-primary hover:text-on-primary text-primary'
@@ -607,12 +606,12 @@ export default function AdminConsole() {
                                 type="number"
                                 placeholder="± Delta"
                                 className="w-24 px-2.5 py-1.5 bg-surface-subtle text-primary font-label-mono-sm text-xs rounded border border-hairline-light outline-none focus:bg-white"
-                                value={customScoreDeltas[player.id] || ''}
-                                onChange={(e) => handleCustomDeltaChange(player.id, e.target.value)}
+                                value={customScoreDeltas[team.id] || ''}
+                                onChange={(e) => handleCustomDeltaChange(team.id, e.target.value)}
                               />
                               <button
                                 type="button"
-                                onClick={() => handleApplyCustomScore(player.id)}
+                                onClick={() => handleApplyCustomScore(team.id)}
                                 className="px-3 py-1.5 bg-primary text-on-primary font-label-mono-sm text-xs uppercase rounded cursor-pointer font-bold shadow-[1px_1px_0px_#CCFF00]"
                               >
                                 Set
@@ -650,7 +649,7 @@ export default function AdminConsole() {
                     Kanaku Valaku
                   </h1>
                   <p className="font-body-base text-body-base text-on-surface-variant">
-                    Full chronological transaction record of buzzer locks, score increments, arbitrage rulings, and sabotage overrides.
+                    Full chronological transaction record of buzzer locks, score increments, arbitrage rulings, and sabotage overrides for all squads.
                   </p>
                 </div>
 

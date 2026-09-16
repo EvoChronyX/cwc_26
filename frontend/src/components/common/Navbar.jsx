@@ -3,11 +3,11 @@ import ClashLogo from './ClashLogo';
 import { useGame } from '../../context/GameContext';
 
 export default function Navbar() {
-  const { currentView, setCurrentView, buzzersArmed } = useGame();
+  const { currentView, setCurrentView, buzzersArmed, teamName } = useGame();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
-    { id: 'arena', label: 'Player Arena', icon: 'swords' },
+    { id: 'arena', label: 'Namma Area', icon: 'swords' },
     { id: 'admin', label: 'Admin Console', icon: 'tune' },
     { id: 'portal', label: 'Portal Access / Login', icon: 'vpn_key' }
   ];
@@ -60,8 +60,8 @@ export default function Navbar() {
         {/* Right User Telemetry Profile & Mobile Menu Button */}
         <div className="flex items-center gap-3">
           <div className="hidden sm:flex flex-col text-right">
-            <span className="font-label-mono-sm text-label-mono-sm uppercase text-primary font-bold">AGENT #8491</span>
-            <span className="font-label-mono-sm text-label-mono-sm text-signal-emerald">SYNCED // NODE-09</span>
+            <span className="font-label-mono-sm text-label-mono-sm uppercase text-primary font-bold">{teamName || 'TEAM KINETIC'}</span>
+            <span className="font-label-mono-sm text-label-mono-sm text-signal-emerald">SQUAD // 2 PLAYERS</span>
           </div>
 
           <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-[1px_1px_0px_#CCFF00]">

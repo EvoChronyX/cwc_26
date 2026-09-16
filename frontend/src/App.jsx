@@ -10,7 +10,7 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-background text-on-surface antialiased selection:bg-acid-chartreuse selection:text-primary">
-      {currentView !== 'admin' && <Navbar />}
+      {currentView === 'portal' && <Navbar />}
       {currentView === 'arena' && <PlayerArena />}
       {currentView === 'admin' && <AdminConsole />}
       {currentView === 'portal' && <PortalAccess />}

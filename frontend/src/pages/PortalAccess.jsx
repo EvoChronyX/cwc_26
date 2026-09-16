@@ -4,6 +4,10 @@ import { useGame } from '../context/GameContext';
 export default function PortalAccess() {
   const {
     setCurrentView,
+    setNammaAreaSubTab,
+    setAdminSubTab,
+    teamName,
+    setTeamName,
     p1Handle,
     setP1Handle,
     p2Handle,
@@ -29,11 +33,13 @@ export default function PortalAccess() {
 
   const handleEnterArena = () => {
     playTone(900, 0.2);
+    setNammaAreaSubTab('kootani');
     setCurrentView('arena');
   };
 
   const handleLaunchAdmin = () => {
     playTone(1100, 0.2);
+    setAdminSubTab('thalaivar');
     setCurrentView('admin');
   };
 
@@ -68,13 +74,13 @@ export default function PortalAccess() {
               <span className="px-2.5 py-0.5 bg-surface-dark text-acid-chartreuse font-label-mono-sm text-label-mono-sm uppercase">SESSION SETUP</span>
               <span className="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase tracking-wider">// ARENA SYNC 4.2</span>
             </div>
-            <h1 className="font-display-hero text-headline-xl lg:text-display-hero uppercase tracking-tight leading-none text-primary">
+            <h1 className="font-display-hero text-headline-xl lg:text-display-hero uppercase tracking-tight leading-none text-primary font-bold">
               STAGE CLASH:<br />LIVE TOURNAMENT ACCESS
             </h1>
           </div>
           <div className="lg:col-span-4 flex flex-col justify-end gap-3 pb-1">
             <p className="font-body-lead text-body-lead text-on-surface-variant leading-relaxed">
-              Enter your player identities to sync hardware buzzers or authenticate directly as presiding Game Master.
+              Register your team identity (2 players per squad) to sync hardware buzzers or authenticate directly as presiding Game Master.
             </p>
             <div className="flex items-center gap-2 text-on-surface-variant">
               <span className="material-symbols-outlined text-sm">schedule</span>
@@ -86,13 +92,14 @@ export default function PortalAccess() {
         {/* Main Workspace Bento Split */}
         <main className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Interactive Form Container */}
-          <section className="lg:col-span-7 bg-surface-container-lowest shadow-sm rounded-none p-6 sm:p-8 flex flex-col gap-8 relative overflow-hidden">
+          <section className="lg:col-span-7 bg-surface-container-lowest shadow-sm rounded-none p-6 sm:p-8 flex flex-col gap-8 relative overflow-hidden border border-hairline-light">
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-acid-chartreuse via-cobalt-deep to-acid-chartreuse"></div>
 
             {/* Mode Selector Tabs */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pb-4 border-b border-hairline-light">
               <div className="inline-flex p-1 bg-surface-subtle rounded-none">
                 <button
+                  type="button"
                   onClick={() => {
                     setAuthMode('player');
                     playTone(700, 0.08);
@@ -107,6 +114,7 @@ export default function PortalAccess() {
                   <span>Player Access</span>
                 </button>
                 <button
+                  type="button"
                   onClick={() => {
                     setAuthMode('admin');
                     playTone(850, 0.08);
@@ -124,7 +132,7 @@ export default function PortalAccess() {
               <div className="flex items-center gap-2 self-end sm:self-auto">
                 <span className="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase">AUTH PROTOCOL:</span>
                 <span className="font-label-mono-sm text-label-mono-sm text-primary uppercase font-bold">
-                  {authMode === 'player' ? 'DUAL-POD SYNC' : 'GAME MASTER DIRECT'}
+                  {authMode === 'player' ? 'TEAM SQUAD SYNC' : 'GAME MASTER DIRECT'}
                 </span>
               </div>
             </div>
@@ -132,11 +140,36 @@ export default function PortalAccess() {
             {/* PLAYER ACCESS PANEL */}
             {authMode === 'player' ? (
               <div className="flex flex-col gap-6">
+                
+                {/* 1. Team Name Field (NEW - Team consists of 2 players) */}
+                <div className="bg-surface-subtle p-5 flex flex-col gap-2 border border-hairline-light">
+                  <div className="flex items-center justify-between">
+                    <span className="font-label-mono-sm text-label-mono-sm text-primary uppercase font-bold tracking-wider">
+                      TEAM IDENTIFIER (2 PLAYERS SQUAD)
+                    </span>
+                    <span className="px-2 py-0.5 bg-primary text-acid-chartreuse font-label-mono-sm text-xs font-bold uppercase">
+                      DUAL POD
+                    </span>
+                  </div>
+                  <label className="font-label-mono-sm text-xs text-on-surface-variant uppercase" htmlFor="team-name">
+                    Registered Team Name:
+                  </label>
+                  <input
+                    className="w-full bg-surface-container-lowest text-primary font-headline-md text-headline-md px-4 py-3 border-b-2 border-primary focus:border-cobalt-deep focus:outline-none placeholder:text-outline-variant font-bold uppercase tracking-tight"
+                    id="team-name"
+                    placeholder="ENTER YOUR TEAM NAME..."
+                    type="text"
+                    value={teamName}
+                    onChange={(e) => setTeamName(e.target.value)}
+                  />
+                </div>
+
+                {/* 2 Players Handles */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   {/* Player 1 */}
-                  <div className="bg-surface-subtle p-5 flex flex-col gap-4">
+                  <div className="bg-surface-subtle p-5 flex flex-col gap-4 border border-hairline-light">
                     <div className="flex items-center justify-between">
-                      <span className="font-label-mono-sm text-label-mono-sm text-primary uppercase font-bold tracking-wider">POD 01 // ALPHA</span>
+                      <span className="font-label-mono-sm text-label-mono-sm text-primary uppercase font-bold tracking-wider">POD 01 // PLAYER 1</span>
                       <span className="w-3 h-3 bg-acid-chartreuse"></span>
                     </div>
                     <div className="flex flex-col gap-1.5">
@@ -159,9 +192,9 @@ export default function PortalAccess() {
                   </div>
 
                   {/* Player 2 */}
-                  <div className="bg-surface-subtle p-5 flex flex-col gap-4">
+                  <div className="bg-surface-subtle p-5 flex flex-col gap-4 border border-hairline-light">
                     <div className="flex items-center justify-between">
-                      <span className="font-label-mono-sm text-label-mono-sm text-primary uppercase font-bold tracking-wider">POD 02 // BRAVO</span>
+                      <span className="font-label-mono-sm text-label-mono-sm text-primary uppercase font-bold tracking-wider">POD 02 // PLAYER 2</span>
                       <span className="w-3 h-3 bg-cobalt-deep"></span>
                     </div>
                     <div className="flex flex-col gap-1.5">
@@ -242,7 +275,7 @@ export default function PortalAccess() {
                     type="button"
                     className="w-full sm:w-auto px-8 py-4 bg-primary text-on-primary font-headline-md text-headline-md uppercase tracking-wide hover:translate-x-[-2px] hover:translate-y-[-2px] transition-transform duration-100 flex items-center justify-center gap-3 cursor-pointer shadow-[4px_4px_0px_#CCFF00]"
                   >
-                    <span>Enter Arena</span>
+                    <span>Enter Namma Area</span>
                     <span className="material-symbols-outlined">arrow_forward</span>
                   </button>
                 </div>
@@ -375,22 +408,22 @@ export default function PortalAccess() {
             </div>
 
             {/* Editorial Info Cell */}
-            <div className="bg-surface-subtle p-6 flex flex-col gap-3">
+            <div className="bg-surface-subtle p-6 flex flex-col gap-3 border border-hairline-light">
               <div className="flex items-center gap-2">
                 <span className="font-label-mono-sm text-label-mono-sm text-cobalt-deep uppercase font-bold">MATCH PROTOCOL BRIEF</span>
                 <span className="text-outline-variant">/</span>
                 <span className="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase">V3.4</span>
               </div>
               <p className="font-body-base text-body-base text-on-surface leading-relaxed">
-                Stage Clash executes zero-tolerance input arbitration. Buzzer inputs are lock-checked server side within a 10-microsecond rolling quantum window. Dual players must confirm presence via tactile trigger within 30 seconds of match call.
+                Stage Clash executes zero-tolerance input arbitration. Buzzer inputs are lock-checked server side within a 10-microsecond rolling quantum window. Dual-player teams must confirm presence via tactile trigger within 30 seconds of match call.
               </p>
               <div className="flex items-center gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setCurrentView('arena')}
+                  onClick={handleEnterArena}
                   className="inline-flex items-center gap-1.5 font-label-mono-sm text-label-mono-sm text-primary hover:text-cobalt-deep uppercase underline underline-offset-4 cursor-pointer"
                 >
-                  <span>Review Tournament Rules</span>
+                  <span>Review Tournament Rules in Namma Area</span>
                   <span className="material-symbols-outlined text-sm">open_in_new</span>
                 </button>
               </div>
@@ -403,7 +436,7 @@ export default function PortalAccess() {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-3 border-b border-hairline-light">
             <div className="flex flex-col gap-1">
               <span className="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase">ACTIVE ARENAS &amp; BROADCAST HUBS</span>
-              <h2 className="font-headline-lg text-headline-lg uppercase text-primary">Live Tournament Pods</h2>
+              <h2 className="font-headline-lg text-headline-lg uppercase text-primary font-bold">Live Tournament Pods</h2>
             </div>
             <div className="flex items-center gap-2">
               <span className="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase">LIVE FEED RECORDERS: 03 ACTIVE</span>
@@ -411,8 +444,7 @@ export default function PortalAccess() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Card 1 */}
-            <div className="bg-surface-container-lowest p-4 flex flex-col gap-3 group">
+            <div className="bg-surface-container-lowest p-4 flex flex-col gap-3 group border border-hairline-light">
               <div className="w-full aspect-[16/10] bg-surface-dark relative overflow-hidden">
                 <img
                   className="w-full h-full object-cover grayscale contrast-125 group-hover:scale-105 transition-transform duration-300"
@@ -423,14 +455,13 @@ export default function PortalAccess() {
                 <div className="absolute bottom-2 right-2 px-2 py-0.5 bg-acid-chartreuse text-canvas-dark font-label-mono-sm text-label-mono-sm uppercase font-bold">BROADCAST 4K</div>
               </div>
               <div className="flex flex-col gap-1 pt-1">
-                <span className="font-label-mono-sm text-label-mono-sm text-cobalt-deep uppercase">POD A-10 • DUAL CONSOLE</span>
-                <h3 className="font-headline-md text-headline-md uppercase text-primary">Main Stage Center Ring</h3>
+                <span className="font-label-mono-sm text-label-mono-sm text-cobalt-deep uppercase font-bold">POD A-10 • DUAL CONSOLE</span>
+                <h3 className="font-headline-md text-headline-md uppercase text-primary font-bold">Main Stage Center Ring</h3>
                 <p className="font-body-sm text-body-sm text-on-surface-variant">Primary competitive desk with dual hydraulic buzzers and physical response dampening.</p>
               </div>
             </div>
 
-            {/* Card 2 */}
-            <div className="bg-surface-container-lowest p-4 flex flex-col gap-3 group">
+            <div className="bg-surface-container-lowest p-4 flex flex-col gap-3 group border border-hairline-light">
               <div className="w-full aspect-[16/10] bg-surface-dark relative overflow-hidden">
                 <img
                   className="w-full h-full object-cover grayscale contrast-125 group-hover:scale-105 transition-transform duration-300"
@@ -441,14 +472,13 @@ export default function PortalAccess() {
                 <div className="absolute bottom-2 right-2 px-2 py-0.5 bg-signal-emerald text-canvas-dark font-label-mono-sm text-label-mono-sm uppercase font-bold">TESTED 0.0MS</div>
               </div>
               <div className="flex flex-col gap-1 pt-1">
-                <span className="font-label-mono-sm text-label-mono-sm text-cobalt-deep uppercase">TELEMETRY RIG • V7</span>
-                <h3 className="font-headline-md text-headline-md uppercase text-primary">Precision Lockout Units</h3>
+                <span className="font-label-mono-sm text-label-mono-sm text-cobalt-deep uppercase font-bold">TELEMETRY RIG • V7</span>
+                <h3 className="font-headline-md text-headline-md uppercase text-primary font-bold">Precision Lockout Units</h3>
                 <p className="font-body-sm text-body-sm text-on-surface-variant">Optical debounce actuators wired directly to stage arbitration servers.</p>
               </div>
             </div>
 
-            {/* Card 3 */}
-            <div className="bg-surface-container-lowest p-4 flex flex-col gap-3 group">
+            <div className="bg-surface-container-lowest p-4 flex flex-col gap-3 group border border-hairline-light">
               <div className="w-full aspect-[16/10] bg-surface-dark relative overflow-hidden">
                 <img
                   className="w-full h-full object-cover grayscale contrast-125 group-hover:scale-105 transition-transform duration-300"
@@ -459,21 +489,21 @@ export default function PortalAccess() {
                 <div className="absolute bottom-2 right-2 px-2 py-0.5 bg-primary text-on-primary font-label-mono-sm text-label-mono-sm uppercase font-bold">GAME MASTER 01</div>
               </div>
               <div className="flex flex-col gap-1 pt-1">
-                <span className="font-label-mono-sm text-label-mono-sm text-cobalt-deep uppercase">CONTROL ROOM • RACK B</span>
-                <h3 className="font-headline-md text-headline-md uppercase text-primary">Arbitration Nerve Center</h3>
+                <span className="font-label-mono-sm text-label-mono-sm text-cobalt-deep uppercase font-bold">CONTROL ROOM • RACK B</span>
+                <h3 className="font-headline-md text-headline-md uppercase text-primary font-bold">Arbitration Nerve Center</h3>
                 <p className="font-body-sm text-body-sm text-on-surface-variant">Real-time instant replay, override control switches, and tournament seed management.</p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Persistent Live Status Ticker & Bottom Telemetry */}
+        {/* Persistent Live Status Ticker */}
         <footer className="w-full mt-4 pt-4 border-t-2 border-primary">
           <div className="bg-primary text-on-primary p-4 sm:p-5 flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3 overflow-hidden">
               <span className="inline-flex w-2.5 h-2.5 rounded-full bg-acid-chartreuse animate-pulse"></span>
               <p className="font-label-mono-sm text-label-mono-sm uppercase tracking-wider text-acid-chartreuse">
-                MATCH STATUS: <span className="text-on-primary font-bold">LOBBY OPEN</span> • BUZZERS: <span className="text-on-primary font-bold">ARMED &amp; READY</span> • CONNECTED HUBS: <span className="text-on-primary font-bold">2</span>
+                MATCH STATUS: <span className="text-on-primary font-bold">LOBBY OPEN</span> • BUZZERS: <span className="text-on-primary font-bold">ARMED &amp; READY</span> • CONNECTED TEAMS: <span className="text-on-primary font-bold">4</span>
               </p>
             </div>
             <div className="flex items-center gap-6 font-label-mono-sm text-label-mono-sm uppercase">
@@ -481,7 +511,7 @@ export default function PortalAccess() {
               <button
                 type="button"
                 onClick={() => playTone(800, 0.1)}
-                className="text-acid-chartreuse cursor-pointer hover:underline uppercase bg-transparent border-none p-0"
+                className="text-acid-chartreuse cursor-pointer hover:underline uppercase bg-transparent border-none p-0 font-bold"
               >
                 HARDWARE_RE-SYNC [F9]
               </button>
