@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import ClashLogo from '../components/common/ClashLogo';
 import { useGame } from '../context/GameContext';
+import { PREDEFINED_AVATARS } from '../assets/avatars';
 
 export default function PlayerArena() {
   const {
@@ -10,6 +11,7 @@ export default function PlayerArena() {
     teamName,
     p1Handle,
     p2Handle,
+    playerAvatar,
     activeFaction,
     teams,
     buzzersArmed,
@@ -20,6 +22,8 @@ export default function PlayerArena() {
     deploySabotageToTeam,
     playTone
   } = useGame();
+
+  const selectedAvatarObj = PREDEFINED_AVATARS.find((a) => a.id === playerAvatar) || PREDEFINED_AVATARS[0];
 
   // Sabotage Target state per card in Power-up Pothys
   const [targetTeam1, setTargetTeam1] = useState(2);
@@ -109,15 +113,46 @@ export default function PlayerArena() {
           </button>
         </nav>
 
-        {/* Sidebar Telemetry Footer */}
-        <div className="px-space-md pt-space-md mt-auto">
-          <div className="bg-surface-subtle p-space-sm rounded-lg flex flex-col gap-1 border border-hairline-light">
+        {/* Sidebar Telemetry Footer & Selected Avatar */}
+        <div className="px-space-md pt-space-md mt-auto flex flex-col gap-3">
+          <div className="bg-surface-subtle p-space-sm rounded-lg flex flex-col gap-2 border border-hairline-light">
             <span className="font-label-mono-sm text-label-mono-sm uppercase text-on-surface-variant">ACTIVE SQUAD</span>
-            <span className="font-label-mono-lg text-sm text-primary font-bold">{currentTeam.teamName}</span>
+            <div className="flex items-center gap-3">
+              <img
+                src={selectedAvatarObj.svg}
+                alt={selectedAvatarObj.name}
+                className="w-10 h-10 rounded-lg border-2 border-primary object-cover shadow-sm bg-black shrink-0"
+              />
+              <div className="flex flex-col min-w-0">
+                <span className="font-label-mono-lg text-sm text-primary font-bold truncate">{currentTeam.teamName}</span>
+                <span className="font-label-mono-sm text-[10px] text-acid-chartreuse font-bold uppercase">{selectedAvatarObj.name}</span>
+              </div>
+            </div>
             <div className="flex items-center justify-between pt-1 border-t border-hairline-light mt-1">
               <span className="font-label-mono-sm text-xs text-on-surface-variant">{currentTeam.lane}</span>
               <span className="font-label-mono-sm text-xs text-signal-emerald font-bold">{currentTeam.score} PTS</span>
             </div>
+          </div>
+
+          {/* Quick Page View Switcher in Sidebar */}
+          <div className="pt-2 border-t border-hairline-light flex flex-col gap-1">
+            <span className="font-label-mono-sm text-[10px] uppercase text-on-surface-variant tracking-wider">NAVIGATION</span>
+            <button
+              type="button"
+              onClick={() => setCurrentView('admin')}
+              className="flex items-center gap-2 text-xs font-label-mono-sm text-on-surface-variant hover:text-primary py-1.5 px-2 rounded hover:bg-surface-subtle text-left cursor-pointer transition-colors"
+            >
+              <span className="material-symbols-outlined text-[16px]">tune</span>
+              Admin Console
+            </button>
+            <button
+              type="button"
+              onClick={() => setCurrentView('portal')}
+              className="flex items-center gap-2 text-xs font-label-mono-sm text-on-surface-variant hover:text-primary py-1.5 px-2 rounded hover:bg-surface-subtle text-left cursor-pointer transition-colors"
+            >
+              <span className="material-symbols-outlined text-[16px]">vpn_key</span>
+              Portal Access / Login
+            </button>
           </div>
         </div>
       </aside>
@@ -125,51 +160,8 @@ export default function PlayerArena() {
       {/* Main Area */}
       <div className="pl-64 w-full min-h-screen">
         
-        {/* Top Header */}
-        <header className="fixed top-0 left-64 right-0 h-16 bg-surface/90 backdrop-blur-md z-40 flex items-center justify-between px-4 sm:px-8 border-b border-hairline-light">
-          <div className="flex items-center gap-space-md">
-            <ClashLogo className="h-7 sm:h-8 w-auto" />
-            <span className="font-headline-md text-headline-md tracking-tight font-bold text-primary hidden sm:inline-block">
-              NAMMA AREA
-            </span>
-            <div className="flex items-center gap-space-xs bg-surface-subtle px-space-sm py-space-2xs rounded-full">
-              <span className="w-2 h-2 rounded-full bg-signal-emerald animate-pulse"></span>
-              <span className="font-label-mono-sm text-label-mono-sm text-primary uppercase">SYS_ONLINE</span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-space-md">
-            <nav className="hidden lg:flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setCurrentView('arena')}
-                className="transition-colors text-primary font-semibold bg-surface-subtle px-space-sm py-space-xs rounded-full text-sm cursor-pointer"
-              >
-                Namma Area
-              </button>
-              <button
-                type="button"
-                onClick={() => setCurrentView('admin')}
-                className="font-body-base text-sm text-on-surface-variant hover:text-on-surface transition-colors px-3 py-1 cursor-pointer"
-              >
-                Admin Console
-              </button>
-              <button
-                type="button"
-                onClick={() => setCurrentView('portal')}
-                className="font-body-base text-sm text-on-surface-variant hover:text-on-surface transition-colors px-3 py-1 cursor-pointer"
-              >
-                Portal Access / Login
-              </button>
-            </nav>
-            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-[1px_1px_0px_#CCFF00]">
-              <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
-            </div>
-          </div>
-        </header>
-
-        {/* Top Transmission Status Ribbon */}
-        <section className="w-full mt-16 bg-canvas-dark text-on-primary px-4 sm:px-8 py-3 flex flex-wrap items-center justify-between gap-4 border-b border-hairline-dark">
+        {/* Top Transmission Status Ribbon (No horizontal navbar above) */}
+        <section className="w-full bg-canvas-dark text-on-primary px-4 sm:px-8 py-3 flex flex-wrap items-center justify-between gap-4 border-b border-hairline-dark">
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-signal-emerald animate-ping"></span>

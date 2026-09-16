@@ -193,57 +193,33 @@
           <span class="font-label-mono-sm text-xs text-signal-emerald font-bold" id="sidebarScore">1,450 PTS</span>
         </div>
       </div>
+
+      <!-- Quick Switcher in Sidebar -->
+      <div class="pt-2 border-t border-hairline-light flex flex-col gap-1">
+        <span class="font-label-mono-sm text-[10px] uppercase text-on-surface-variant tracking-wider">NAVIGATION</span>
+        <a
+          href="../admin_console_control_center/code.html"
+          class="flex items-center gap-2 text-xs font-label-mono-sm text-on-surface-variant hover:text-primary py-1.5 px-2 rounded hover:bg-surface-subtle transition-colors"
+        >
+          <span class="material-symbols-outlined text-[16px]">tune</span>
+          Admin Console
+        </a>
+        <a
+          href="../event_login_authentication/code.html"
+          class="flex items-center gap-2 text-xs font-label-mono-sm text-on-surface-variant hover:text-primary py-1.5 px-2 rounded hover:bg-surface-subtle transition-colors"
+        >
+          <span class="material-symbols-outlined text-[16px]">vpn_key</span>
+          Portal Access / Login
+        </a>
+      </div>
     </div>
   </aside>
 
   <!-- MAIN WORKSPACE -->
   <div class="pl-64 w-full min-h-screen">
     
-    <!-- Top Header Navigation -->
-    <header class="fixed top-0 left-64 right-0 h-16 bg-surface/90 backdrop-blur-md z-40 flex items-center justify-between px-8 border-b border-hairline-light">
-      <div class="flex items-center gap-space-md">
-        <div class="flex items-center gap-2">
-          <span class="font-headline-md text-headline-md tracking-tight font-bold text-primary">CLASH</span>
-          <span class="font-label-mono-sm text-label-mono-sm uppercase text-on-surface-variant">v2.4</span>
-        </div>
-        <span class="font-headline-md text-headline-md tracking-tight font-bold text-primary hidden sm:inline-block">
-          NAMMA AREA
-        </span>
-        <div class="flex items-center gap-space-xs bg-surface-subtle px-space-sm py-space-2xs rounded-full">
-          <span class="w-2 h-2 rounded-full bg-signal-emerald animate-pulse"></span>
-          <span class="font-label-mono-sm text-label-mono-sm text-primary uppercase">SYS_ONLINE</span>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-space-md">
-        <nav class="hidden md:flex items-center gap-2">
-          <a
-            href="#"
-            class="transition-colors text-primary font-semibold bg-surface-subtle px-space-sm py-space-xs rounded-full text-sm cursor-pointer"
-          >
-            Namma Area
-          </a>
-          <a
-            href="../admin_console_control_center/code.html"
-            class="font-body-base text-sm text-on-surface-variant hover:text-on-surface transition-colors px-3 py-1 cursor-pointer"
-          >
-            Admin Console
-          </a>
-          <a
-            href="../event_login_authentication/code.html"
-            class="font-body-base text-sm text-on-surface-variant hover:text-on-surface transition-colors px-3 py-1 cursor-pointer"
-          >
-            Portal Access / Login
-          </a>
-        </nav>
-        <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-[1px_1px_0px_#CCFF00]">
-          <span class="material-symbols-outlined text-on-primary text-[18px]">person</span>
-        </div>
-      </div>
-    </header>
-
-    <!-- Transmission Status Ribbon -->
-    <section class="w-full mt-16 bg-canvas-dark text-on-primary px-8 py-3 flex flex-wrap items-center justify-between gap-4 border-b border-hairline-dark">
+    <!-- Transmission Status Ribbon (No horizontal navbar above) -->
+    <section class="w-full bg-canvas-dark text-on-primary px-8 py-3 flex flex-wrap items-center justify-between gap-4 border-b border-hairline-dark">
       <div class="flex items-center gap-6">
         <div class="flex items-center gap-2">
           <span class="w-2 h-2 rounded-full bg-signal-emerald animate-ping"></span>

@@ -1,362 +1,594 @@
 <!DOCTYPE html>
-
-<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><title>CLASH // Authentication</title><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=Space+Mono:wght@400;700&amp;family=Work+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={"darkMode":"class","theme":{"extend":{"colors":{"secondary-fixed-dim":"#abd600","on-surface-variant":"#444748","cobalt-deep":"#4B00E0","error":"#ba1a1a","on-primary-fixed-variant":"#474646","on-tertiary-fixed":"#1c0062","acid-glow":"#E2FF4D","on-background":"#1b1c1c","sabotage-crimson":"#FF2A3B","canvas-light":"#FAFAFA","surface-container":"#efeded","primary-fixed":"#e5e2e1","outline-variant":"#c4c7c7","error-container":"#ffdad6","signal-emerald":"#00FF85","secondary-fixed":"#c3f400","tertiary":"#000000","surface-container-lowest":"#ffffff","on-surface":"#1b1c1c","secondary":"#506600","inverse-surface":"#303031","tertiary-fixed":"#e6deff","hairline-dark":"#222222","on-primary":"#ffffff","primary":"#000000","surface":"#fbf9f9","acid-chartreuse":"#CCFF00","surface-tint":"#5f5e5e","on-secondary-fixed-variant":"#3c4d00","surface-container-high":"#e9e8e7","tertiary-fixed-dim":"#cabeff","inverse-on-surface":"#f2f0f0","tertiary-container":"#1c0062","surface-subtle":"#F2F2F2","surface-bright":"#fbf9f9","on-tertiary-fixed-variant":"#4700d6","on-tertiary":"#ffffff","outline":"#747878","surface-container-low":"#f5f3f3","on-tertiary-container":"#876bff","on-secondary-container":"#546b00","primary-container":"#1c1b1b","on-primary-container":"#858383","secondary-container":"#c1f100","on-primary-fixed":"#1c1b1b","inverse-primary":"#c9c6c5","surface-variant":"#e3e2e2","surface-dim":"#dbdad9","background":"#fbf9f9","on-secondary-fixed":"#161e00","canvas-dark":"#050505","on-error":"#ffffff","surface-dark":"#111111","primary-fixed-dim":"#c9c6c5","on-secondary":"#ffffff","surface-container-highest":"#e3e2e2","hairline-light":"#E5E5E5","on-error-container":"#93000a"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"margin":"2rem","gutter":"1.5rem","space-2xs":"0.25rem","space-sm":"0.75rem","space-md":"1.25rem","gutter-sm":"0.75rem","margin-mobile":"1rem","space-xl":"3.5rem","space-xs":"0.5rem","space-lg":"2rem","space-2xl":"5rem"},"fontFamily":{"label-mono-sm":["Space Mono"],"display-hero-mobile":["Space Grotesk"],"display-hero":["Space Grotesk"],"headline-xl":["Space Grotesk"],"body-sm":["Work Sans"],"headline-md":["Space Grotesk"],"headline-xl-mobile":["Space Grotesk"],"headline-lg":["Space Grotesk"],"label-mono-lg":["Space Mono"],"label-pill":["Work Sans"],"body-base":["Work Sans"],"body-lead":["Work Sans"]},"fontSize":{"label-mono-sm":["11px",{"lineHeight":"14px","letterSpacing":"0.08em","fontWeight":"700"}],"display-hero-mobile":["40px",{"lineHeight":"44px","letterSpacing":"-0.03em","fontWeight":"700"}],"display-hero":["72px",{"lineHeight":"76px","letterSpacing":"-0.04em","fontWeight":"700"}],"headline-xl":["44px",{"lineHeight":"48px","letterSpacing":"-0.03em","fontWeight":"600"}],"body-sm":["13px",{"lineHeight":"18px","letterSpacing":"0em","fontWeight":"400"}],"headline-md":["22px",{"lineHeight":"28px","letterSpacing":"-0.01em","fontWeight":"500"}],"headline-xl-mobile":["32px",{"lineHeight":"36px","letterSpacing":"-0.02em","fontWeight":"600"}],"headline-lg":["30px",{"lineHeight":"36px","letterSpacing":"-0.02em","fontWeight":"600"}],"label-mono-lg":["14px",{"lineHeight":"16px","letterSpacing":"0.06em","fontWeight":"700"}],"label-pill":["11px",{"lineHeight":"12px","letterSpacing":"0.04em","fontWeight":"600"}],"body-base":["15px",{"lineHeight":"22px","letterSpacing":"0em","fontWeight":"400"}],"body-lead":["18px",{"lineHeight":"26px","letterSpacing":"-0.01em","fontWeight":"400"}]}}}};</script></head><body class="bg-background font-body-base text-on-surface antialiased flex items-center justify-center min-h-screen"><main class="w-full flex items-center justify-center"><div class="flex flex-col w-full">
-<div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-8 lg:py-14 flex flex-col gap-10">
-<!-- Top Telemetry & Global Breadcrumb Bar -->
-<header class="w-full flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-hairline-light">
-<div class="flex items-center gap-3">
-<span class="inline-flex items-center justify-center w-2.5 h-2.5 rounded-full bg-signal-emerald animate-pulse"></span>
-<span class="font-label-mono-sm text-label-mono-sm tracking-widest text-on-surface uppercase">SYS_ACTIVE // CLASH_NODE_09</span>
-<span class="text-outline-variant font-label-mono-sm text-label-mono-sm">/</span>
-<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase">REGISTRATION PROTOCOL</span>
-</div>
-<div class="flex items-center gap-3">
-<div class="inline-flex items-center gap-2 px-3 py-1 bg-surface-container rounded-full">
-<span class="font-label-mono-sm text-label-mono-sm uppercase text-on-surface-variant">REGION:</span>
-<span class="font-label-mono-sm text-label-mono-sm uppercase text-on-surface font-bold">US-EAST (0.14ms)</span>
-</div>
-<div class="inline-flex items-center gap-2 px-3 py-1 bg-primary text-on-primary rounded-full">
-<span class="w-1.5 h-1.5 rounded-full bg-acid-chartreuse"></span>
-<span class="font-label-mono-sm text-label-mono-sm uppercase">NET: SECURED</span>
-</div>
-</div>
-</header>
-<!-- Editorial Header Block -->
-<section class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end">
-<div class="lg:col-span-8 flex flex-col gap-3">
-<div class="flex items-center gap-2">
-<span class="px-2.5 py-0.5 bg-surface-dark text-acid-chartreuse font-label-mono-sm text-label-mono-sm uppercase">SESSION SETUP</span>
-<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase tracking-wider">// ARENA SYNC 4.2</span>
-</div>
-<h1 class="font-display-hero text-headline-xl lg:text-display-hero uppercase tracking-tight leading-none text-primary">
-          STAGE CLASH:<br/>LIVE TOURNAMENT ACCESS
-        </h1>
-</div>
-<div class="lg:col-span-4 flex flex-col justify-end gap-3 pb-1">
-<p class="font-body-lead text-body-lead text-on-surface-variant leading-relaxed">
-          Enter your player identities to sync hardware buzzers or authenticate directly as presiding Game Master.
-        </p>
-<div class="flex items-center gap-2 text-on-surface-variant">
-<span class="material-symbols-outlined text-sm">schedule</span>
-<span class="font-label-mono-sm text-label-mono-sm">EST. QUEUE LATENCY: &lt; 0.4 SEC</span>
-</div>
-</div>
-</section>
-<!-- Main Workspace Bento Split -->
-<main class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-<!-- Interactive Form Container -->
-<section class="lg:col-span-7 bg-surface-container-lowest shadow-sm rounded-none p-6 sm:p-8 flex flex-col gap-8 relative overflow-hidden">
-<div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-acid-chartreuse via-cobalt-deep to-acid-chartreuse"></div>
-<!-- Mode Selector Tabs -->
-<div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pb-4 border-b border-hairline-light">
-<div class="inline-flex p-1 bg-surface-subtle rounded-none">
-<button class="px-5 py-2.5 text-xs font-label-mono-sm tracking-wider uppercase transition-all duration-150 bg-primary text-on-primary shadow-sm flex items-center gap-2 cursor-pointer" id="tabPlayer" onclick="switchAuthTab('player')">
-<span class="w-2 h-2 rounded-full bg-acid-chartreuse"></span>
-<span>Player Access</span>
-</button>
-<button class="px-5 py-2.5 text-xs font-label-mono-sm tracking-wider uppercase transition-all duration-150 text-on-surface-variant hover:text-primary flex items-center gap-2 cursor-pointer" id="tabAdmin" onclick="switchAuthTab('admin')">
-<span class="w-2 h-2 rounded-full bg-outline-variant"></span>
-<span>Admin Console Login</span>
-</button>
-</div>
-<div class="flex items-center gap-2 self-end sm:self-auto">
-<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase">AUTH PROTOCOL:</span>
-<span class="font-label-mono-sm text-label-mono-sm text-primary uppercase font-bold" id="activeModeLabel">DUAL-POD SYNC</span>
-</div>
-</div>
-<!-- PLAYER ACCESS PANEL -->
-<div class="flex flex-col gap-6" id="playerPanel">
-<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-<!-- Player 1 -->
-<div class="bg-surface-subtle p-5 flex flex-col gap-4">
-<div class="flex items-center justify-between">
-<span class="font-label-mono-sm text-label-mono-sm text-primary uppercase font-bold tracking-wider">POD 01 // ALPHA</span>
-<span class="w-3 h-3 bg-acid-chartreuse"></span>
-</div>
-<div class="flex flex-col gap-1.5">
-<label class="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase" for="p1-handle">Player 1 Handle</label>
-<input class="w-full bg-surface-container-lowest text-primary font-headline-md text-headline-md px-3 py-2 border-b-2 border-primary focus:border-cobalt-deep focus:outline-none placeholder:text-outline-variant font-medium uppercase tracking-tight" id="p1-handle" placeholder="ENTER HANDLE..." type="text" value="VALKYRIE_01"/>
-</div>
-<div class="flex items-center justify-between pt-1">
-<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">BUZZER POD STATUS</span>
-<span class="font-label-mono-sm text-label-mono-sm text-secondary uppercase font-bold">READY (CH-01)</span>
-</div>
-</div>
-<!-- Player 2 -->
-<div class="bg-surface-subtle p-5 flex flex-col gap-4">
-<div class="flex items-center justify-between">
-<span class="font-label-mono-sm text-label-mono-sm text-primary uppercase font-bold tracking-wider">POD 02 // BRAVO</span>
-<span class="w-3 h-3 bg-cobalt-deep"></span>
-</div>
-<div class="flex flex-col gap-1.5">
-<label class="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase" for="p2-handle">Player 2 Handle</label>
-<input class="w-full bg-surface-container-lowest text-primary font-headline-md text-headline-md px-3 py-2 border-b-2 border-primary focus:border-cobalt-deep focus:outline-none placeholder:text-outline-variant font-medium uppercase tracking-tight" id="p2-handle" placeholder="ENTER HANDLE..." type="text" value="NEXUS_CORE"/>
-</div>
-<div class="flex items-center justify-between pt-1">
-<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">BUZZER POD STATUS</span>
-<span class="font-label-mono-sm text-label-mono-sm text-secondary uppercase font-bold">READY (CH-02)</span>
-</div>
-</div>
-</div>
-<!-- Faction & Arena PIN Controls -->
-<div class="grid grid-cols-1 md:grid-cols-12 gap-5 pt-2">
-<!-- Faction Selection -->
-<div class="md:col-span-7 flex flex-col gap-2">
-<label class="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase">Select Division / Faction</label>
-<div class="grid grid-cols-3 gap-2">
-<button class="faction-pill py-2.5 px-2 bg-primary text-on-primary font-label-mono-sm text-label-mono-sm uppercase text-center transition-all cursor-pointer" onclick="setFaction(this, 'KINETIC')" type="button">
-                  KINETIC
-                </button>
-<button class="faction-pill py-2.5 px-2 bg-surface-subtle text-on-surface font-label-mono-sm text-label-mono-sm uppercase text-center hover:bg-surface-container transition-all cursor-pointer" onclick="setFaction(this, 'SYNTH')" type="button">
-                  SYNTH
-                </button>
-<button class="faction-pill py-2.5 px-2 bg-surface-subtle text-on-surface font-label-mono-sm text-label-mono-sm uppercase text-center hover:bg-surface-container transition-all cursor-pointer" onclick="setFaction(this, 'VECTOR')" type="button">
-                  VECTOR
-                </button>
-</div>
-</div>
-<!-- PIN Code -->
-<div class="md:col-span-5 flex flex-col gap-2">
-<div class="flex items-center justify-between">
-<label class="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase" for="arena-pin">Match PIN</label>
-<span class="font-label-mono-sm text-label-mono-sm text-cobalt-deep font-bold">LOBBY #882</span>
-</div>
-<div class="relative">
-<input class="w-full bg-surface-subtle text-primary font-label-mono-lg text-label-mono-lg px-3 py-2 text-center tracking-widest uppercase focus:bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-primary" id="arena-pin" maxlength="6" type="text" value="794-20"/>
-</div>
-</div>
-</div>
-<!-- CTA Button -->
-<div class="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-<div class="flex items-center gap-2 text-on-surface-variant">
-<span class="material-symbols-outlined text-base">lock_open</span>
-<span class="font-label-mono-sm text-label-mono-sm uppercase">LOBBY PASSCODE AUTHENTICATED</span>
-</div>
-<button class="w-full sm:w-auto px-8 py-4 bg-primary text-on-primary font-headline-md text-headline-md uppercase tracking-wide hover:translate-x-[-2px] hover:translate-y-[-2px] transition-transform duration-100 flex items-center justify-center gap-3 cursor-pointer" style="box-shadow: 4px 4px 0px #CCFF00;" type="button">
-<span>Enter Arena</span>
-<span class="material-symbols-outlined">arrow_forward</span>
-</button>
-</div>
-</div>
-<!-- ADMIN ACCESS PANEL (HIDDEN BY DEFAULT) -->
-<div class="hidden flex flex-col gap-6" id="adminPanel">
-<div class="p-4 bg-surface-subtle border-l-4 border-cobalt-deep flex flex-col sm:flex-row justify-between sm:items-center gap-3">
-<div>
-<p class="font-label-mono-sm text-label-mono-sm uppercase text-primary font-bold">GAME MASTER CONSOLE ELEVATION</p>
-<p class="font-body-sm text-body-sm text-on-surface-variant">Direct hardware telemetry override, round arbitration, and scoring overrides.</p>
-</div>
-<span class="px-3 py-1 bg-surface-dark text-on-primary font-label-mono-sm text-label-mono-sm uppercase tracking-wider self-start sm:self-auto">ROOT_ROLE</span>
-</div>
-<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-<div class="flex flex-col gap-1.5">
-<label class="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase" for="gm-id">Game Master Identifier</label>
-<input class="w-full bg-surface-subtle text-primary font-body-base text-body-base px-3 py-3 border-b-2 border-primary focus:border-cobalt-deep focus:outline-none uppercase font-semibold" id="gm-id" type="text" value="GM_ARBITER_07"/>
-</div>
-<div class="flex flex-col gap-1.5">
-<label class="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase" for="session-token">Session Target Token</label>
-<input class="w-full bg-surface-subtle text-primary font-body-base text-body-base px-3 py-3 border-b-2 border-primary focus:border-cobalt-deep focus:outline-none uppercase font-semibold" id="session-token" type="text" value="STG-TOURNAMENT-2025-Q1"/>
-</div>
-</div>
-<div class="flex flex-col gap-1.5">
-<label class="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase" for="master-key">Admin Passcode / Master Cryptographic Key</label>
-<div class="relative flex items-center">
-<input class="w-full bg-surface-subtle text-primary font-label-mono-lg text-label-mono-lg px-3 py-3 border-b-2 border-primary focus:border-cobalt-deep focus:outline-none" id="master-key" type="password" value="••••••••••••••••••••"/>
-<button class="absolute right-3 text-on-surface-variant hover:text-primary font-label-mono-sm text-label-mono-sm uppercase" type="button">VERIFY</button>
-</div>
-</div>
-<div class="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-<div class="flex items-center gap-2">
-<span class="w-2 h-2 rounded-full bg-signal-emerald"></span>
-<span class="font-label-mono-sm text-label-mono-sm uppercase text-on-surface-variant">HOST PERMISSION LEVEL: UNRESTRICTED</span>
-</div>
-<button class="w-full sm:w-auto px-8 py-4 bg-cobalt-deep text-on-primary font-headline-md text-headline-md uppercase tracking-wide hover:translate-x-[-2px] hover:translate-y-[-2px] transition-transform duration-100 flex items-center justify-center gap-3 cursor-pointer" style="box-shadow: 4px 4px 0px #050505;" type="button">
-<span>Launch Admin Command</span>
-<span class="material-symbols-outlined">terminal</span>
-</button>
-</div>
-</div>
-</section>
-<!-- Tactical Telemetry & Session Dossier Sidebar -->
-<aside class="lg:col-span-5 flex flex-col gap-6">
-<!-- Active Match Status Card -->
-<div class="bg-surface-dark text-on-primary p-6 sm:p-7 flex flex-col gap-6 relative">
-<div class="flex items-center justify-between border-b border-hairline-dark pb-4">
-<div class="flex items-center gap-2">
-<span class="px-2 py-0.5 bg-acid-chartreuse text-canvas-dark font-label-mono-sm text-label-mono-sm uppercase font-bold">LOBBY 01</span>
-<span class="font-label-mono-sm text-label-mono-sm text-primary-fixed uppercase tracking-wider">LIVE BRACKET FEED</span>
-</div>
-<span class="font-label-mono-sm text-label-mono-sm text-signal-emerald font-bold uppercase">ROUND 3/5</span>
-</div>
-<!-- Mini Vector Visualizer -->
-<div class="bg-surface-dark/60 p-4 border border-hairline-dark flex flex-col gap-3">
-<div class="flex items-center justify-between">
-<span class="font-label-mono-sm text-label-mono-sm text-outline uppercase">BUZZER FREQUENCY SYNCHRONIZATION</span>
-<span class="font-label-mono-sm text-label-mono-sm text-acid-chartreuse">99.8%</span>
-</div>
-<svg class="w-full h-12" fill="none" preserveaspectratio="none" viewbox="0 0 300 40">
-<path d="M0 20 L25 20 L35 5 L45 35 L55 20 L90 20 L100 8 L110 32 L120 20 L170 20 L180 2 L190 38 L200 20 L240 20 L250 12 L260 28 L270 20 L300 20" fill="none" stroke="#CCFF00" stroke-linejoin="round" stroke-width="2"></path>
-<line stroke="#222222" stroke-dasharray="4 4" stroke-width="1" x1="0" x2="300" y1="20" y2="20"></line>
-</svg>
-<div class="grid grid-cols-3 gap-2 pt-1 font-label-mono-sm text-label-mono-sm text-primary-fixed-dim">
-<div>LATENCY: <span class="text-on-primary">1.2MS</span></div>
-<div>JITTER: <span class="text-on-primary">0.03MS</span></div>
-<div>DROP: <span class="text-signal-emerald">0.00%</span></div>
-</div>
-</div>
-<!-- Quick Telemetry HUD -->
-<div class="flex flex-col gap-3">
-<div class="flex justify-between items-center text-sm">
-<span class="font-label-mono-sm text-label-mono-sm text-primary-fixed-dim uppercase">SLOT ALLOCATION</span>
-<span class="font-label-mono-sm text-label-mono-sm text-on-primary">2 OF 2 SEATS READY</span>
-</div>
-<!-- Segmented Progress Bar -->
-<div class="grid grid-cols-10 gap-1.5 h-2 w-full">
-<div class="bg-acid-chartreuse h-full"></div>
-<div class="bg-acid-chartreuse h-full"></div>
-<div class="bg-acid-chartreuse h-full"></div>
-<div class="bg-acid-chartreuse h-full"></div>
-<div class="bg-acid-chartreuse h-full"></div>
-<div class="bg-acid-chartreuse h-full"></div>
-<div class="bg-acid-chartreuse h-full"></div>
-<div class="bg-acid-chartreuse h-full"></div>
-<div class="bg-acid-chartreuse h-full"></div>
-<div class="bg-acid-chartreuse h-full"></div>
-</div>
-</div>
-<div class="flex items-center justify-between pt-2 border-t border-hairline-dark font-label-mono-sm text-label-mono-sm">
-<span class="text-outline uppercase">NEXT ENGAGEMENT:</span>
-<span class="text-acid-chartreuse tracking-widest font-bold">T-MINUS 00:01:42</span>
-</div>
-</div>
-<!-- Editorial Info Cell (Afternow inspired) -->
-<div class="bg-surface-subtle p-6 flex flex-col gap-3">
-<div class="flex items-center gap-2">
-<span class="font-label-mono-sm text-label-mono-sm text-cobalt-deep uppercase font-bold">MATCH PROTOCOL BRIEF</span>
-<span class="text-outline-variant">/</span>
-<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase">V3.4</span>
-</div>
-<p class="font-body-base text-body-base text-on-surface leading-relaxed">
-            Stage Clash executes zero-tolerance input arbitration. Buzzer inputs are lock-checked server side within a 10-microsecond rolling quantum window. Dual players must confirm presence via tactile trigger within 30 seconds of match call.
-          </p>
-<div class="flex items-center gap-3 pt-2">
-<a class="inline-flex items-center gap-1.5 font-label-mono-sm text-label-mono-sm text-primary hover:text-cobalt-deep uppercase underline underline-offset-4" href="#">
-<span>Review Tournament Rules</span>
-<span class="material-symbols-outlined text-sm">open_in_new</span>
-</a>
-</div>
-</div>
-</aside>
-</main>
-<!-- Visual Showcase Mosaic Section (Afternow Agency Style) -->
-<section class="flex flex-col gap-6 pt-6">
-<div class="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-3 border-b border-hairline-light">
-<div class="flex flex-col gap-1">
-<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase">ACTIVE ARENAS &amp; BROADCAST HUBS</span>
-<h2 class="font-headline-lg text-headline-lg uppercase text-primary">Live Tournament Pods</h2>
-</div>
-<div class="flex items-center gap-2">
-<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase">LIVE FEED RECORDERS: 03 ACTIVE</span>
-</div>
-</div>
-<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-<!-- Card 1 -->
-<div class="bg-surface-container-lowest p-4 flex flex-col gap-3 group">
-<div class="w-full aspect-[16/10] bg-surface-dark relative overflow-hidden">
-<img class="w-full h-full object-cover grayscale contrast-125 group-hover:scale-105 transition-transform duration-300" data-alt="High stakes esports stage battle arena with dramatic rim neon lighting in acid green and electric cobalt violet, dual competitor gaming podiums under spotlights, cinematic brutalist esports venue atmosphere with audience in soft focus" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBij9TOvYej3RISF8Je-rttG8vc2bkKn9ZfhTdwjg5pn3gEkRa2MXxWGk1OC-5slMdnI3oGKrPqnVgXIOVhh6TtnA0ChxxPAv6V7qjHlhbdhGD7zloxXnfZ-6o6ZQDoYCcf7sUxIB48RZlLNmvlvG02zKC4C6ART9igb9AlsSZSGmliTZP8Gli_pJn9rPT8Uh3exSRdZ61UKmWE4nM5nfZ-xeUvHWBu3o3s_tTzkLbTqGsj_WHw0zV1Ug"/>
-<div class="absolute top-2 left-2 px-2 py-0.5 bg-canvas-dark text-on-primary font-label-mono-sm text-label-mono-sm uppercase">ARENA // A</div>
-<div class="absolute bottom-2 right-2 px-2 py-0.5 bg-acid-chartreuse text-canvas-dark font-label-mono-sm text-label-mono-sm uppercase font-bold">BROADCAST 4K</div>
-</div>
-<div class="flex flex-col gap-1 pt-1">
-<span class="font-label-mono-sm text-label-mono-sm text-cobalt-deep uppercase">POD A-10 • DUAL CONSOLE</span>
-<h3 class="font-headline-md text-headline-md uppercase text-primary">Main Stage Center Ring</h3>
-<p class="font-body-sm text-body-sm text-on-surface-variant">Primary competitive desk with dual hydraulic buzzers and physical response dampening.</p>
-</div>
-</div>
-<!-- Card 2 -->
-<div class="bg-surface-container-lowest p-4 flex flex-col gap-3 group">
-<div class="w-full aspect-[16/10] bg-surface-dark relative overflow-hidden">
-<img class="w-full h-full object-cover grayscale contrast-125 group-hover:scale-105 transition-transform duration-300" data-alt="Close-up of minimalist tactile mechanical hardware buzzers and competition controllers on matte black slate desk with subtle chartreuse glow lines and Space Grotesk technical typography on high contrast digital screens" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA-69D7lHaeUjAJ9Y_SWPvIiTBD7rhZkHOnxp470HVheOsHOCFqlEmeaOZUd94-thYp_l1cTNehtlkXqQIN7AmHkI19OsLo2o24ZHwsMBrARYTAcfzsYXM3_t175gScD82uZzPdHUlFO8h9MiSUJ4i4Mh3pjFUNQva-WY8MqzYC_7CkmX6U1KqV083LNgLgh11-T4Y-sw3Xhbgu5trb2eeIbdklRRr7vy9PJST0fcWFGq2QGAOPsO0rqw"/>
-<div class="absolute top-2 left-2 px-2 py-0.5 bg-canvas-dark text-on-primary font-label-mono-sm text-label-mono-sm uppercase">BUZZER // HARDWARE</div>
-<div class="absolute bottom-2 right-2 px-2 py-0.5 bg-signal-emerald text-canvas-dark font-label-mono-sm text-label-mono-sm uppercase font-bold">TESTED 0.0MS</div>
-</div>
-<div class="flex flex-col gap-1 pt-1">
-<span class="font-label-mono-sm text-label-mono-sm text-cobalt-deep uppercase">TELEMETRY RIG • V7</span>
-<h3 class="font-headline-md text-headline-md uppercase text-primary">Precision Lockout Units</h3>
-<p class="font-body-sm text-body-sm text-on-surface-variant">Optical debounce actuators wired directly to stage arbitration servers.</p>
-</div>
-</div>
-<!-- Card 3 -->
-<div class="bg-surface-container-lowest p-4 flex flex-col gap-3 group">
-<div class="w-full aspect-[16/10] bg-surface-dark relative overflow-hidden">
-<img class="w-full h-full object-cover grayscale contrast-125 group-hover:scale-105 transition-transform duration-300" data-alt="Modern esports production control room with broadcast monitors displaying live gameplay telemetry, brackets, and real-time audio waveforms in monochrome with subtle green indicators, brutalist editorial studio aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAYT2wahh56WpAcBATCRHzgzqIxqK6X_hq_P_iEsAZs_QWk7cIQWpdlQQnQUxUEquQP1q-p0fg3JJxrxULUSKKk9zL0HoZa8CkLlWOoOPj3FTHVSnLxVl2fMiwAxYpLSqgth6c47CvSUyanCd3ch2HFnp5aHTERmIVUNDSpH8ArJh7Uzo8yDWsW7Q0WVidNj71_73j5nA4Mw-dlm2REHHIBX4F7-KUrm_zSaWpTmZxohJsmFQf-VVEs9w"/>
-<div class="absolute top-2 left-2 px-2 py-0.5 bg-canvas-dark text-on-primary font-label-mono-sm text-label-mono-sm uppercase">ADMIN // CONTROL</div>
-<div class="absolute bottom-2 right-2 px-2 py-0.5 bg-primary text-on-primary font-label-mono-sm text-label-mono-sm uppercase font-bold">GAME MASTER 01</div>
-</div>
-<div class="flex flex-col gap-1 pt-1">
-<span class="font-label-mono-sm text-label-mono-sm text-cobalt-deep uppercase">CONTROL ROOM • RACK B</span>
-<h3 class="font-headline-md text-headline-md uppercase text-primary">Arbitration Nerve Center</h3>
-<p class="font-body-sm text-body-sm text-on-surface-variant">Real-time instant replay, override control switches, and tournament seed management.</p>
-</div>
-</div>
-</div>
-</section>
-<!-- Persistent Live Status Ticker & Bottom Telemetry -->
-<footer class="w-full mt-4 pt-4 border-t-2 border-primary">
-<div class="bg-primary text-on-primary p-4 sm:p-5 flex flex-col md:flex-row items-center justify-between gap-4">
-<!-- Live Ticker Copy requested by user -->
-<div class="flex items-center gap-3 overflow-hidden">
-<span class="inline-flex w-2.5 h-2.5 rounded-full bg-acid-chartreuse animate-pulse"></span>
-<p class="font-label-mono-sm text-label-mono-sm uppercase tracking-wider text-acid-chartreuse">
-            MATCH STATUS: <span class="text-on-primary font-bold">LOBBY OPEN</span> • BUZZERS: <span class="text-on-primary font-bold">ARMED &amp; READY</span> • CONNECTED HUBS: <span class="text-on-primary font-bold">2</span>
-</p>
-</div>
-<!-- Terminal Quick Links -->
-<div class="flex items-center gap-6 font-label-mono-sm text-label-mono-sm uppercase">
-<span class="text-primary-fixed-dim">TOURNAMENT_ID: #CLASH-9042</span>
-<span class="text-acid-chartreuse cursor-pointer hover:underline">HARDWARE_RE-SYNC [F9]</span>
-<span class="text-primary-fixed-dim">NODE: NY-02</span>
-</div>
-</div>
-</footer>
-</div>
-</div>
-<script>
-  function switchAuthTab(mode) {
-    const pTab = document.getElementById('tabPlayer');
-    const aTab = document.getElementById('tabAdmin');
-    const pPanel = document.getElementById('playerPanel');
-    const aPanel = document.getElementById('adminPanel');
-    const label = document.getElementById('activeModeLabel');
-
-    if (mode === 'player') {
-      pTab.className = "px-5 py-2.5 text-xs font-label-mono-sm tracking-wider uppercase transition-all duration-150 bg-primary text-on-primary shadow-sm flex items-center gap-2 cursor-pointer";
-      pTab.querySelector('span:first-child').className = "w-2 h-2 rounded-full bg-acid-chartreuse";
-      
-      aTab.className = "px-5 py-2.5 text-xs font-label-mono-sm tracking-wider uppercase transition-all duration-150 text-on-surface-variant hover:text-primary flex items-center gap-2 cursor-pointer";
-      aTab.querySelector('span:first-child').className = "w-2 h-2 rounded-full bg-outline-variant";
-      
-      pPanel.classList.remove('hidden');
-      aPanel.classList.add('hidden');
-      label.innerText = 'DUAL-POD SYNC';
-    } else {
-      aTab.className = "px-5 py-2.5 text-xs font-label-mono-sm tracking-wider uppercase transition-all duration-150 bg-cobalt-deep text-on-primary shadow-sm flex items-center gap-2 cursor-pointer";
-      aTab.querySelector('span:first-child').className = "w-2 h-2 rounded-full bg-acid-chartreuse";
-      
-      pTab.className = "px-5 py-2.5 text-xs font-label-mono-sm tracking-wider uppercase transition-all duration-150 text-on-surface-variant hover:text-primary flex items-center gap-2 cursor-pointer";
-      pTab.querySelector('span:first-child').className = "w-2 h-2 rounded-full bg-outline-variant";
-      
-      aPanel.classList.remove('hidden');
-      pPanel.classList.add('hidden');
-      label.innerText = 'GAME MASTER DIRECT';
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>CLASH // Authentication</title>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com" rel="preconnect"/>
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <style>
+    @layer base {
+      html, body { margin: 0; padding: 0; }
+      body { overscroll-behavior: none; }
+      main > :first-child { margin-top: 0 !important; }
+      main > :last-child { margin-bottom: 0 !important; }
     }
-  }
+    ::-webkit-scrollbar { display: none; }
 
-  function setFaction(button, faction) {
-    const buttons = document.querySelectorAll('.faction-pill');
-    buttons.forEach(btn => {
-      btn.className = "faction-pill py-2.5 px-2 bg-surface-subtle text-on-surface font-label-mono-sm text-label-mono-sm uppercase text-center hover:bg-surface-container transition-all cursor-pointer";
-    });
-    button.className = "faction-pill py-2.5 px-2 bg-primary text-on-primary font-label-mono-sm text-label-mono-sm uppercase text-center transition-all cursor-pointer";
-  }
-</script></main></body></html>
+    @keyframes marquee {
+      0% { transform: translateX(0%); }
+      100% { transform: translateX(-50%); }
+    }
+    .animate-marquee {
+      display: inline-flex;
+      white-space: nowrap;
+      animation: marquee 16s linear infinite;
+      will-change: transform;
+    }
+    .animate-marquee:hover {
+      animation-play-state: paused;
+    }
+  </style>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      "darkMode": "class",
+      "theme": {
+        "extend": {
+          "colors": {
+            "secondary-fixed-dim": "#abd600",
+            "on-surface-variant": "#444748",
+            "cobalt-deep": "#4B00E0",
+            "error": "#ba1a1a",
+            "on-primary-fixed-variant": "#474646",
+            "on-tertiary-fixed": "#1c0062",
+            "acid-glow": "#E2FF4D",
+            "on-background": "#1b1c1c",
+            "sabotage-crimson": "#FF2A3B",
+            "canvas-light": "#FAFAFA",
+            "surface-container": "#efeded",
+            "primary-fixed": "#e5e2e1",
+            "outline-variant": "#c4c7c7",
+            "error-container": "#ffdad6",
+            "signal-emerald": "#00FF85",
+            "secondary-fixed": "#c3f400",
+            "tertiary": "#000000",
+            "surface-container-lowest": "#ffffff",
+            "on-surface": "#1b1c1c",
+            "secondary": "#506600",
+            "inverse-surface": "#303031",
+            "tertiary-fixed": "#e6deff",
+            "hairline-dark": "#222222",
+            "on-primary": "#ffffff",
+            "primary": "#000000",
+            "surface": "#fbf9f9",
+            "acid-chartreuse": "#CCFF00",
+            "surface-tint": "#5f5e5e",
+            "on-secondary-fixed-variant": "#3c4d00",
+            "surface-container-high": "#e9e8e7",
+            "tertiary-fixed-dim": "#cabeff",
+            "inverse-on-surface": "#f2f0f0",
+            "tertiary-container": "#1c0062",
+            "surface-subtle": "#F2F2F2",
+            "surface-bright": "#fbf9f9",
+            "on-tertiary-fixed-variant": "#4700d6",
+            "on-tertiary": "#ffffff",
+            "outline": "#747878",
+            "surface-container-low": "#f5f3f3",
+            "on-tertiary-container": "#876bff",
+            "on-secondary-container": "#546b00",
+            "primary-container": "#1c1b1b",
+            "on-primary-container": "#858383",
+            "secondary-container": "#c1f100",
+            "on-primary-fixed": "#1c1b1b",
+            "inverse-primary": "#c9c6c5",
+            "surface-variant": "#e3e2e2",
+            "surface-dim": "#dbdad9",
+            "background": "#fbf9f9",
+            "on-secondary-fixed": "#161e00",
+            "canvas-dark": "#050505",
+            "on-error": "#ffffff",
+            "surface-dark": "#111111",
+            "primary-fixed-dim": "#c9c6c5",
+            "on-secondary": "#ffffff",
+            "surface-container-highest": "#e3e2e2",
+            "hairline-light": "#E5E5E5",
+            "on-error-container": "#93000a"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "margin": "2rem",
+            "gutter": "1.5rem",
+            "space-2xs": "0.25rem",
+            "space-sm": "0.75rem",
+            "space-md": "1.25rem",
+            "gutter-sm": "0.75rem",
+            "margin-mobile": "1rem",
+            "space-xl": "3.5rem",
+            "space-xs": "0.5rem",
+            "space-lg": "2rem",
+            "space-2xl": "5rem"
+          },
+          "fontFamily": {
+            "label-mono-sm": ["Space Mono", "monospace"],
+            "display-hero-mobile": ["Space Grotesk", "sans-serif"],
+            "display-hero": ["Space Grotesk", "sans-serif"],
+            "headline-xl": ["Space Grotesk", "sans-serif"],
+            "body-sm": ["Work Sans", "sans-serif"],
+            "headline-md": ["Space Grotesk", "sans-serif"],
+            "headline-xl-mobile": ["Space Grotesk", "sans-serif"],
+            "headline-lg": ["Space Grotesk", "sans-serif"],
+            "label-mono-lg": ["Space Mono", "monospace"],
+            "label-pill": ["Work Sans", "sans-serif"],
+            "body-base": ["Work Sans", "sans-serif"],
+            "body-lead": ["Work Sans", "sans-serif"]
+          },
+          "fontSize": {
+            "label-mono-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.08em", "fontWeight": "700" }],
+            "display-hero-mobile": ["40px", { "lineHeight": "44px", "letterSpacing": "-0.03em", "fontWeight": "700" }],
+            "display-hero": ["72px", { "lineHeight": "76px", "letterSpacing": "-0.04em", "fontWeight": "700" }],
+            "headline-xl": ["44px", { "lineHeight": "48px", "letterSpacing": "-0.03em", "fontWeight": "600" }],
+            "body-sm": ["13px", { "lineHeight": "18px", "letterSpacing": "0em", "fontWeight": "400" }],
+            "headline-md": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+            "headline-xl-mobile": ["32px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "headline-lg": ["30px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "label-mono-lg": ["14px", { "lineHeight": "16px", "letterSpacing": "0.06em", "fontWeight": "700" }],
+            "label-pill": ["11px", { "lineHeight": "12px", "letterSpacing": "0.04em", "fontWeight": "600" }],
+            "body-base": ["15px", { "lineHeight": "22px", "letterSpacing": "0em", "fontWeight": "400" }],
+            "body-lead": ["18px", { "lineHeight": "26px", "letterSpacing": "-0.01em", "fontWeight": "400" }]
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="bg-background font-body-base text-on-surface antialiased flex flex-col relative selection:bg-acid-chartreuse selection:text-primary">
+
+  <!-- ========================================================================= -->
+  <!-- 1. COMPLETE FIXED BACKGROUND IMAGE IN CENTER POSITION WITHOUT REPETITION   -->
+  <!-- ========================================================================= -->
+  <div 
+    class="fixed inset-0 w-full h-full bg-center bg-no-repeat bg-cover z-0 pointer-events-none"
+    style="background-image: url('../assets/background.jpeg'); background-position: center center; background-repeat: no-repeat; background-size: cover;"
+  >
+    <!-- Subtle Dark Overlay for legibility -->
+    <div class="absolute inset-0 bg-black/30"></div>
+    <div class="absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#CCFF00_1px,transparent_1px)] [background-size:24px_24px]"></div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 2. INITIAL VIEWPORT: ONLY BACKGROUND & 'KEELA POLAM' SCROLLING TEXT       -->
+  <!-- ========================================================================= -->
+  <section class="w-full h-screen flex flex-col justify-end items-center relative z-10 select-none pb-0">
+    <!-- 'Keela polam' Continuous Scrolling Text Marquee Ticker -->
+    <div 
+      onclick="scrollToContent()"
+      class="w-full bg-black/90 border-y-2 border-acid-chartreuse py-3.5 overflow-hidden whitespace-nowrap cursor-pointer hover:bg-black transition-colors"
+    >
+      <div class="animate-marquee font-headline-md font-extrabold text-sm sm:text-base text-acid-chartreuse tracking-widest uppercase flex items-center gap-8">
+        <span>KEELA POLAM ✦ கீழ போலாம் ✦ SCROLL DOWN ✦ KEELA POLAM ✦ கீழ போலாம் ✦ SCROLL DOWN ✦</span>
+        <span>KEELA POLAM ✦ கீழ போலாம் ✦ SCROLL DOWN ✦ KEELA POLAM ✦ கீழ போலாம் ✦ SCROLL DOWN ✦</span>
+        <span>KEELA POLAM ✦ கீழ போலாம் ✦ SCROLL DOWN ✦ KEELA POLAM ✦ கீழ போலாம் ✦ SCROLL DOWN ✦</span>
+        <span>KEELA POLAM ✦ கீழ போலாம் ✦ SCROLL DOWN ✦ KEELA POLAM ✦ கீழ போலாம் ✦ SCROLL DOWN ✦</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- 3. SCROLL REVEAL CONTENT: TEXT REVEALS IN ANIMATED MANNER, THEN LOGIN SECTION -->
+  <!-- ========================================================================= -->
+  <div 
+    id="revealContainer"
+    class="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-24 flex flex-col gap-10 relative z-10"
+  >
+    
+    <!-- Staggered Animated Text Header Block -->
+    <div class="flex flex-col gap-4 text-center items-center">
+      <!-- Badge -->
+      <div 
+        id="animBadge"
+        class="inline-flex items-center gap-2 px-3.5 py-1.5 bg-acid-chartreuse text-canvas-dark rounded font-label-mono-sm text-xs uppercase font-bold tracking-wider shadow-sm transition-all duration-700 ease-out transform opacity-0 translate-y-8 pointer-events-none"
+      >
+        <span>CHAMPIONSHIP STAGE</span>
+        <span>//</span>
+        <span>LIVE EVENT PORTAL</span>
+      </div>
+
+      <!-- Hero Title -->
+      <h1 
+        id="animTitle"
+        class="font-display-hero text-3xl sm:text-5xl lg:text-6xl uppercase tracking-tight text-white font-extrabold leading-none drop-shadow-xl transition-all duration-700 delay-150 ease-out transform opacity-0 translate-y-10 pointer-events-none"
+      >
+        STAGE CLASH: <br class="hidden sm:inline" />
+        <span class="text-acid-chartreuse">LIVE TOURNAMENT ACCESS</span>
+      </h1>
+
+      <!-- Subtitle Description -->
+      <p 
+        id="animDesc"
+        class="font-body-base text-sm sm:text-base text-gray-200 max-w-2xl leading-relaxed drop-shadow-md transition-all duration-700 delay-300 ease-out transform opacity-0 translate-y-10 pointer-events-none"
+      >
+        Register your official 2-player team identity, select your tactical avatar profile, and synchronize hardware debounce triggers for live stage confrontation.
+      </p>
+
+      <!-- Protocol Info -->
+      <div 
+        id="animProto"
+        class="flex items-center gap-4 text-white/80 font-label-mono-sm text-xs pt-2 border-t border-white/20 transition-all duration-700 delay-450 ease-out transform opacity-0 translate-y-8 pointer-events-none"
+      >
+        <span>SQUAD PROTOCOL: 2 PLAYERS PER TEAM</span>
+        <span>•</span>
+        <span>DEBOUNCE ENGINE: ARMED</span>
+      </div>
+    </div>
+
+    <!-- Animated Login Section Card at the Bottom -->
+    <div 
+      id="animLoginCard"
+      class="bg-surface-container-lowest/95 backdrop-blur-md shadow-2xl rounded-2xl p-6 sm:p-10 flex flex-col gap-8 border-2 border-primary relative overflow-hidden transition-all duration-800 delay-600 ease-out transform opacity-0 translate-y-16 scale-95 pointer-events-none"
+    >
+      
+      <!-- Top Neon Edge -->
+      <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-acid-chartreuse via-primary to-signal-emerald"></div>
+
+      <!-- Mode Selector Tabs (Player vs Game Master) -->
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pb-6 border-b border-hairline-light">
+        <div>
+          <span class="font-label-mono-sm text-xs text-on-surface-variant uppercase font-bold block mb-1">
+            ACCESS GATEWAY
+          </span>
+          <h2 class="font-headline-lg text-2xl font-bold text-primary" id="authModeTitle">
+            Contender Squad Registration
+          </h2>
+        </div>
+
+        <div class="inline-flex p-1 bg-surface-subtle rounded-xl border border-hairline-light">
+          <button
+            id="tabPlayerBtn"
+            type="button"
+            onclick="switchAuthMode('player')"
+            class="px-5 py-2.5 text-xs font-label-mono-sm tracking-wider uppercase transition-all duration-150 flex items-center gap-2 rounded-lg cursor-pointer bg-primary text-on-primary font-bold shadow-[2px_2px_0px_#CCFF00]"
+          >
+            <span class="w-2 h-2 rounded-full bg-acid-chartreuse"></span>
+            <span>Player Access</span>
+          </button>
+
+          <button
+            id="tabAdminBtn"
+            type="button"
+            onclick="switchAuthMode('admin')"
+            class="px-5 py-2.5 text-xs font-label-mono-sm tracking-wider uppercase transition-all duration-150 flex items-center gap-2 rounded-lg cursor-pointer text-on-surface-variant hover:text-primary"
+          >
+            <span class="w-2 h-2 rounded-full bg-outline-variant"></span>
+            <span>Game Master</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- PLAYER FORM (WITH AVATAR SELECTION)                                       -->
+      <!-- ========================================================================= -->
+      <div id="playerForm" class="flex flex-col gap-8">
+        
+        <!-- FEATURE 2: 5 PREDEFINED AVATAR SELECTION DECK -->
+        <div class="flex flex-col gap-3 p-5 bg-surface-subtle rounded-xl border border-hairline-light">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-primary text-xl">face</span>
+              <span class="font-label-mono-sm text-xs uppercase font-bold text-primary">
+                SELECT PROFILE PICTURE AVATAR (5 PREDEFINED OPTIONS)
+              </span>
+            </div>
+            <span class="font-label-mono-sm text-xs text-on-surface-variant">
+              SELECTED: <strong class="text-primary" id="selectedAvatarLabel">Valkyrie Zero (VK-01)</strong>
+            </span>
+          </div>
+
+          <!-- 5 Avatar Cards -->
+          <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2">
+            
+            <!-- Avatar 1 -->
+            <button
+              type="button"
+              onclick="selectAvatar('Valkyrie Zero', 'VK-01', this)"
+              class="avatar-card p-3 rounded-xl flex flex-col items-center gap-2 transition-all cursor-pointer border-2 text-center relative border-primary bg-primary text-on-primary shadow-[3px_3px_0px_#CCFF00] scale-105"
+            >
+              <div class="w-14 h-14 rounded-lg bg-[#050505] flex items-center justify-center border border-hairline-dark shadow-sm">
+                <span class="material-symbols-outlined text-3xl text-acid-chartreuse">smart_toy</span>
+              </div>
+              <span class="font-headline-md text-xs font-bold leading-tight">Valkyrie Zero</span>
+              <span class="font-label-mono-sm text-[10px] uppercase font-bold text-acid-chartreuse">VK-01</span>
+            </button>
+
+            <!-- Avatar 2 -->
+            <button
+              type="button"
+              onclick="selectAvatar('Nexus Core', 'NX-09', this)"
+              class="avatar-card p-3 rounded-xl flex flex-col items-center gap-2 transition-all cursor-pointer border-2 text-center relative border-hairline-light bg-surface-container-lowest hover:border-primary/50 text-on-surface"
+            >
+              <div class="w-14 h-14 rounded-lg bg-[#0a1914] flex items-center justify-center border border-hairline-dark shadow-sm">
+                <span class="material-symbols-outlined text-3xl text-signal-emerald">android</span>
+              </div>
+              <span class="font-headline-md text-xs font-bold leading-tight">Nexus Core</span>
+              <span class="font-label-mono-sm text-[10px] uppercase font-bold text-on-surface-variant">NX-09</span>
+            </button>
+
+            <!-- Avatar 3 -->
+            <button
+              type="button"
+              onclick="selectAvatar('Crimson Shinobi', 'CS-77', this)"
+              class="avatar-card p-3 rounded-xl flex flex-col items-center gap-2 transition-all cursor-pointer border-2 text-center relative border-hairline-light bg-surface-container-lowest hover:border-primary/50 text-on-surface"
+            >
+              <div class="w-14 h-14 rounded-lg bg-[#1a0809] flex items-center justify-center border border-hairline-dark shadow-sm">
+                <span class="material-symbols-outlined text-3xl text-sabotage-crimson">sports_kabaddi</span>
+              </div>
+              <span class="font-headline-md text-xs font-bold leading-tight">Crimson Shinobi</span>
+              <span class="font-label-mono-sm text-[10px] uppercase font-bold text-on-surface-variant">CS-77</span>
+            </button>
+
+            <!-- Avatar 4 -->
+            <button
+              type="button"
+              onclick="selectAvatar('Cobalt Spectre', 'CB-44', this)"
+              class="avatar-card p-3 rounded-xl flex flex-col items-center gap-2 transition-all cursor-pointer border-2 text-center relative border-hairline-light bg-surface-container-lowest hover:border-primary/50 text-on-surface"
+            >
+              <div class="w-14 h-14 rounded-lg bg-[#0c0724] flex items-center justify-center border border-hairline-dark shadow-sm">
+                <span class="material-symbols-outlined text-3xl text-cyan-400">shield_person</span>
+              </div>
+              <span class="font-headline-md text-xs font-bold leading-tight">Cobalt Spectre</span>
+              <span class="font-label-mono-sm text-[10px] uppercase font-bold text-on-surface-variant">CB-44</span>
+            </button>
+
+            <!-- Avatar 5 -->
+            <button
+              type="button"
+              onclick="selectAvatar('Acid Mecha', 'MC-88', this)"
+              class="avatar-card p-3 rounded-xl flex flex-col items-center gap-2 transition-all cursor-pointer border-2 text-center relative border-hairline-light bg-surface-container-lowest hover:border-primary/50 text-on-surface"
+            >
+              <div class="w-14 h-14 rounded-lg bg-[#1c1605] flex items-center justify-center border border-hairline-dark shadow-sm">
+                <span class="material-symbols-outlined text-3xl text-yellow-500">precision_manufacturing</span>
+              </div>
+              <span class="font-headline-md text-xs font-bold leading-tight">Acid Mecha</span>
+              <span class="font-label-mono-sm text-[10px] uppercase font-bold text-on-surface-variant">MC-88</span>
+            </button>
+
+          </div>
+        </div>
+
+        <!-- Team Name Input -->
+        <div class="flex flex-col gap-2">
+          <div class="flex justify-between items-baseline">
+            <label class="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
+              TEAM NAME (DUAL CONTENDER SQUAD)
+            </label>
+            <span class="font-label-mono-sm text-xs text-signal-emerald font-bold">1 SQUAD = 2 PLAYERS</span>
+          </div>
+          <div class="relative">
+            <input
+              type="text"
+              id="inputTeamName"
+              value="TEAM KINETIC"
+              placeholder="ENTER OFFICIAL SQUAD NAME..."
+              class="w-full bg-surface-subtle text-primary font-headline-md text-lg sm:text-xl px-4 py-3 border-2 border-primary rounded-xl focus:outline-none focus:border-cobalt-deep font-bold uppercase tracking-tight"
+            />
+            <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+              <span class="font-label-mono-sm text-xs text-on-surface-variant uppercase font-bold">LOBBY_VERIFIED</span>
+              <span class="material-symbols-outlined text-signal-emerald text-base font-bold">verified</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2 Player Member Handles -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="flex flex-col gap-2">
+            <label class="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
+              MEMBER 01 CALLSIGN
+            </label>
+            <input
+              type="text"
+              value="Alex Vance // VALKYRIE_01"
+              class="w-full bg-surface-subtle text-primary font-body-base text-sm px-4 py-3 border border-hairline-light rounded-xl focus:outline-none focus:border-primary font-bold"
+            />
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <label class="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
+              MEMBER 02 CALLSIGN
+            </label>
+            <input
+              type="text"
+              value="Sarah Connor // NEXUS_CORE"
+              class="w-full bg-surface-subtle text-primary font-body-base text-sm px-4 py-3 border border-hairline-light rounded-xl focus:outline-none focus:border-primary font-bold"
+            />
+          </div>
+        </div>
+
+        <!-- Faction & Arena PIN -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="flex flex-col gap-2">
+            <label class="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
+              DIVISION / FACTION
+            </label>
+            <select class="w-full bg-surface-subtle text-primary font-body-base text-sm px-4 py-3 border border-hairline-light rounded-xl focus:outline-none focus:border-primary font-bold">
+              <option>FACTION // KINETIC (PRIMARY)</option>
+              <option>FACTION // VORTEX (DEFENSIVE)</option>
+              <option>FACTION // CYBER SPECTRE (TACTICAL)</option>
+              <option>FACTION // NEO PULSE (AGGRESSIVE)</option>
+            </select>
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <label class="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
+              ARENA SESSION PIN
+            </label>
+            <input
+              type="text"
+              value="794-20"
+              class="w-full bg-surface-subtle text-primary font-label-mono-lg text-sm px-4 py-3 border border-hairline-light rounded-xl focus:outline-none focus:border-primary font-bold tracking-widest uppercase"
+            />
+          </div>
+        </div>
+
+        <!-- Action Button -->
+        <a
+          href="../player_arena_live_buzzer/code.html"
+          class="w-full py-4 sm:py-5 bg-primary text-on-primary font-label-mono-lg text-base sm:text-lg uppercase tracking-wider font-extrabold shadow-[4px_4px_0px_#CCFF00] hover:bg-black active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center justify-center gap-3 cursor-pointer rounded-xl text-center"
+        >
+          <span>ENTER NAMMA AREA WITH SQUAD</span>
+          <span class="material-symbols-outlined text-2xl text-acid-chartreuse">arrow_forward</span>
+        </a>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- ADMIN FORM (NO AVATAR SELECTOR)                                          -->
+      <!-- ========================================================================= -->
+      <div id="adminForm" class="hidden flex flex-col gap-6">
+        <div class="p-4 bg-sabotage-crimson/10 border border-sabotage-crimson/30 rounded-xl flex items-center gap-3">
+          <span class="material-symbols-outlined text-sabotage-crimson text-2xl font-bold">admin_panel_settings</span>
+          <span class="font-label-mono-sm text-xs text-primary font-bold uppercase">
+            RESTRICTED TOURNAMENT MASTER NERVE CENTER • DUAL AUTHORIZATION REQUIRED
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="flex flex-col gap-2">
+            <label class="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
+              GAME MASTER IDENTIFIER
+            </label>
+            <input
+              type="text"
+              value="GM_ARBITER_07"
+              class="w-full bg-surface-subtle text-primary font-body-base text-sm px-4 py-3 border border-hairline-light rounded-xl focus:outline-none focus:border-primary font-bold"
+            />
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <label class="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
+              SESSION TOKEN
+            </label>
+            <input
+              type="text"
+              value="STG-TOURNAMENT-2025-Q1"
+              class="w-full bg-surface-subtle text-primary font-body-base text-sm px-4 py-3 border border-hairline-light rounded-xl focus:outline-none focus:border-primary font-bold"
+            />
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <label class="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
+            MASTER SECURITY OVERRIDE KEY
+          </label>
+          <input
+            type="password"
+            value="••••••••••••••••••••"
+            class="w-full bg-surface-subtle text-primary font-label-mono-lg text-sm px-4 py-3 border border-hairline-light rounded-xl focus:outline-none focus:border-primary font-bold tracking-widest"
+          />
+        </div>
+
+        <a
+          href="../admin_console_control_center/code.html"
+          class="w-full py-4 sm:py-5 bg-sabotage-crimson text-on-primary font-label-mono-lg text-base sm:text-lg uppercase tracking-wider font-extrabold shadow-[4px_4px_0px_#000] hover:bg-black active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center justify-center gap-3 cursor-pointer rounded-xl text-center mt-2"
+        >
+          <span>LAUNCH ADMIN COMMAND CONSOLE</span>
+          <span class="material-symbols-outlined text-2xl">tune</span>
+        </a>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Script for Auth Mode & Avatar Selection -->
+  <script>
+    function switchAuthMode(mode) {
+      const pBtn = document.getElementById('tabPlayerBtn');
+      const aBtn = document.getElementById('tabAdminBtn');
+      const pForm = document.getElementById('playerForm');
+      const aForm = document.getElementById('adminForm');
+      const title = document.getElementById('authModeTitle');
+
+      if (mode === 'player') {
+        pBtn.className = 'px-5 py-2.5 text-xs font-label-mono-sm tracking-wider uppercase transition-all duration-150 flex items-center gap-2 rounded-lg cursor-pointer bg-primary text-on-primary font-bold shadow-[2px_2px_0px_#CCFF00]';
+        aBtn.className = 'px-5 py-2.5 text-xs font-label-mono-sm tracking-wider uppercase transition-all duration-150 flex items-center gap-2 rounded-lg cursor-pointer text-on-surface-variant hover:text-primary';
+        pForm.classList.remove('hidden');
+        aForm.classList.add('hidden');
+        title.textContent = 'Contender Squad Registration';
+      } else {
+        aBtn.className = 'px-5 py-2.5 text-xs font-label-mono-sm tracking-wider uppercase transition-all duration-150 flex items-center gap-2 rounded-lg cursor-pointer bg-primary text-on-primary font-bold shadow-[2px_2px_0px_#CCFF00]';
+        pBtn.className = 'px-5 py-2.5 text-xs font-label-mono-sm tracking-wider uppercase transition-all duration-150 flex items-center gap-2 rounded-lg cursor-pointer text-on-surface-variant hover:text-primary';
+        aForm.classList.remove('hidden');
+        pForm.classList.add('hidden');
+        title.textContent = 'Game Master Command';
+      }
+    function selectAvatar(name, callsign, btn) {
+      document.querySelectorAll('.avatar-card').forEach(c => {
+        c.className = 'avatar-card p-3 rounded-xl flex flex-col items-center gap-2 transition-all cursor-pointer border-2 text-center relative border-hairline-light bg-surface-container-lowest hover:border-primary/50 text-on-surface';
+      });
+      btn.className = 'avatar-card p-3 rounded-xl flex flex-col items-center gap-2 transition-all cursor-pointer border-2 text-center relative border-primary bg-primary text-on-primary shadow-[3px_3px_0px_#CCFF00] scale-105';
+      document.getElementById('selectedAvatarLabel').textContent = name + ' (' + callsign + ')';
+    }
+
+    // Scroll Reveal Handling
+    function updateScrollReveal() {
+      const isScrolled = window.scrollY > 60;
+      const badge = document.getElementById('animBadge');
+      const title = document.getElementById('animTitle');
+      const desc = document.getElementById('animDesc');
+      const proto = document.getElementById('animProto');
+      const card = document.getElementById('animLoginCard');
+
+      if (isScrolled) {
+        badge.classList.remove('opacity-0', 'translate-y-8', 'pointer-events-none');
+        badge.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
+
+        title.classList.remove('opacity-0', 'translate-y-10', 'pointer-events-none');
+        title.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
+
+        desc.classList.remove('opacity-0', 'translate-y-10', 'pointer-events-none');
+        desc.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
+
+        proto.classList.remove('opacity-0', 'translate-y-8', 'pointer-events-none');
+        proto.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
+
+        card.classList.remove('opacity-0', 'translate-y-16', 'scale-95', 'pointer-events-none');
+        card.classList.add('opacity-100', 'translate-y-0', 'scale-100', 'pointer-events-auto');
+      } else {
+        badge.classList.add('opacity-0', 'translate-y-8', 'pointer-events-none');
+        badge.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto');
+
+        title.classList.add('opacity-0', 'translate-y-10', 'pointer-events-none');
+        title.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto');
+
+        desc.classList.add('opacity-0', 'translate-y-10', 'pointer-events-none');
+        desc.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto');
+
+        proto.classList.add('opacity-0', 'translate-y-8', 'pointer-events-none');
+        proto.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto');
+
+        card.classList.add('opacity-0', 'translate-y-16', 'scale-95', 'pointer-events-none');
+        card.classList.remove('opacity-100', 'translate-y-0', 'scale-100', 'pointer-events-auto');
+      }
+    }
+
+    function scrollToContent() {
+      const container = document.getElementById('revealContainer');
+      if (container) {
+        container.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        window.scrollTo({ top: window.innerHeight, behavior: 'smooth' });
+      }
+    }
+
+    window.addEventListener('scroll', updateScrollReveal, { passive: true });
+    // Initial check
+    updateScrollReveal();
+  </script>
+</body>
+</html>

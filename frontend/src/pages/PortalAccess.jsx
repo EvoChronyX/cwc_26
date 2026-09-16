@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useGame } from '../context/GameContext';
+import { PREDEFINED_AVATARS } from '../assets/avatars';
+import heroBg from '../assets/background.jpeg';
 
 export default function PortalAccess() {
   const {
@@ -12,6 +14,8 @@ export default function PortalAccess() {
     setP1Handle,
     p2Handle,
     setP2Handle,
+    playerAvatar,
+    setPlayerAvatar,
     activeFaction,
     setActiveFaction,
     arenaPin,
@@ -24,6 +28,34 @@ export default function PortalAccess() {
   const [sessionToken, setSessionToken] = useState('STG-TOURNAMENT-2025-Q1');
   const [masterKey, setMasterKey] = useState('••••••••••••••••••••');
   const [keyVerified, setKeyVerified] = useState(false);
+
+  // Scroll detection for animated appearance
+  const [hasScrolled, setHasScrolled] = useState(false);
+  const contentRef = useRef(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 50) {
+        setHasScrolled(true);
+      } else {
+        setHasScrolled(false);
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToContent = () => {
+    playTone(700, 0.1);
+    setHasScrolled(true);
+    if (contentRef.current) {
+      contentRef.current.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      window.scrollTo({ top: window.innerHeight, behavior: 'smooth' });
+    }
+  };
+
+  const selectedAvatarObj = PREDEFINED_AVATARS.find((a) => a.id === playerAvatar) || PREDEFINED_AVATARS[0];
 
   const handleVerifyKey = () => {
     playTone(1050, 0.15);
@@ -44,483 +76,369 @@ export default function PortalAccess() {
   };
 
   return (
-    <div className="w-full flex items-center justify-center min-h-screen bg-background pt-16 pb-12">
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-8 lg:py-12 flex flex-col gap-10">
+    <div className="relative w-full min-h-[170vh] text-on-surface selection:bg-acid-chartreuse selection:text-primary">
+      
+      {/* 1. COMPLETE FIXED BACKGROUND IMAGE IN CENTER POSITION WITHOUT REPETITION */}
+      <div 
+        className="fixed inset-0 w-full h-full bg-center bg-no-repeat bg-cover z-0 pointer-events-none"
+        style={{ 
+          backgroundImage: `url(${heroBg})`,
+          backgroundPosition: 'center center',
+          backgroundRepeat: 'no-repeat',
+          backgroundSize: 'cover'
+        }}
+      >
+        {/* Subtle Overlay to ensure visual crispness */}
+        <div className="absolute inset-0 bg-black/30"></div>
+        <div className="absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#CCFF00_1px,transparent_1px)] [background-size:24px_24px]"></div>
+      </div>
+
+      {/* 2. INITIAL VIEWPORT: ONLY BACKGROUND & 'KEELA POLAM' SCROLLING TEXT (FLOATING BUTTON REMOVED) */}
+      <section className="w-full h-screen flex flex-col justify-end items-center relative z-10 select-none pb-0">
+        {/* 'Keela polam' Continuous Scrolling Text Marquee Ticker */}
+        <div 
+          onClick={scrollToContent}
+          className="w-full bg-black/90 border-y-2 border-acid-chartreuse py-3.5 overflow-hidden whitespace-nowrap cursor-pointer hover:bg-black transition-colors"
+        >
+          <div className="animate-marquee font-headline-md font-extrabold text-sm sm:text-base text-acid-chartreuse tracking-widest uppercase flex items-center gap-8">
+            <span>KEELA POLAM ✦ கீழ போலாம் ✦ SCROLL DOWN ✦ KEELA POLAM ✦ கீழ போலாம் ✦ SCROLL DOWN ✦</span>
+            <span>KEELA POLAM ✦ கீழ போலாம் ✦ SCROLL DOWN ✦ KEELA POLAM ✦ கீழ போலாம் ✦ SCROLL DOWN ✦</span>
+            <span>KEELA POLAM ✦ கீழ போலாம் ✦ SCROLL DOWN ✦ KEELA POLAM ✦ கீழ போலாம் ✦ SCROLL DOWN ✦</span>
+            <span>KEELA POLAM ✦ கீழ போலாம் ✦ SCROLL DOWN ✦ KEELA POLAM ✦ கீழ போலாம் ✦ SCROLL DOWN ✦</span>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. SCROLL REVEAL CONTENT: TEXT REVEALS IN ANIMATED MANNER, THEN LOGIN SECTION */}
+      <div 
+        ref={contentRef}
+        className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-24 flex flex-col gap-10 relative z-10"
+      >
         
-        {/* Top Telemetry & Global Breadcrumb Bar */}
-        <header className="w-full flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-hairline-light">
-          <div className="flex items-center gap-3">
-            <span className="inline-flex items-center justify-center w-2.5 h-2.5 rounded-full bg-signal-emerald animate-pulse"></span>
-            <span className="font-label-mono-sm text-label-mono-sm tracking-widest text-on-surface uppercase">SYS_ACTIVE // CLASH_NODE_09</span>
-            <span className="text-outline-variant font-label-mono-sm text-label-mono-sm">/</span>
-            <span className="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase">REGISTRATION PROTOCOL</span>
+        {/* Staggered Animated Text Header Block */}
+        <div className="flex flex-col gap-4 text-center items-center">
+          {/* Badge */}
+          <div 
+            className={`inline-flex items-center gap-2 px-3.5 py-1.5 bg-acid-chartreuse text-canvas-dark rounded font-label-mono-sm text-xs uppercase font-bold tracking-wider shadow-sm transition-all duration-700 ease-out transform ${
+              hasScrolled ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 pointer-events-none'
+            }`}
+          >
+            <span>CHAMPIONSHIP STAGE</span>
+            <span>//</span>
+            <span>LIVE EVENT PORTAL</span>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-surface-container rounded-full">
-              <span className="font-label-mono-sm text-label-mono-sm uppercase text-on-surface-variant">REGION:</span>
-              <span className="font-label-mono-sm text-label-mono-sm uppercase text-on-surface font-bold">US-EAST (0.14ms)</span>
-            </div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary text-on-primary rounded-full">
-              <span className="w-1.5 h-1.5 rounded-full bg-acid-chartreuse"></span>
-              <span className="font-label-mono-sm text-label-mono-sm uppercase">NET: SECURED</span>
-            </div>
-          </div>
-        </header>
 
-        {/* Editorial Header Block */}
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end">
-          <div className="lg:col-span-8 flex flex-col gap-3">
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 bg-surface-dark text-acid-chartreuse font-label-mono-sm text-label-mono-sm uppercase">SESSION SETUP</span>
-              <span className="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase tracking-wider">// ARENA SYNC 4.2</span>
-            </div>
-            <h1 className="font-display-hero text-headline-xl lg:text-display-hero uppercase tracking-tight leading-none text-primary font-bold">
-              STAGE CLASH:<br />LIVE TOURNAMENT ACCESS
-            </h1>
-          </div>
-          <div className="lg:col-span-4 flex flex-col justify-end gap-3 pb-1">
-            <p className="font-body-lead text-body-lead text-on-surface-variant leading-relaxed">
-              Register your team identity (2 players per squad) to sync hardware buzzers or authenticate directly as presiding Game Master.
-            </p>
-            <div className="flex items-center gap-2 text-on-surface-variant">
-              <span className="material-symbols-outlined text-sm">schedule</span>
-              <span className="font-label-mono-sm text-label-mono-sm">EST. QUEUE LATENCY: &lt; 0.4 SEC</span>
-            </div>
-          </div>
-        </section>
+          {/* Hero Title */}
+          <h1 
+            className={`font-display-hero text-3xl sm:text-5xl lg:text-6xl uppercase tracking-tight text-white font-extrabold leading-none drop-shadow-xl transition-all duration-700 delay-150 ease-out transform ${
+              hasScrolled ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
+            }`}
+          >
+            STAGE CLASH: <br className="hidden sm:inline" />
+            <span className="text-acid-chartreuse">LIVE TOURNAMENT ACCESS</span>
+          </h1>
 
-        {/* Main Workspace Bento Split */}
-        <main className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Interactive Form Container */}
-          <section className="lg:col-span-7 bg-surface-container-lowest shadow-sm rounded-none p-6 sm:p-8 flex flex-col gap-8 relative overflow-hidden border border-hairline-light">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-acid-chartreuse via-cobalt-deep to-acid-chartreuse"></div>
+          {/* Subtitle Description */}
+          <p 
+            className={`font-body-base text-sm sm:text-base text-gray-200 max-w-2xl leading-relaxed drop-shadow-md transition-all duration-700 delay-300 ease-out transform ${
+              hasScrolled ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
+            }`}
+          >
+            Register your official 2-player team identity, select your tactical avatar profile, and synchronize hardware debounce triggers for live stage confrontation.
+          </p>
 
-            {/* Mode Selector Tabs */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pb-4 border-b border-hairline-light">
-              <div className="inline-flex p-1 bg-surface-subtle rounded-none">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAuthMode('player');
-                    playTone(700, 0.08);
-                  }}
-                  className={`px-5 py-2.5 text-xs font-label-mono-sm tracking-wider uppercase transition-all duration-150 flex items-center gap-2 cursor-pointer ${
-                    authMode === 'player'
-                      ? 'bg-primary text-on-primary shadow-sm'
-                      : 'text-on-surface-variant hover:text-primary'
-                  }`}
-                >
-                  <span className={`w-2 h-2 rounded-full ${authMode === 'player' ? 'bg-acid-chartreuse' : 'bg-outline-variant'}`}></span>
-                  <span>Player Access</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAuthMode('admin');
-                    playTone(850, 0.08);
-                  }}
-                  className={`px-5 py-2.5 text-xs font-label-mono-sm tracking-wider uppercase transition-all duration-150 flex items-center gap-2 cursor-pointer ${
-                    authMode === 'admin'
-                      ? 'bg-cobalt-deep text-on-primary shadow-sm'
-                      : 'text-on-surface-variant hover:text-primary'
-                  }`}
-                >
-                  <span className={`w-2 h-2 rounded-full ${authMode === 'admin' ? 'bg-acid-chartreuse' : 'bg-outline-variant'}`}></span>
-                  <span>Admin Console Login</span>
-                </button>
-              </div>
-              <div className="flex items-center gap-2 self-end sm:self-auto">
-                <span className="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase">AUTH PROTOCOL:</span>
-                <span className="font-label-mono-sm text-label-mono-sm text-primary uppercase font-bold">
-                  {authMode === 'player' ? 'TEAM SQUAD SYNC' : 'GAME MASTER DIRECT'}
-                </span>
-              </div>
+          {/* Protocol Info */}
+          <div 
+            className={`flex items-center gap-4 text-white/80 font-label-mono-sm text-xs pt-2 border-t border-white/20 transition-all duration-700 delay-450 ease-out transform ${
+              hasScrolled ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 pointer-events-none'
+            }`}
+          >
+            <span>SQUAD PROTOCOL: 2 PLAYERS PER TEAM</span>
+            <span>•</span>
+            <span>DEBOUNCE ENGINE: ARMED</span>
+          </div>
+        </div>
+
+        {/* Animated Login Section Card at the Bottom */}
+        <div 
+          className={`bg-surface-container-lowest/95 backdrop-blur-md shadow-2xl rounded-2xl p-6 sm:p-10 flex flex-col gap-8 border-2 border-primary relative overflow-hidden transition-all duration-800 delay-600 ease-out transform ${
+            hasScrolled ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-16 scale-95 pointer-events-none'
+          }`}
+        >
+          {/* Top Neon Edge */}
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-acid-chartreuse via-primary to-signal-emerald"></div>
+
+          {/* Mode Selector Tabs (Player vs Game Master) */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pb-6 border-b border-hairline-light">
+            <div>
+              <span className="font-label-mono-sm text-xs text-on-surface-variant uppercase font-bold block mb-1">
+                ACCESS GATEWAY
+              </span>
+              <h2 className="font-headline-lg text-2xl font-bold text-primary">
+                {authMode === 'player' ? 'Contender Squad Registration' : 'Game Master Command'}
+              </h2>
             </div>
 
-            {/* PLAYER ACCESS PANEL */}
-            {authMode === 'player' ? (
-              <div className="flex flex-col gap-6">
-                
-                {/* 1. Team Name Field (NEW - Team consists of 2 players) */}
-                <div className="bg-surface-subtle p-5 flex flex-col gap-2 border border-hairline-light">
-                  <div className="flex items-center justify-between">
-                    <span className="font-label-mono-sm text-label-mono-sm text-primary uppercase font-bold tracking-wider">
-                      TEAM IDENTIFIER (2 PLAYERS SQUAD)
-                    </span>
-                    <span className="px-2 py-0.5 bg-primary text-acid-chartreuse font-label-mono-sm text-xs font-bold uppercase">
-                      DUAL POD
+            <div className="inline-flex p-1 bg-surface-subtle rounded-xl border border-hairline-light">
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode('player');
+                  playTone(700, 0.08);
+                }}
+                className={`px-5 py-2.5 text-xs font-label-mono-sm tracking-wider uppercase transition-all duration-150 flex items-center gap-2 rounded-lg cursor-pointer ${
+                  authMode === 'player'
+                    ? 'bg-primary text-on-primary font-bold shadow-[2px_2px_0px_#CCFF00]'
+                    : 'text-on-surface-variant hover:text-primary'
+                }`}
+              >
+                <span className={`w-2 h-2 rounded-full ${authMode === 'player' ? 'bg-acid-chartreuse' : 'bg-outline-variant'}`}></span>
+                <span>Player Access</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode('admin');
+                  playTone(850, 0.08);
+                }}
+                className={`px-5 py-2.5 text-xs font-label-mono-sm tracking-wider uppercase transition-all duration-150 flex items-center gap-2 rounded-lg cursor-pointer ${
+                  authMode === 'admin'
+                    ? 'bg-primary text-on-primary font-bold shadow-[2px_2px_0px_#CCFF00]'
+                    : 'text-on-surface-variant hover:text-primary'
+                }`}
+              >
+                <span className={`w-2 h-2 rounded-full ${authMode === 'admin' ? 'bg-acid-chartreuse' : 'bg-outline-variant'}`}></span>
+                <span>Game Master</span>
+              </button>
+            </div>
+          </div>
+
+          {/* PLAYER ACCESS MODE FORM (With Profile Picture Avatar Selection) */}
+          {authMode === 'player' ? (
+            <div className="flex flex-col gap-8">
+              
+              {/* AVATAR SELECTION DECK (FOR PLAYERS ONLY) */}
+              <div className="flex flex-col gap-3 p-5 bg-surface-subtle rounded-xl border border-hairline-light">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-primary text-xl">face</span>
+                    <span className="font-label-mono-sm text-xs uppercase font-bold text-primary">
+                      SELECT PROFILE PICTURE AVATAR (5 PREDEFINED OPTIONS)
                     </span>
                   </div>
-                  <label className="font-label-mono-sm text-xs text-on-surface-variant uppercase" htmlFor="team-name">
-                    Registered Team Name:
+                  <span className="font-label-mono-sm text-xs text-on-surface-variant">
+                    SELECTED: <strong className="text-primary">{selectedAvatarObj.name} ({selectedAvatarObj.callsign})</strong>
+                  </span>
+                </div>
+
+                {/* 5 Predefined Avatar Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2">
+                  {PREDEFINED_AVATARS.map((av) => {
+                    const isSelected = playerAvatar === av.id;
+                    return (
+                      <button
+                        key={av.id}
+                        type="button"
+                        onClick={() => {
+                          setPlayerAvatar(av.id);
+                          playTone(850, 0.08);
+                        }}
+                        className={`p-3 rounded-xl flex flex-col items-center gap-2 transition-all cursor-pointer border-2 text-center relative ${
+                          isSelected
+                            ? 'border-primary bg-primary text-on-primary shadow-[3px_3px_0px_#CCFF00] scale-105'
+                            : 'border-hairline-light bg-surface-container-lowest hover:border-primary/50 text-on-surface'
+                        }`}
+                      >
+                        {isSelected && (
+                          <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-acid-chartreuse text-canvas-dark flex items-center justify-center shadow-md">
+                            <span className="material-symbols-outlined text-sm font-bold">check</span>
+                          </div>
+                        )}
+                        <img
+                          src={av.svg}
+                          alt={av.name}
+                          className="w-14 h-14 rounded-lg object-cover bg-black border border-hairline-dark shadow-sm"
+                        />
+                        <span className="font-headline-md text-xs font-bold leading-tight line-clamp-1">
+                          {av.name}
+                        </span>
+                        <span className={`font-label-mono-sm text-[10px] uppercase font-bold ${
+                          isSelected ? 'text-acid-chartreuse' : 'text-on-surface-variant'
+                        }`}>
+                          {av.callsign}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Team Name Input */}
+              <div className="flex flex-col gap-2">
+                <div className="flex justify-between items-baseline">
+                  <label className="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
+                    TEAM NAME (DUAL CONTENDER SQUAD)
                   </label>
+                  <span className="font-label-mono-sm text-xs text-signal-emerald font-bold">1 SQUAD = 2 PLAYERS</span>
+                </div>
+                <div className="relative">
                   <input
-                    className="w-full bg-surface-container-lowest text-primary font-headline-md text-headline-md px-4 py-3 border-b-2 border-primary focus:border-cobalt-deep focus:outline-none placeholder:text-outline-variant font-bold uppercase tracking-tight"
-                    id="team-name"
-                    placeholder="ENTER YOUR TEAM NAME..."
                     type="text"
                     value={teamName}
-                    onChange={(e) => setTeamName(e.target.value)}
+                    onChange={(e) => setTeamName(e.target.value.toUpperCase())}
+                    placeholder="ENTER OFFICIAL SQUAD NAME..."
+                    className="w-full bg-surface-subtle text-primary font-headline-md text-lg sm:text-xl px-4 py-3 border-2 border-primary rounded-xl focus:outline-none focus:border-cobalt-deep font-bold uppercase tracking-tight"
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                    <span className="font-label-mono-sm text-xs text-on-surface-variant uppercase font-bold">LOBBY_VERIFIED</span>
+                    <span className="material-symbols-outlined text-signal-emerald text-base font-bold">verified</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2 Player Member Handles */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-2">
+                  <label className="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
+                    MEMBER 01 CALLSIGN
+                  </label>
+                  <input
+                    type="text"
+                    value={p1Handle}
+                    onChange={(e) => setP1Handle(e.target.value)}
+                    placeholder="e.g. Alex Vance // VALKYRIE_01"
+                    className="w-full bg-surface-subtle text-primary font-body-base text-sm px-4 py-3 border border-hairline-light rounded-xl focus:outline-none focus:border-primary font-bold"
                   />
                 </div>
 
-                {/* 2 Players Handles */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  {/* Player 1 */}
-                  <div className="bg-surface-subtle p-5 flex flex-col gap-4 border border-hairline-light">
-                    <div className="flex items-center justify-between">
-                      <span className="font-label-mono-sm text-label-mono-sm text-primary uppercase font-bold tracking-wider">POD 01 // PLAYER 1</span>
-                      <span className="w-3 h-3 bg-acid-chartreuse"></span>
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                      <label className="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase" htmlFor="p1-handle">
-                        Player 1 Handle
-                      </label>
-                      <input
-                        className="w-full bg-surface-container-lowest text-primary font-headline-md text-headline-md px-3 py-2 border-b-2 border-primary focus:border-cobalt-deep focus:outline-none placeholder:text-outline-variant font-medium uppercase tracking-tight"
-                        id="p1-handle"
-                        placeholder="ENTER HANDLE..."
-                        type="text"
-                        value={p1Handle}
-                        onChange={(e) => setP1Handle(e.target.value)}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between pt-1">
-                      <span className="font-label-mono-sm text-label-mono-sm text-on-surface-variant">BUZZER POD STATUS</span>
-                      <span className="font-label-mono-sm text-label-mono-sm text-secondary uppercase font-bold">READY (CH-01)</span>
-                    </div>
-                  </div>
-
-                  {/* Player 2 */}
-                  <div className="bg-surface-subtle p-5 flex flex-col gap-4 border border-hairline-light">
-                    <div className="flex items-center justify-between">
-                      <span className="font-label-mono-sm text-label-mono-sm text-primary uppercase font-bold tracking-wider">POD 02 // PLAYER 2</span>
-                      <span className="w-3 h-3 bg-cobalt-deep"></span>
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                      <label className="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase" htmlFor="p2-handle">
-                        Player 2 Handle
-                      </label>
-                      <input
-                        className="w-full bg-surface-container-lowest text-primary font-headline-md text-headline-md px-3 py-2 border-b-2 border-primary focus:border-cobalt-deep focus:outline-none placeholder:text-outline-variant font-medium uppercase tracking-tight"
-                        id="p2-handle"
-                        placeholder="ENTER HANDLE..."
-                        type="text"
-                        value={p2Handle}
-                        onChange={(e) => setP2Handle(e.target.value)}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between pt-1">
-                      <span className="font-label-mono-sm text-label-mono-sm text-on-surface-variant">BUZZER POD STATUS</span>
-                      <span className="font-label-mono-sm text-label-mono-sm text-secondary uppercase font-bold">READY (CH-02)</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Faction & Arena PIN Controls */}
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-5 pt-2">
-                  {/* Faction Selection */}
-                  <div className="md:col-span-7 flex flex-col gap-2">
-                    <label className="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase">Select Division / Faction</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {['KINETIC', 'SYNTH', 'VECTOR'].map((faction) => (
-                        <button
-                          key={faction}
-                          type="button"
-                          onClick={() => {
-                            setActiveFaction(faction);
-                            playTone(750, 0.06);
-                          }}
-                          className={`py-2.5 px-2 font-label-mono-sm text-label-mono-sm uppercase text-center transition-all cursor-pointer ${
-                            activeFaction === faction
-                              ? 'bg-primary text-on-primary shadow-[2px_2px_0px_#CCFF00]'
-                              : 'bg-surface-subtle text-on-surface hover:bg-surface-container'
-                          }`}
-                        >
-                          {faction}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* PIN Code */}
-                  <div className="md:col-span-5 flex flex-col gap-2">
-                    <div className="flex items-center justify-between">
-                      <label className="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase" htmlFor="arena-pin">
-                        Match PIN
-                      </label>
-                      <span className="font-label-mono-sm text-label-mono-sm text-cobalt-deep font-bold">LOBBY #882</span>
-                    </div>
-                    <div className="relative">
-                      <input
-                        className="w-full bg-surface-subtle text-primary font-label-mono-lg text-label-mono-lg px-3 py-2 text-center tracking-widest uppercase focus:bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-primary"
-                        id="arena-pin"
-                        maxLength={6}
-                        type="text"
-                        value={arenaPin}
-                        onChange={(e) => setArenaPin(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* CTA Button */}
-                <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <div className="flex items-center gap-2 text-on-surface-variant">
-                    <span className="material-symbols-outlined text-base">lock_open</span>
-                    <span className="font-label-mono-sm text-label-mono-sm uppercase">LOBBY PASSCODE AUTHENTICATED</span>
-                  </div>
-                  <button
-                    onClick={handleEnterArena}
-                    type="button"
-                    className="w-full sm:w-auto px-8 py-4 bg-primary text-on-primary font-headline-md text-headline-md uppercase tracking-wide hover:translate-x-[-2px] hover:translate-y-[-2px] transition-transform duration-100 flex items-center justify-center gap-3 cursor-pointer shadow-[4px_4px_0px_#CCFF00]"
-                  >
-                    <span>Enter Namma Area</span>
-                    <span className="material-symbols-outlined">arrow_forward</span>
-                  </button>
-                </div>
-              </div>
-            ) : (
-              /* ADMIN ACCESS PANEL */
-              <div className="flex flex-col gap-6">
-                <div className="p-4 bg-surface-subtle border-l-4 border-cobalt-deep flex flex-col sm:flex-row justify-between sm:items-center gap-3">
-                  <div>
-                    <p className="font-label-mono-sm text-label-mono-sm uppercase text-primary font-bold">GAME MASTER CONSOLE ELEVATION</p>
-                    <p className="font-body-sm text-body-sm text-on-surface-variant">Direct hardware telemetry override, round arbitration, and scoring overrides.</p>
-                  </div>
-                  <span className="px-3 py-1 bg-surface-dark text-on-primary font-label-mono-sm text-label-mono-sm uppercase tracking-wider self-start sm:self-auto">ROOT_ROLE</span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase" htmlFor="gm-id">
-                      Game Master Identifier
-                    </label>
-                    <input
-                      className="w-full bg-surface-subtle text-primary font-body-base text-body-base px-3 py-3 border-b-2 border-primary focus:border-cobalt-deep focus:outline-none uppercase font-semibold"
-                      id="gm-id"
-                      type="text"
-                      value={gmId}
-                      onChange={(e) => setGmId(e.target.value)}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase" htmlFor="session-token">
-                      Session Target Token
-                    </label>
-                    <input
-                      className="w-full bg-surface-subtle text-primary font-body-base text-body-base px-3 py-3 border-b-2 border-primary focus:border-cobalt-deep focus:outline-none uppercase font-semibold"
-                      id="session-token"
-                      type="text"
-                      value={sessionToken}
-                      onChange={(e) => setSessionToken(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase" htmlFor="master-key">
-                    Admin Passcode / Master Cryptographic Key
+                <div className="flex flex-col gap-2">
+                  <label className="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
+                    MEMBER 02 CALLSIGN
                   </label>
-                  <div className="relative flex items-center">
-                    <input
-                      className="w-full bg-surface-subtle text-primary font-label-mono-lg text-label-mono-lg px-3 py-3 border-b-2 border-primary focus:border-cobalt-deep focus:outline-none"
-                      id="master-key"
-                      type="password"
-                      value={masterKey}
-                      onChange={(e) => setMasterKey(e.target.value)}
-                    />
-                    <button
-                      onClick={handleVerifyKey}
-                      className="absolute right-3 text-on-surface-variant hover:text-primary font-label-mono-sm text-label-mono-sm uppercase cursor-pointer"
-                      type="button"
-                    >
-                      {keyVerified ? '✓ VERIFIED' : 'VERIFY'}
-                    </button>
-                  </div>
+                  <input
+                    type="text"
+                    value={p2Handle}
+                    onChange={(e) => setP2Handle(e.target.value)}
+                    placeholder="e.g. Sarah Connor // NEXUS_CORE"
+                    className="w-full bg-surface-subtle text-primary font-body-base text-sm px-4 py-3 border border-hairline-light rounded-xl focus:outline-none focus:border-primary font-bold"
+                  />
                 </div>
+              </div>
 
-                <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-signal-emerald"></span>
-                    <span className="font-label-mono-sm text-label-mono-sm uppercase text-on-surface-variant">HOST PERMISSION LEVEL: UNRESTRICTED</span>
-                  </div>
-                  <button
-                    onClick={handleLaunchAdmin}
-                    className="w-full sm:w-auto px-8 py-4 bg-cobalt-deep text-on-primary font-headline-md text-headline-md uppercase tracking-wide hover:translate-x-[-2px] hover:translate-y-[-2px] transition-transform duration-100 flex items-center justify-center gap-3 cursor-pointer shadow-[4px_4px_0px_#050505]"
-                    type="button"
+              {/* Faction & Arena PIN */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-2">
+                  <label className="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
+                    DIVISION / FACTION
+                  </label>
+                  <select
+                    value={activeFaction}
+                    onChange={(e) => setActiveFaction(e.target.value)}
+                    className="w-full bg-surface-subtle text-primary font-body-base text-sm px-4 py-3 border border-hairline-light rounded-xl focus:outline-none focus:border-primary font-bold"
                   >
-                    <span>Launch Admin Command</span>
-                    <span className="material-symbols-outlined">terminal</span>
-                  </button>
+                    <option value="KINETIC">FACTION // KINETIC (PRIMARY)</option>
+                    <option value="VORTEX">FACTION // VORTEX (DEFENSIVE)</option>
+                    <option value="CYBER">FACTION // CYBER SPECTRE (TACTICAL)</option>
+                    <option value="NEO">FACTION // NEO PULSE (AGGRESSIVE)</option>
+                  </select>
                 </div>
-              </div>
-            )}
-          </section>
 
-          {/* Tactical Telemetry & Session Dossier Sidebar */}
-          <aside className="lg:col-span-5 flex flex-col gap-6">
-            {/* Active Match Status Card */}
-            <div className="bg-surface-dark text-on-primary p-6 sm:p-7 flex flex-col gap-6 relative">
-              <div className="flex items-center justify-between border-b border-hairline-dark pb-4">
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 bg-acid-chartreuse text-canvas-dark font-label-mono-sm text-label-mono-sm uppercase font-bold">LOBBY 01</span>
-                  <span className="font-label-mono-sm text-label-mono-sm text-primary-fixed uppercase tracking-wider">LIVE BRACKET FEED</span>
-                </div>
-                <span className="font-label-mono-sm text-label-mono-sm text-signal-emerald font-bold uppercase">ROUND 3/5</span>
-              </div>
-
-              {/* Mini Vector Visualizer */}
-              <div className="bg-surface-dark/60 p-4 border border-hairline-dark flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-label-mono-sm text-label-mono-sm text-outline uppercase">BUZZER FREQUENCY SYNCHRONIZATION</span>
-                  <span className="font-label-mono-sm text-label-mono-sm text-acid-chartreuse">99.8%</span>
-                </div>
-                <svg className="w-full h-12" fill="none" preserveAspectRatio="none" viewBox="0 0 300 40">
-                  <path d="M0 20 L25 20 L35 5 L45 35 L55 20 L90 20 L100 8 L110 32 L120 20 L170 20 L180 2 L190 38 L200 20 L240 20 L250 12 L260 28 L270 20 L300 20" fill="none" stroke="#CCFF00" strokeLinejoin="round" strokeWidth="2" />
-                  <line stroke="#222222" strokeDasharray="4 4" strokeWidth="1" x1="0" x2="300" y1="20" y2="20" />
-                </svg>
-                <div className="grid grid-cols-3 gap-2 pt-1 font-label-mono-sm text-label-mono-sm text-primary-fixed-dim">
-                  <div>LATENCY: <span className="text-on-primary">1.2MS</span></div>
-                  <div>JITTER: <span className="text-on-primary">0.03MS</span></div>
-                  <div>DROP: <span className="text-signal-emerald">0.00%</span></div>
+                <div className="flex flex-col gap-2">
+                  <label className="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
+                    ARENA SESSION PIN
+                  </label>
+                  <input
+                    type="text"
+                    value={arenaPin}
+                    onChange={(e) => setArenaPin(e.target.value)}
+                    placeholder="e.g. 794-20"
+                    className="w-full bg-surface-subtle text-primary font-label-mono-lg text-sm px-4 py-3 border border-hairline-light rounded-xl focus:outline-none focus:border-primary font-bold tracking-widest uppercase"
+                  />
                 </div>
               </div>
 
-              {/* Quick Telemetry HUD */}
-              <div className="flex flex-col gap-3">
-                <div className="flex justify-between items-center text-sm">
-                  <span className="font-label-mono-sm text-label-mono-sm text-primary-fixed-dim uppercase">SLOT ALLOCATION</span>
-                  <span className="font-label-mono-sm text-label-mono-sm text-on-primary">2 OF 2 SEATS READY</span>
-                </div>
-                {/* Segmented Progress Bar */}
-                <div className="grid grid-cols-10 gap-1.5 h-2 w-full">
-                  {[...Array(10)].map((_, i) => (
-                    <div key={i} className="bg-acid-chartreuse h-full"></div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between pt-2 border-t border-hairline-dark font-label-mono-sm text-label-mono-sm">
-                <span className="text-outline uppercase">NEXT ENGAGEMENT:</span>
-                <span className="text-acid-chartreuse tracking-widest font-bold">T-MINUS 00:01:42</span>
-              </div>
-            </div>
-
-            {/* Editorial Info Cell */}
-            <div className="bg-surface-subtle p-6 flex flex-col gap-3 border border-hairline-light">
-              <div className="flex items-center gap-2">
-                <span className="font-label-mono-sm text-label-mono-sm text-cobalt-deep uppercase font-bold">MATCH PROTOCOL BRIEF</span>
-                <span className="text-outline-variant">/</span>
-                <span className="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase">V3.4</span>
-              </div>
-              <p className="font-body-base text-body-base text-on-surface leading-relaxed">
-                Stage Clash executes zero-tolerance input arbitration. Buzzer inputs are lock-checked server side within a 10-microsecond rolling quantum window. Dual-player teams must confirm presence via tactile trigger within 30 seconds of match call.
-              </p>
-              <div className="flex items-center gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={handleEnterArena}
-                  className="inline-flex items-center gap-1.5 font-label-mono-sm text-label-mono-sm text-primary hover:text-cobalt-deep uppercase underline underline-offset-4 cursor-pointer"
-                >
-                  <span>Review Tournament Rules in Namma Area</span>
-                  <span className="material-symbols-outlined text-sm">open_in_new</span>
-                </button>
-              </div>
-            </div>
-          </aside>
-        </main>
-
-        {/* Visual Showcase Mosaic Section */}
-        <section className="flex flex-col gap-6 pt-6">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-3 border-b border-hairline-light">
-            <div className="flex flex-col gap-1">
-              <span className="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase">ACTIVE ARENAS &amp; BROADCAST HUBS</span>
-              <h2 className="font-headline-lg text-headline-lg uppercase text-primary font-bold">Live Tournament Pods</h2>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase">LIVE FEED RECORDERS: 03 ACTIVE</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-surface-container-lowest p-4 flex flex-col gap-3 group border border-hairline-light">
-              <div className="w-full aspect-[16/10] bg-surface-dark relative overflow-hidden">
-                <img
-                  className="w-full h-full object-cover grayscale contrast-125 group-hover:scale-105 transition-transform duration-300"
-                  alt="Esports Arena Stage"
-                  src="https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80"
-                />
-                <div className="absolute top-2 left-2 px-2 py-0.5 bg-canvas-dark text-on-primary font-label-mono-sm text-label-mono-sm uppercase">ARENA // A</div>
-                <div className="absolute bottom-2 right-2 px-2 py-0.5 bg-acid-chartreuse text-canvas-dark font-label-mono-sm text-label-mono-sm uppercase font-bold">BROADCAST 4K</div>
-              </div>
-              <div className="flex flex-col gap-1 pt-1">
-                <span className="font-label-mono-sm text-label-mono-sm text-cobalt-deep uppercase font-bold">POD A-10 • DUAL CONSOLE</span>
-                <h3 className="font-headline-md text-headline-md uppercase text-primary font-bold">Main Stage Center Ring</h3>
-                <p className="font-body-sm text-body-sm text-on-surface-variant">Primary competitive desk with dual hydraulic buzzers and physical response dampening.</p>
-              </div>
-            </div>
-
-            <div className="bg-surface-container-lowest p-4 flex flex-col gap-3 group border border-hairline-light">
-              <div className="w-full aspect-[16/10] bg-surface-dark relative overflow-hidden">
-                <img
-                  className="w-full h-full object-cover grayscale contrast-125 group-hover:scale-105 transition-transform duration-300"
-                  alt="Mechanical tactile buzzer controllers"
-                  src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=800&q=80"
-                />
-                <div className="absolute top-2 left-2 px-2 py-0.5 bg-canvas-dark text-on-primary font-label-mono-sm text-label-mono-sm uppercase">BUZZER // HARDWARE</div>
-                <div className="absolute bottom-2 right-2 px-2 py-0.5 bg-signal-emerald text-canvas-dark font-label-mono-sm text-label-mono-sm uppercase font-bold">TESTED 0.0MS</div>
-              </div>
-              <div className="flex flex-col gap-1 pt-1">
-                <span className="font-label-mono-sm text-label-mono-sm text-cobalt-deep uppercase font-bold">TELEMETRY RIG • V7</span>
-                <h3 className="font-headline-md text-headline-md uppercase text-primary font-bold">Precision Lockout Units</h3>
-                <p className="font-body-sm text-body-sm text-on-surface-variant">Optical debounce actuators wired directly to stage arbitration servers.</p>
-              </div>
-            </div>
-
-            <div className="bg-surface-container-lowest p-4 flex flex-col gap-3 group border border-hairline-light">
-              <div className="w-full aspect-[16/10] bg-surface-dark relative overflow-hidden">
-                <img
-                  className="w-full h-full object-cover grayscale contrast-125 group-hover:scale-105 transition-transform duration-300"
-                  alt="Arbitration control nerve center"
-                  src="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=800&q=80"
-                />
-                <div className="absolute top-2 left-2 px-2 py-0.5 bg-canvas-dark text-on-primary font-label-mono-sm text-label-mono-sm uppercase">ADMIN // CONTROL</div>
-                <div className="absolute bottom-2 right-2 px-2 py-0.5 bg-primary text-on-primary font-label-mono-sm text-label-mono-sm uppercase font-bold">GAME MASTER 01</div>
-              </div>
-              <div className="flex flex-col gap-1 pt-1">
-                <span className="font-label-mono-sm text-label-mono-sm text-cobalt-deep uppercase font-bold">CONTROL ROOM • RACK B</span>
-                <h3 className="font-headline-md text-headline-md uppercase text-primary font-bold">Arbitration Nerve Center</h3>
-                <p className="font-body-sm text-body-sm text-on-surface-variant">Real-time instant replay, override control switches, and tournament seed management.</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Persistent Live Status Ticker */}
-        <footer className="w-full mt-4 pt-4 border-t-2 border-primary">
-          <div className="bg-primary text-on-primary p-4 sm:p-5 flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-3 overflow-hidden">
-              <span className="inline-flex w-2.5 h-2.5 rounded-full bg-acid-chartreuse animate-pulse"></span>
-              <p className="font-label-mono-sm text-label-mono-sm uppercase tracking-wider text-acid-chartreuse">
-                MATCH STATUS: <span className="text-on-primary font-bold">LOBBY OPEN</span> • BUZZERS: <span className="text-on-primary font-bold">ARMED &amp; READY</span> • CONNECTED TEAMS: <span className="text-on-primary font-bold">4</span>
-              </p>
-            </div>
-            <div className="flex items-center gap-6 font-label-mono-sm text-label-mono-sm uppercase">
-              <span className="text-primary-fixed-dim">TOURNAMENT_ID: #CLASH-9042</span>
+              {/* Action Submit Button */}
               <button
                 type="button"
-                onClick={() => playTone(800, 0.1)}
-                className="text-acid-chartreuse cursor-pointer hover:underline uppercase bg-transparent border-none p-0 font-bold"
+                onClick={handleEnterArena}
+                className="w-full py-4 sm:py-5 bg-primary text-on-primary font-label-mono-lg text-base sm:text-lg uppercase tracking-wider font-extrabold shadow-[4px_4px_0px_#CCFF00] hover:bg-black active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center justify-center gap-3 cursor-pointer rounded-xl"
               >
-                HARDWARE_RE-SYNC [F9]
+                <span>ENTER NAMMA AREA WITH SQUAD</span>
+                <span className="material-symbols-outlined text-2xl text-acid-chartreuse">arrow_forward</span>
               </button>
-              <span className="text-primary-fixed-dim">NODE: NY-02</span>
             </div>
-          </div>
-        </footer>
+          ) : (
+            /* GAME MASTER / ADMIN LOGIN FORM */
+            <div className="flex flex-col gap-6">
+              <div className="p-4 bg-sabotage-crimson/10 border border-sabotage-crimson/30 rounded-xl flex items-center gap-3">
+                <span className="material-symbols-outlined text-sabotage-crimson text-2xl font-bold">admin_panel_settings</span>
+                <span className="font-label-mono-sm text-xs text-primary font-bold uppercase">
+                  RESTRICTED TOURNAMENT MASTER NERVE CENTER • DUAL AUTHORIZATION REQUIRED
+                </span>
+              </div>
 
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-2">
+                  <label className="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
+                    GAME MASTER IDENTIFIER
+                  </label>
+                  <input
+                    type="text"
+                    value={gmId}
+                    onChange={(e) => setGmId(e.target.value)}
+                    className="w-full bg-surface-subtle text-primary font-body-base text-sm px-4 py-3 border border-hairline-light rounded-xl focus:outline-none focus:border-primary font-bold"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label className="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
+                    SESSION TOKEN
+                  </label>
+                  <input
+                    type="text"
+                    value={sessionToken}
+                    onChange={(e) => setSessionToken(e.target.value)}
+                    className="w-full bg-surface-subtle text-primary font-body-base text-sm px-4 py-3 border border-hairline-light rounded-xl focus:outline-none focus:border-primary font-bold"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
+                  MASTER SECURITY OVERRIDE KEY
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="password"
+                    value={masterKey}
+                    onChange={(e) => setMasterKey(e.target.value)}
+                    className="flex-1 bg-surface-subtle text-primary font-label-mono-lg text-sm px-4 py-3 border border-hairline-light rounded-xl focus:outline-none focus:border-primary font-bold tracking-widest"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleVerifyKey}
+                    className="px-5 py-3 bg-surface-container hover:bg-surface-container-high text-primary font-label-mono-sm text-xs font-bold uppercase rounded-xl border border-hairline-light cursor-pointer"
+                  >
+                    {keyVerified ? 'KEY VERIFIED ✓' : 'VERIFY KEY'}
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleLaunchAdmin}
+                className="w-full py-4 sm:py-5 bg-sabotage-crimson text-on-primary font-label-mono-lg text-base sm:text-lg uppercase tracking-wider font-extrabold shadow-[4px_4px_0px_#000] hover:bg-black active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center justify-center gap-3 cursor-pointer rounded-xl mt-2"
+              >
+                <span>LAUNCH ADMIN COMMAND CONSOLE</span>
+                <span className="material-symbols-outlined text-2xl">tune</span>
+              </button>
+            </div>
+          )}
+
+        </div>
       </div>
+
     </div>
   );
 }

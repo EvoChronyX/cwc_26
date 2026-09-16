@@ -129,62 +129,40 @@ export default function AdminConsole() {
         </nav>
 
         {/* Bottom Telemetry Latency Card */}
-        <div className="px-space-md pt-space-md mt-auto">
+        <div className="px-space-md pt-space-md mt-auto flex flex-col gap-3">
           <div className="bg-surface-subtle p-space-sm rounded-lg flex flex-col gap-space-2xs border border-hairline-light">
             <span className="font-label-mono-sm text-label-mono-sm uppercase text-on-surface-variant">TELEMETRY LATENCY</span>
             <span className="font-label-mono-lg text-label-mono-lg text-primary font-bold">14ms // STABLE</span>
           </div>
+
+          {/* Quick Page View Switcher in Sidebar */}
+          <div className="pt-2 border-t border-hairline-light flex flex-col gap-1">
+            <span className="font-label-mono-sm text-[10px] uppercase text-on-surface-variant tracking-wider">NAVIGATION</span>
+            <button
+              type="button"
+              onClick={() => setCurrentView('arena')}
+              className="flex items-center gap-2 text-xs font-label-mono-sm text-on-surface-variant hover:text-primary py-1.5 px-2 rounded hover:bg-surface-subtle text-left cursor-pointer transition-colors"
+            >
+              <span className="material-symbols-outlined text-[16px]">swords</span>
+              Namma Area
+            </button>
+            <button
+              type="button"
+              onClick={() => setCurrentView('portal')}
+              className="flex items-center gap-2 text-xs font-label-mono-sm text-on-surface-variant hover:text-primary py-1.5 px-2 rounded hover:bg-surface-subtle text-left cursor-pointer transition-colors"
+            >
+              <span className="material-symbols-outlined text-[16px]">vpn_key</span>
+              Portal Access / Login
+            </button>
+          </div>
         </div>
       </aside>
 
-      {/* Main Content Area */}
+      {/* Main Content Area (No horizontal navbar above) */}
       <div className="pl-64 w-full min-h-screen">
         
-        {/* Top Header */}
-        <header className="fixed top-0 left-64 right-0 h-16 bg-surface/90 backdrop-blur-md z-40 flex items-center justify-between px-4 sm:px-8 border-b border-hairline-light">
-          <div className="flex items-center gap-space-md">
-            <ClashLogo className="h-7 sm:h-8 w-auto" />
-            <span className="font-headline-md text-headline-md tracking-tight font-bold text-primary hidden sm:inline-block">
-              CLASH // CONTROL
-            </span>
-            <div className="flex items-center gap-space-xs bg-surface-subtle px-space-sm py-space-2xs rounded-full">
-              <span className="w-2 h-2 rounded-full bg-signal-emerald animate-pulse"></span>
-              <span className="font-label-mono-sm text-label-mono-sm text-primary uppercase">LIVE STATUS: ONLINE</span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-space-md">
-            <nav className="hidden lg:flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setCurrentView('arena')}
-                className="font-body-base text-sm text-on-surface-variant hover:text-on-surface transition-colors px-3 py-1 cursor-pointer"
-              >
-                Namma Area
-              </button>
-              <button
-                type="button"
-                onClick={() => setCurrentView('admin')}
-                className="transition-colors text-primary font-semibold bg-surface-subtle px-space-sm py-space-xs rounded-full text-sm cursor-pointer"
-              >
-                Admin Console
-              </button>
-              <button
-                type="button"
-                onClick={() => setCurrentView('portal')}
-                className="font-body-base text-sm text-on-surface-variant hover:text-on-surface transition-colors px-3 py-1 cursor-pointer"
-              >
-                Portal Access / Login
-              </button>
-            </nav>
-            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-[1px_1px_0px_#CCFF00]">
-              <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
-            </div>
-          </div>
-        </header>
-
         {/* Workspaces for the 3 Subtabs */}
-        <main className="w-full pt-20 p-4 sm:p-6 md:p-10 flex flex-col gap-8 max-w-7xl mx-auto">
+        <main className="w-full pt-6 p-4 sm:p-6 md:p-10 flex flex-col gap-8 max-w-7xl mx-auto">
           
           {/* ========================================================================= */}
           {/* TAB 1: THALAIVAR PAGE (Console Overview with Buzzer Queue & Neutralizer) */}

@@ -189,57 +189,33 @@
         <span class="font-label-mono-sm text-label-mono-sm uppercase text-on-surface-variant">TELEMETRY LATENCY</span>
         <span class="font-label-mono-lg text-label-mono-lg text-primary font-bold">14ms // STABLE</span>
       </div>
+
+      <!-- Quick Switcher in Sidebar -->
+      <div class="pt-2 border-t border-hairline-light flex flex-col gap-1">
+        <span class="font-label-mono-sm text-[10px] uppercase text-on-surface-variant tracking-wider">NAVIGATION</span>
+        <a
+          href="../player_arena_live_buzzer/code.html"
+          class="flex items-center gap-2 text-xs font-label-mono-sm text-on-surface-variant hover:text-primary py-1.5 px-2 rounded hover:bg-surface-subtle transition-colors"
+        >
+          <span class="material-symbols-outlined text-[16px]">swords</span>
+          Namma Area
+        </a>
+        <a
+          href="../event_login_authentication/code.html"
+          class="flex items-center gap-2 text-xs font-label-mono-sm text-on-surface-variant hover:text-primary py-1.5 px-2 rounded hover:bg-surface-subtle transition-colors"
+        >
+          <span class="material-symbols-outlined text-[16px]">vpn_key</span>
+          Portal Access / Login
+        </a>
+      </div>
     </div>
   </aside>
 
-  <!-- MAIN CONTENT AREA -->
+  <!-- MAIN CONTENT AREA (No horizontal navbar above) -->
   <div class="pl-64 w-full min-h-screen">
     
-    <!-- Top Header -->
-    <header class="fixed top-0 left-64 right-0 h-16 bg-surface/90 backdrop-blur-md z-40 flex items-center justify-between px-8 border-b border-hairline-light">
-      <div class="flex items-center gap-space-md">
-        <div class="flex items-center gap-2">
-          <span class="font-headline-md text-headline-md tracking-tight font-bold text-primary">CLASH</span>
-          <span class="font-label-mono-sm text-label-mono-sm uppercase text-on-surface-variant">v2.4</span>
-        </div>
-        <span class="font-headline-md text-headline-md tracking-tight font-bold text-primary hidden sm:inline-block">
-          CLASH // CONTROL
-        </span>
-        <div class="flex items-center gap-space-xs bg-surface-subtle px-space-sm py-space-2xs rounded-full">
-          <span class="w-2 h-2 rounded-full bg-signal-emerald animate-pulse"></span>
-          <span class="font-label-mono-sm text-label-mono-sm text-primary uppercase">LIVE STATUS: ONLINE</span>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-space-md">
-        <nav class="hidden md:flex items-center gap-2">
-          <a
-            href="../player_arena_live_buzzer/code.html"
-            class="font-body-base text-sm text-on-surface-variant hover:text-on-surface transition-colors px-3 py-1 cursor-pointer"
-          >
-            Namma Area
-          </a>
-          <a
-            href="#"
-            class="transition-colors text-primary font-semibold bg-surface-subtle px-space-sm py-space-xs rounded-full text-sm cursor-pointer"
-          >
-            Admin Console
-          </a>
-          <a
-            href="../event_login_authentication/code.html"
-            class="font-body-base text-sm text-on-surface-variant hover:text-on-surface transition-colors px-3 py-1 cursor-pointer"
-          >
-            Portal Access / Login
-          </a>
-        </nav>
-        <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-[1px_1px_0px_#CCFF00]">
-          <span class="material-symbols-outlined text-on-primary text-[18px]">person</span>
-        </div>
-      </div>
-    </header>
-
     <!-- MAIN BODY -->
-    <main class="w-full pt-20 p-6 md:p-10 flex flex-col gap-8 max-w-7xl mx-auto">
+    <main class="w-full pt-6 p-6 md:p-10 flex flex-col gap-8 max-w-7xl mx-auto">
       
       <!-- ========================================================================= -->
       <!-- TAB 1: THALAIVAR PAGE (Console Overview)                                  -->
