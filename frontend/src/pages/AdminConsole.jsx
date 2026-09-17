@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import ClashLogo from '../components/common/ClashLogo';
 import { useGame } from '../context/GameContext';
+import { api } from '../services/api';
 
 export default function AdminConsole() {
   const {
@@ -21,7 +22,8 @@ export default function AdminConsole() {
     awardFastestAnswer,
     removeSabotageFromTeam,
     clearLogs,
-    playTone
+    playTone,
+    logout
   } = useGame();
 
   // Sabotage Neutralizer States in Thalaivar Page
@@ -134,6 +136,18 @@ export default function AdminConsole() {
             <span className="font-label-mono-sm text-label-mono-sm uppercase text-on-surface-variant">TELEMETRY LATENCY</span>
             <span className="font-label-mono-lg text-label-mono-lg text-primary font-bold">14ms // STABLE</span>
           </div>
+        </div>
+
+        {/* Bottom Sidebar Action: Logout Admin */}
+        <div className="p-space-sm border-t border-hairline-light mt-2">
+          <button
+            type="button"
+            onClick={logout}
+            className="flex items-center gap-2 px-space-sm py-2.5 w-full rounded-lg text-left cursor-pointer font-label-mono-sm text-xs uppercase tracking-wider text-sabotage-crimson hover:bg-sabotage-crimson/10 font-bold transition-all border border-sabotage-crimson/30"
+          >
+            <span className="material-symbols-outlined text-lg">logout</span>
+            <span>LOGOUT / EXIT</span>
+          </button>
         </div>
       </aside>
 
@@ -613,7 +627,10 @@ export default function AdminConsole() {
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
-                    onClick={() => playTone(950, 0.1)}
+                    onClick={() => {
+                      playTone(950, 0.1);
+                      window.open(api.audit.getExportUrl(), '_blank');
+                    }}
                     className="px-4 py-2 bg-surface-subtle hover:bg-surface-container-high text-primary font-label-mono-sm text-label-mono-sm uppercase rounded flex items-center gap-1.5 cursor-pointer border border-hairline-light"
                   >
                     <span className="material-symbols-outlined text-sm">download</span> Export CSV

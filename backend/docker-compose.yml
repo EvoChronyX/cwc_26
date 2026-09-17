@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: cwc_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-cwc_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cwc_password}
+      POSTGRES_DB: ${POSTGRES_DB:-cwc_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cwc_user} -d ${POSTGRES_DB:-cwc_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cwc_backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-cwc_user}:${POSTGRES_PASSWORD:-cwc_password}@postgres:5432/${POSTGRES_DB:-cwc_db}
+      DATABASE_URL_SYNC: postgresql://${POSTGRES_USER:-cwc_user}:${POSTGRES_PASSWORD:-cwc_password}@postgres:5432/${POSTGRES_DB:-cwc_db}
+      SECRET_KEY: ${SECRET_KEY:-cwc_tournament_secret_key_change_in_production_2026}
+      ENVIRONMENT: production
+    ports:
+      - "8000:8000"
+    command: >
+      sh -c "alembic upgrade head && python -m app.seed && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+
+volumes:
+  postgres_data:

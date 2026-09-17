@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import confetti from 'canvas-confetti';
+import { api, WS_URL, getAuthToken, setAuthToken, clearAuthToken, getStoredUser, setStoredUser } from '../services/api';
 
 const GameContext = createContext();
 
@@ -9,7 +10,7 @@ export function GameProvider({ children }) {
       const hash = window.location.hash.replace('#', '');
       if (['portal', 'arena', 'admin'].includes(hash)) return hash;
     }
-    return 'arena'; // Default directly to Namma Area so user immediately sees Namma Area
+    return 'portal'; // Default directly to portal login access page
   };
 
   const [currentView, setCurrentViewState] = useState(getInitialView);
@@ -34,86 +35,21 @@ export function GameProvider({ children }) {
   const [adminSubTab, setAdminSubTab] = useState('thalaivar'); // 'thalaivar' | 'total-comalies' | 'kanaku-valaku'
   const [nammaAreaSubTab, setNammaAreaSubTab] = useState('kootani'); // 'kootani' | 'mani-adi' | 'power-up-pothys'
 
-  // Team Registration Details
-  const [teamName, setTeamName] = useState('TEAM KINETIC');
-  const [p1Handle, setP1Handle] = useState('VALKYRIE_01');
-  const [p2Handle, setP2Handle] = useState('NEXUS_CORE');
-  const [playerAvatar, setPlayerAvatar] = useState('avatar-1');
+  // User & Squad Identity State
+  const initialUser = getStoredUser();
+  const [currentUser, setCurrentUser] = useState(initialUser);
+  const [currentTeamId, setCurrentTeamId] = useState(initialUser?.team_data?.id || initialUser?.team_id || null);
+
+  const [teamName, setTeamName] = useState(initialUser?.team_data?.teamName || initialUser?.display_name || '');
+  const [p1Handle, setP1Handle] = useState(initialUser?.team_data?.p1 || '');
+  const [p2Handle, setP2Handle] = useState(initialUser?.team_data?.p2 || '');
+  const [playerAvatar, setPlayerAvatar] = useState(initialUser?.team_data?.avatarId || 'avatar-1');
   const [playerPassword, setPlayerPassword] = useState('');
   const [activeFaction, setActiveFaction] = useState('KINETIC');
   const [arenaPin, setArenaPin] = useState('794-20');
 
-  // Connected Teams Roster (Each team consists of 2 players)
-  const [teams, setTeams] = useState([
-    {
-      id: 1,
-      teamName: 'TEAM KINETIC',
-      p1: 'Alex Vance',
-      p2: 'Sarah Connor',
-      handle: 'AGENT ZERO // VALKYRIE_01',
-      tag: 'YOUR TEAM',
-      lane: 'Lane #01',
-      score: 1450,
-      r1: 450,
-      r2: 600,
-      r3Live: 400,
-      winRate: '78%',
-      streak: 4,
-      status: 'CONNECTED',
-      activeSabotages: []
-    },
-    {
-      id: 2,
-      teamName: 'TEAM VORTEX',
-      p1: 'Elena Rostova',
-      p2: 'Dmitri Volkov',
-      handle: 'VORTEX-9 // NEXUS_CORE',
-      tag: 'OPPONENT',
-      lane: 'Lane #02',
-      score: 1200,
-      r1: 500,
-      r2: 450,
-      r3Live: 250,
-      winRate: '54%',
-      streak: 1,
-      status: 'CONNECTED',
-      activeSabotages: ['Sound Distortion']
-    },
-    {
-      id: 3,
-      teamName: 'TEAM NULL POINTER',
-      p1: 'Marcus Thorne',
-      p2: 'Aria Stark',
-      handle: 'NULL_POINTER // BER_07',
-      tag: 'BENCH',
-      lane: 'Lane #03',
-      score: 950,
-      r1: 400,
-      r2: 350,
-      r3Live: 200,
-      winRate: '42%',
-      streak: 0,
-      status: 'CONNECTED',
-      activeSabotages: []
-    },
-    {
-      id: 4,
-      teamName: 'TEAM CYBER SPECTRE',
-      p1: 'Kenji Sato',
-      p2: 'Maya Lin',
-      handle: 'CYBER_SPECTRE // NYC_09',
-      tag: 'STANDBY',
-      lane: 'Lane #04',
-      score: 750,
-      r1: 300,
-      r2: 300,
-      r3Live: 150,
-      winRate: '36%',
-      streak: 0,
-      status: 'CONNECTED',
-      activeSabotages: []
-    }
-  ]);
+  // Connected Teams Roster (Synchronized with PostgreSQL DB)
+  const [teams, setTeams] = useState([]);
 
   // Buzzer & Lock-in State with sequential queue
   const [buzzersArmed, setBuzzersArmed] = useState(true);
@@ -123,20 +59,13 @@ export function GameProvider({ children }) {
   const [buzzerPressResult, setBuzzerPressResult] = useState({
     pressed: false,
     rank: 1,
-    time: '14:02:44.819',
-    latency: '0.142s',
-    title: 'CONGRATS! YOU PRESSED 1ST!',
-    subtitle: 'GOLD RESPONSE PRIORITY SECURED // QUEUE #01'
+    time: '--:--:--',
+    latency: '0.000s',
+    title: 'BUZZER STANDBY',
+    subtitle: 'AWAITING MASTER CIRCUIT ARBITRAGE'
   });
 
-  const initialQueue = [
-    { id: 1, teamId: 1, teamName: 'TEAM KINETIC', name: 'Alex Vance & Sarah Connor', handle: 'VALKYRIE_01', latency: '0.142s', timestamp: '14:02:44.819', rank: 1 },
-    { id: 2, teamId: 2, teamName: 'TEAM VORTEX', name: 'Elena Rostova & Dmitri Volkov', handle: 'NEXUS_CORE', latency: '0.198s', timestamp: '14:02:44.875', rank: 2 },
-    { id: 3, teamId: 3, teamName: 'TEAM NULL POINTER', name: 'Marcus Thorne & Aria Stark', handle: 'NULL_POINTER', latency: '0.245s', timestamp: '14:02:44.922', rank: 3 },
-    { id: 4, teamId: 4, teamName: 'TEAM CYBER SPECTRE', name: 'Kenji Sato & Maya Lin', handle: 'CYBER_SPECTRE', latency: '0.312s', timestamp: '14:02:44.989', rank: 4 }
-  ];
-
-  const [buzzerQueue, setBuzzerQueue] = useState(initialQueue);
+  const [buzzerQueue, setBuzzerQueue] = useState([]);
   const [queueIndex, setQueueIndex] = useState(0);
 
   // Active Threat / Sabotage for live arena
@@ -149,39 +78,11 @@ export function GameProvider({ children }) {
   });
 
   // Kanaku Valaku (Audit Log)
-  const [auditLogs, setAuditLogs] = useState([
-    {
-      id: 1,
-      time: '14:02:44',
-      category: 'LOCK EVENT',
-      message: 'Buzzer resolved to TEAM KINETIC (Alex Vance & Sarah Connor) in 0.142s.',
-      colorClass: 'text-signal-emerald font-bold'
-    },
-    {
-      id: 2,
-      time: '14:02:18',
-      category: 'SCORE',
-      message: 'Admin adjusted TEAM KINETIC points (+100).',
-      colorClass: 'text-primary'
-    },
-    {
-      id: 3,
-      time: '14:01:50',
-      category: 'SABOTAGE',
-      message: 'Sound Distortion active on TEAM VORTEX terminal.',
-      colorClass: 'text-sabotage-crimson font-bold'
-    },
-    {
-      id: 4,
-      time: '14:00:12',
-      category: 'SYS',
-      message: 'Round 04 initialized. Target question set: Tech Architecture.',
-      colorClass: 'text-on-surface-variant'
-    }
-  ]);
+  const [auditLogs, setAuditLogs] = useState([]);
 
   const threatTimerRef = useRef(null);
   const resetTimeoutRef = useRef(null);
+  const wsRef = useRef(null);
 
   const getFormattedTime = () => {
     const d = new Date();
@@ -210,7 +111,256 @@ export function GameProvider({ children }) {
     }
   };
 
-  // Append entry to Kanaku Valaku
+  // Fetch baseline state from PostgreSQL database
+  const refreshDatabaseState = useCallback(async () => {
+    try {
+      const [fetchedTeams, queueData, logsData] = await Promise.all([
+        api.teams.getAll().catch(() => []),
+        api.buzzer.getQueue().catch(() => ({ queue: [], queueIndex: 0, buzzersArmed: true })),
+        api.audit.getLogs('ALL', 50).catch(() => [])
+      ]);
+
+      if (Array.isArray(fetchedTeams) && fetchedTeams.length > 0) {
+        setTeams(fetchedTeams);
+      }
+
+      if (queueData) {
+        setBuzzerQueue(queueData.queue || []);
+        setQueueIndex(queueData.queueIndex || 0);
+        if (typeof queueData.buzzersArmed === 'boolean') {
+          setBuzzersArmed(queueData.buzzersArmed);
+        }
+      }
+
+      if (Array.isArray(logsData)) {
+        setAuditLogs(logsData);
+      }
+    } catch (err) {
+      console.warn('Error refreshing database state:', err);
+    }
+  }, []);
+
+  // Connect WebSocket for live tournament telemetry
+  useEffect(() => {
+    const token = getAuthToken();
+    const wsUrl = token ? `${WS_URL}?token=${encodeURIComponent(token)}` : WS_URL;
+
+    let socket;
+    try {
+      socket = new WebSocket(wsUrl);
+      wsRef.current = socket;
+
+      socket.onopen = () => {
+        // Connected
+      };
+
+      socket.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          handleWebSocketMessage(data);
+        } catch (e) {
+          console.warn('WS parse error:', e);
+        }
+      };
+
+      socket.onerror = (e) => {
+        console.warn('WS socket error:', e);
+      };
+
+      socket.onclose = () => {
+        // Socket closed
+      };
+    } catch (e) {
+      console.warn('WebSocket connection error:', e);
+    }
+
+    return () => {
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.close();
+      }
+    };
+  }, [currentUser]);
+
+  // Initial database hydration
+  useEffect(() => {
+    refreshDatabaseState();
+  }, [refreshDatabaseState]);
+
+  // Handle incoming real-time messages from FastAPI WebSocket
+  const handleWebSocketMessage = (data) => {
+    if (!data || !data.type) return;
+
+    switch (data.type) {
+      case 'INIT_STATE':
+        if (data.teams) setTeams(data.teams);
+        if (data.queueState) {
+          setBuzzerQueue(data.queueState.queue || []);
+          setQueueIndex(data.queueState.queueIndex || 0);
+          if (typeof data.queueState.buzzersArmed === 'boolean') {
+            setBuzzersArmed(data.queueState.buzzersArmed);
+          }
+        }
+        if (data.recentLogs) setAuditLogs(data.recentLogs);
+        break;
+
+      case 'SCORE_UPDATED':
+        setTeams((prev) =>
+          prev.map((t) => (t.id === data.team_id ? { ...t, score: data.score } : t))
+        );
+        break;
+
+      case 'LEADERBOARD_UPDATED':
+      case 'SCORE_RESET':
+        if (Array.isArray(data.teams)) {
+          setTeams(data.teams);
+        }
+        break;
+
+      case 'BUZZER_STRIKE':
+        if (data.queueState) {
+          setBuzzerQueue(data.queueState.queue || []);
+          setQueueIndex(data.queueState.queueIndex || 0);
+        }
+        if (data.strike) {
+          playTone(850, 0.15);
+          // If this strike belongs to current team
+          if (currentTeamId && data.strike.teamId === currentTeamId) {
+            setIsLockedIn(true);
+            setBuzzerPressResult({
+              pressed: true,
+              rank: data.strike.rank,
+              time: data.strike.timestamp,
+              latency: data.strike.latency,
+              title: data.strike.rank === 1 ? '🎉 CONGRATS! YOU PRESSED 1ST!' : `BUZZER CONFIRMED: #${data.strike.rank}`,
+              subtitle: `RESPONSE PRIORITY SECURED // QUEUE #${data.strike.rank}`
+            });
+            try {
+              confetti({
+                particleCount: 50,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#CCFF00', '#00FF85', '#4B00E0']
+              });
+            } catch (e) {}
+          }
+        }
+        break;
+
+      case 'BUZZERS_ARMED':
+        setBuzzersArmed(true);
+        playTone(600, 0.1);
+        break;
+
+      case 'BUZZERS_LOCKED':
+        setBuzzersArmed(false);
+        playTone(300, 0.15, 'square');
+        break;
+
+      case 'BUZZER_RESET':
+        setIsLockedIn(false);
+        setQueueIndex(0);
+        setBuzzerPressResult((prev) => ({ ...prev, pressed: false }));
+        if (data.queueState) {
+          setBuzzerQueue(data.queueState.queue || []);
+        } else {
+          setBuzzerQueue([]);
+        }
+        playTone(700, 0.1);
+        break;
+
+      case 'QUEUE_ADVANCED':
+        setQueueIndex(data.queueIndex || 0);
+        playTone(780, 0.15);
+        break;
+
+      case 'SABOTAGE_DEPLOYED':
+        // Update teams active sabotages
+        setTeams((prev) =>
+          prev.map((t) => {
+            if (t.id === data.targetId) {
+              const cur = t.activeSabotages || [];
+              return {
+                ...t,
+                activeSabotages: cur.includes(data.sabotageName) ? cur : [...cur, data.sabotageName]
+              };
+            }
+            return t;
+          })
+        );
+        // If current team is target or attacker, update activeThreat HUD
+        if (currentTeamId && (data.targetId === currentTeamId || data.attackerId === currentTeamId)) {
+          setActiveThreat({
+            name: `${(data.sabotageName || 'TACTICAL DISRUPTION').toUpperCase()} [ACTIVE]`,
+            isActive: true,
+            timeLeft: data.duration || 15,
+            target: data.targetTeamName || `Team #${data.targetId}`,
+            sub: `Disruption payload active against ${data.targetTeamName || 'target'}.`
+          });
+          playTone(420, 0.3, 'sawtooth');
+
+          if (threatTimerRef.current) clearInterval(threatTimerRef.current);
+          let left = data.duration || 15;
+          threatTimerRef.current = setInterval(() => {
+            left -= 1;
+            if (left <= 0) {
+              clearInterval(threatTimerRef.current);
+              setActiveThreat({
+                name: 'NONE ACTIVE',
+                isActive: false,
+                timeLeft: 0,
+                target: '',
+                sub: 'Shields nominal. No hostile modifiers.'
+              });
+            } else {
+              setActiveThreat((prev) => ({ ...prev, timeLeft: left }));
+            }
+          }, 1000);
+        }
+        break;
+
+      case 'SABOTAGE_NEUTRALIZED':
+        setTeams((prev) =>
+          prev.map((t) => {
+            if (t.id === data.targetTeamId) {
+              return {
+                ...t,
+                activeSabotages: Array.isArray(data.activeSabotages)
+                  ? data.activeSabotages
+                  : (t.activeSabotages || []).filter((s) => s !== data.sabotageName)
+              };
+            }
+            return t;
+          })
+        );
+        if (currentTeamId && data.targetTeamId === currentTeamId) {
+          setActiveThreat({
+            name: 'NONE ACTIVE',
+            isActive: false,
+            timeLeft: 0,
+            target: '',
+            sub: 'Shields nominal. Hostile modifier neutralized by Admin.'
+          });
+          if (threatTimerRef.current) clearInterval(threatTimerRef.current);
+        }
+        playTone(1050, 0.25, 'triangle');
+        break;
+
+      case 'AUDIT_EVENT':
+        if (data.event) {
+          setAuditLogs((prev) => [data.event, ...prev]);
+        }
+        break;
+
+      case 'AUDIT_CLEARED':
+        setAuditLogs([]);
+        break;
+
+      default:
+        break;
+    }
+  };
+
+  // Append entry to Kanaku Valaku locally (used as instant optimistic feed)
   const appendLog = (category, message, colorClass = 'text-primary') => {
     setAuditLogs((prev) => [
       {
@@ -224,18 +374,80 @@ export function GameProvider({ children }) {
     ]);
   };
 
-  // Adjust score of any team by ID
-  const adjustTeamScore = (teamId, delta) => {
-    setTeams((prev) =>
-      prev.map((t) => {
-        if (t.id === teamId) {
-          const nextScore = t.score + delta;
-          appendLog('SCORE', `Adjusted score for ${t.teamName} (${delta > 0 ? '+' : ''}${delta} pts). New total: ${nextScore}.`);
-          return { ...t, score: nextScore };
-        }
-        return t;
-      })
+  // AUTHENTICATION: Player Register or Returning Squad Login
+  const loginPlayer = async (rawTeamName, rawP1, rawP2, avatarId, password) => {
+    const res = await api.auth.playerRegisterOrLogin(
+      rawTeamName,
+      rawP1,
+      rawP2,
+      avatarId,
+      password
     );
+
+    setAuthToken(res.access_token);
+    setStoredUser(res);
+    setCurrentUser(res);
+
+    if (res.team_data) {
+      setCurrentTeamId(res.team_data.id);
+      setTeamName(res.team_data.teamName);
+      setP1Handle(res.team_data.p1);
+      setP2Handle(res.team_data.p2);
+      setPlayerAvatar(res.team_data.avatarId || avatarId || 'avatar-1');
+    } else {
+      setCurrentTeamId(res.entity_id);
+      setTeamName(res.display_name);
+    }
+
+    await refreshDatabaseState();
+    return res;
+  };
+
+  // AUTHENTICATION: Game Master Admin Login
+  const loginAdmin = async (gmId, password) => {
+    const res = await api.auth.adminLogin(gmId, password);
+    setAuthToken(res.access_token);
+    setStoredUser(res);
+    setCurrentUser(res);
+
+    await refreshDatabaseState();
+    return res;
+  };
+
+  // LOGOUT: Clears tokens and redirects back to portal
+  const logout = () => {
+    clearAuthToken();
+    setCurrentUser(null);
+    setCurrentTeamId(null);
+    setPlayerPassword('');
+    setIsLockedIn(false);
+    playTone(500, 0.15, 'sawtooth');
+    setCurrentView('portal');
+  };
+
+  // Adjust score of any team by ID (Calls FastAPI backend)
+  const adjustTeamScore = async (teamId, delta) => {
+    try {
+      const res = await api.scores.adjust(teamId, delta, `Admin score adjust (${delta > 0 ? '+' : ''}${delta} pts)`);
+      if (res && res.score !== undefined) {
+        setTeams((prev) =>
+          prev.map((t) => (t.id === teamId ? { ...t, score: res.score } : t))
+        );
+      }
+    } catch (err) {
+      console.error('Failed to adjust score:', err);
+      // Fallback local mutation
+      setTeams((prev) =>
+        prev.map((t) => {
+          if (t.id === teamId) {
+            const nextScore = t.score + delta;
+            appendLog('SCORE', `Adjusted score for ${t.teamName} (${delta > 0 ? '+' : ''}${delta} pts). New total: ${nextScore}.`);
+            return { ...t, score: nextScore };
+          }
+          return t;
+        })
+      );
+    }
   };
 
   // Current active buzzer team from the queue
@@ -250,76 +462,71 @@ export function GameProvider({ children }) {
     rank: 0
   };
 
-  // Step to the next player in the buzzer queue
-  const advanceToNextPlayer = () => {
-    if (queueIndex < buzzerQueue.length - 1) {
-      const nextIndex = queueIndex + 1;
-      setQueueIndex(nextIndex);
-      const nextTeam = buzzerQueue[nextIndex];
+  // Step to the next player in the buzzer queue (Calls backend)
+  const advanceToNextPlayer = async () => {
+    try {
+      const res = await api.buzzer.advance();
+      if (res) {
+        setQueueIndex(res.queueIndex || 0);
+      }
       playTone(780, 0.15);
-      appendLog(
-        'QUEUE ADVANCE',
-        `Admin advanced to next pressed team: #${nextTeam.rank} ${nextTeam.teamName} (${nextTeam.latency} latency).`,
-        'text-acid-chartreuse font-bold'
-      );
-    } else {
-      playTone(300, 0.2, 'sawtooth');
-      appendLog('QUEUE', 'Buzzer queue reached the end. No more pressed contenders.', 'text-on-surface-variant');
+    } catch (err) {
+      console.warn('Buzzer advance API fallback:', err);
+      if (queueIndex < buzzerQueue.length - 1) {
+        setQueueIndex((prev) => prev + 1);
+        playTone(780, 0.15);
+      } else {
+        playTone(300, 0.2, 'sawtooth');
+      }
     }
   };
 
-  // Award floor points
-  const awardFastestAnswer = (teamIdOverride) => {
+  // Award floor points (Calls backend)
+  const awardFastestAnswer = async (teamIdOverride) => {
     const targetTeamId = teamIdOverride || currentBuzzerWinner.teamId || 1;
-    adjustTeamScore(targetTeamId, 50);
-    playTone(1100, 0.2);
-    appendLog(
-      'ARBITRAGE',
-      `Floor points (+50) awarded to ${currentBuzzerWinner.teamName || 'Team ' + targetTeamId}.`,
-      'text-signal-emerald font-bold'
-    );
+    try {
+      await api.scores.grantFloor(targetTeamId, 50);
+      playTone(1100, 0.2);
+    } catch (err) {
+      console.warn('Award floor API fallback:', err);
+      adjustTeamScore(targetTeamId, 50);
+      playTone(1100, 0.2);
+    }
   };
 
-  // Buzzer Trigger in Mani Adi
-  const executeBuzzIn = () => {
+  // Buzzer Trigger in Mani Adi (Calls backend /api/buzzer/buzz)
+  const executeBuzzIn = async () => {
     if (isLockedIn || !buzzersArmed) return;
 
     setIsLockedIn(true);
     playTone(950, 0.22, 'triangle');
 
     try {
-      confetti({
-        particleCount: 50,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#CCFF00', '#00FF85', '#4B00E0']
-      });
-    } catch (e) {}
+      const clientTime = Date.now() / 1000;
+      const res = await api.buzzer.buzz(clientTime);
 
-    const latencyNum = (0.12 + Math.random() * 0.08).toFixed(3);
-    const nowTime = getFormattedTime();
+      if (res && res.success) {
+        setBuzzerPressResult({
+          pressed: true,
+          rank: res.rank,
+          time: res.timestamp,
+          latency: res.latency,
+          title: res.rank === 1 ? '🎉 CONGRATS! YOU PRESSED 1ST!' : `BUZZER REGISTERED: #${res.rank}`,
+          subtitle: `RESPONSE PRIORITY SECURED // QUEUE #${res.rank}`
+        });
 
-    // Randomize or set rank 1 for user
-    const pressRank = 1;
-    setBuzzerPressResult({
-      pressed: true,
-      rank: pressRank,
-      time: nowTime,
-      latency: `${latencyNum}s`,
-      title: '🎉 CONGRATS! YOU PRESSED 1ST!',
-      subtitle: 'GOLD RESPONSE PRIORITY SECURED // POD CH-01'
-    });
-
-    const updatedQueue = [
-      { id: 1, teamId: 1, teamName: teamName || 'TEAM KINETIC', name: `${p1Handle} & ${p2Handle}`, handle: p1Handle, latency: `${latencyNum}s`, timestamp: nowTime, rank: 1 },
-      { id: 2, teamId: 2, teamName: 'TEAM VORTEX', name: 'Elena Rostova & Dmitri Volkov', handle: 'NEXUS_CORE', latency: '0.198s', timestamp: nowTime, rank: 2 },
-      { id: 3, teamId: 3, teamName: 'TEAM NULL POINTER', name: 'Marcus Thorne & Aria Stark', handle: 'NULL_POINTER', latency: '0.245s', timestamp: nowTime, rank: 3 },
-      { id: 4, teamId: 4, teamName: 'TEAM CYBER SPECTRE', name: 'Kenji Sato & Maya Lin', handle: 'CYBER_SPECTRE', latency: '0.312s', timestamp: nowTime, rank: 4 }
-    ];
-    setBuzzerQueue(updatedQueue);
-    setQueueIndex(0);
-
-    appendLog('LOCK EVENT', `Mani Adi triggered by ${teamName} in ${latencyNum}s! Position: #1.`, 'text-signal-emerald font-bold');
+        try {
+          confetti({
+            particleCount: 50,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#CCFF00', '#00FF85', '#4B00E0']
+          });
+        } catch (e) {}
+      }
+    } catch (err) {
+      console.warn('Buzzer API strike returned error or already locked:', err);
+    }
 
     if (resetTimeoutRef.current) clearTimeout(resetTimeoutRef.current);
     resetTimeoutRef.current = setTimeout(() => {
@@ -327,116 +534,90 @@ export function GameProvider({ children }) {
     }, 7000);
   };
 
-  const armBuzzers = () => {
-    setBuzzersArmed(true);
-    playTone(600, 0.1);
-    appendLog('BUZZERS', 'Master circuit ARMED by Game Master.', 'text-signal-emerald');
-  };
-
-  const lockBuzzers = () => {
-    setBuzzersArmed(false);
-    playTone(300, 0.15, 'square');
-    appendLog('BUZZERS', 'Master circuit LOCKED by Game Master.', 'text-sabotage-crimson font-bold');
-  };
-
-  const resetBuzzers = () => {
-    setIsLockedIn(false);
-    setQueueIndex(0);
-    setBuzzerPressResult((prev) => ({ ...prev, pressed: false }));
-    setBuzzerQueue(initialQueue);
-    playTone(700, 0.1);
-    appendLog('BUZZERS', 'Hardware buffers flushed & queue reset.', 'text-on-surface-variant');
-  };
-
-  // Deploy Sabotage to a target team
-  const deploySabotageToTeam = (sabotageName, duration, targetTeamId) => {
-    const target = teams.find((t) => t.id === targetTeamId);
-    const targetTeamName = target ? target.teamName : `Team ${targetTeamId}`;
-
-    setTeams((prev) =>
-      prev.map((t) => {
-        if (t.id === targetTeamId) {
-          const updatedSabotages = t.activeSabotages.includes(sabotageName)
-            ? t.activeSabotages
-            : [...t.activeSabotages, sabotageName];
-          return { ...t, activeSabotages: updatedSabotages };
-        }
-        return t;
-      })
-    );
-
-    setActiveThreat({
-      name: `${sabotageName.toUpperCase()} [ACTIVE]`,
-      isActive: true,
-      timeLeft: duration || 15,
-      target: targetTeamName,
-      sub: `Tactical disruption payload deployed against ${targetTeamName}.`
-    });
-
-    playTone(420, 0.3, 'sawtooth');
-    appendLog('SABOTAGE', `${sabotageName} deployed directly against ${targetTeamName}.`, 'text-sabotage-crimson font-bold');
-
-    if (threatTimerRef.current) clearInterval(threatTimerRef.current);
-    let left = duration || 15;
-    threatTimerRef.current = setInterval(() => {
-      left -= 1;
-      if (left <= 0) {
-        clearInterval(threatTimerRef.current);
-        setActiveThreat({
-          name: 'NONE ACTIVE',
-          isActive: false,
-          timeLeft: 0,
-          target: '',
-          sub: 'Shields nominal. No hostile modifiers.'
-        });
-        appendLog('SYS', `Disruption expired: ${sabotageName} on ${targetTeamName}.`, 'text-on-surface-variant');
-      } else {
-        setActiveThreat((prev) => ({ ...prev, timeLeft: left }));
-      }
-    }, 1000);
-  };
-
-  // Remove / Neutralize Sabotage from a team (Admin capability)
-  const removeSabotageFromTeam = (teamId, sabotageName) => {
-    const target = teams.find((t) => t.id === teamId);
-    const targetTeamName = target ? target.teamName : `Team ${teamId}`;
-
-    setTeams((prev) =>
-      prev.map((t) => {
-        if (t.id === teamId) {
-          return {
-            ...t,
-            activeSabotages: sabotageName
-              ? t.activeSabotages.filter((s) => s !== sabotageName)
-              : []
-          };
-        }
-        return t;
-      })
-    );
-
-    if (activeThreat.isActive) {
-      setActiveThreat({
-        name: 'NONE ACTIVE',
-        isActive: false,
-        timeLeft: 0,
-        target: '',
-        sub: 'Shields nominal. Hostile modifier neutralized by Admin.'
-      });
-      if (threatTimerRef.current) clearInterval(threatTimerRef.current);
+  const armBuzzers = async () => {
+    try {
+      await api.buzzer.arm();
+      setBuzzersArmed(true);
+      playTone(600, 0.1);
+    } catch (err) {
+      console.warn('Buzzer arm fallback:', err);
+      setBuzzersArmed(true);
+      playTone(600, 0.1);
     }
-
-    playTone(1050, 0.25, 'triangle');
-    appendLog(
-      'NEUTRALIZE',
-      `Admin OVERRIDE: Removed sabotage [${sabotageName || 'ALL DISRUPTIONS'}] from ${targetTeamName}.`,
-      'text-signal-emerald font-bold'
-    );
   };
 
-  const clearLogs = () => {
-    setAuditLogs([]);
-    appendLog('SYS', 'Audit buffer cleared.', 'text-on-surface-variant');
+  const lockBuzzers = async () => {
+    try {
+      await api.buzzer.lock();
+      setBuzzersArmed(false);
+      playTone(300, 0.15, 'square');
+    } catch (err) {
+      console.warn('Buzzer lock fallback:', err);
+      setBuzzersArmed(false);
+      playTone(300, 0.15, 'square');
+    }
+  };
+
+  const resetBuzzers = async () => {
+    try {
+      await api.buzzer.reset();
+      setIsLockedIn(false);
+      setQueueIndex(0);
+      setBuzzerPressResult((prev) => ({ ...prev, pressed: false }));
+      playTone(700, 0.1);
+    } catch (err) {
+      console.warn('Buzzer reset fallback:', err);
+      setIsLockedIn(false);
+      setQueueIndex(0);
+      setBuzzerPressResult((prev) => ({ ...prev, pressed: false }));
+      playTone(700, 0.1);
+    }
+  };
+
+  // Deploy Sabotage to a target team (Calls backend)
+  const deploySabotageToTeam = async (sabotageName, duration, targetTeamId) => {
+    const slug = sabotageName.toLowerCase().trim().replace(/\s+/g, '-');
+    try {
+      await api.sabotages.deploy(slug, targetTeamId);
+      playTone(420, 0.3, 'sawtooth');
+    } catch (err) {
+      console.error('Failed to deploy sabotage:', err);
+      alert(err.message || 'Failed to deploy sabotage');
+    }
+  };
+
+  // Remove / Neutralize Sabotage from a team (Calls backend)
+  const removeSabotageFromTeam = async (teamId, sabotageName) => {
+    try {
+      await api.sabotages.neutralize(teamId, sabotageName);
+      playTone(1050, 0.25, 'triangle');
+    } catch (err) {
+      console.error('Failed to neutralize sabotage:', err);
+      // Fallback local mutation
+      setTeams((prev) =>
+        prev.map((t) => {
+          if (t.id === teamId) {
+            return {
+              ...t,
+              activeSabotages: sabotageName
+                ? (t.activeSabotages || []).filter((s) => s !== sabotageName)
+                : []
+            };
+          }
+          return t;
+        })
+      );
+    }
+  };
+
+  const clearLogs = async () => {
+    try {
+      await api.audit.clear();
+      setAuditLogs([]);
+    } catch (err) {
+      console.warn('Clear logs fallback:', err);
+      setAuditLogs([]);
+    }
   };
 
   // Spacebar listener for Mani Adi
@@ -460,6 +641,8 @@ export function GameProvider({ children }) {
         setAdminSubTab,
         nammaAreaSubTab,
         setNammaAreaSubTab,
+        currentUser,
+        currentTeamId,
         teamName,
         setTeamName,
         teams,
@@ -497,7 +680,11 @@ export function GameProvider({ children }) {
         removeSabotageFromTeam,
         removeSabotageFromPlayer: removeSabotageFromTeam,
         clearLogs,
-        playTone
+        playTone,
+        loginPlayer,
+        loginAdmin,
+        logout,
+        refreshDatabaseState
       }}
     >
       {children}

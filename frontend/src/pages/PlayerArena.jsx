@@ -20,7 +20,9 @@ export default function PlayerArena() {
     activeThreat,
     executeBuzzIn,
     deploySabotageToTeam,
-    playTone
+    playTone,
+    currentTeamId,
+    logout
   } = useGame();
 
   const selectedAvatarObj = PREDEFINED_AVATARS.find((a) => a.id === playerAvatar) || PREDEFINED_AVATARS[0];
@@ -33,17 +35,20 @@ export default function PlayerArena() {
   const [targetTeam5, setTargetTeam5] = useState(2);
   const [targetTeam6, setTargetTeam6] = useState(2);
 
-  const currentTeam = teams.find((t) => t.id === 1) || {
+  const currentTeam = teams.find((t) => t.id === currentTeamId) ||
+                      teams.find((t) => t.teamName?.toUpperCase() === teamName?.toUpperCase()) ||
+                      teams[0] || {
+    id: 1,
     score: 1450,
     teamName: teamName || 'TEAM KINETIC',
-    p1: p1Handle || 'VALKYRIE_01',
-    p2: p2Handle || 'NEXUS_CORE',
+    p1: p1Handle || 'Alex Vance',
+    p2: p2Handle || 'Sarah Connor',
     lane: 'Lane #01',
     winRate: '78%',
     activeSabotages: []
   };
 
-  const rivalTeams = teams.filter((t) => t.id !== 1);
+  const rivalTeams = teams.filter((t) => t.id !== currentTeam?.id);
 
   // Top 3 Leaderboard hierarchy sorting & avatar mapping
   const sortedTeams = [...teams].sort((a, b) => b.score - a.score);
@@ -53,7 +58,7 @@ export default function PlayerArena() {
 
   const getTeamAvatar = (team) => {
     if (!team) return PREDEFINED_AVATARS[0].src;
-    if (team.id === 1) {
+    if (team.id === currentTeam?.id) {
       return selectedAvatarObj.src || selectedAvatarObj.svg;
     }
     const idx = (team.id) % PREDEFINED_AVATARS.length;
@@ -127,6 +132,18 @@ export default function PlayerArena() {
             Power-up Pothys
           </button>
         </nav>
+
+        {/* Bottom Sidebar Action: Logout / Switch Squad */}
+        <div className="p-space-sm border-t border-hairline-light mt-auto">
+          <button
+            type="button"
+            onClick={logout}
+            className="flex items-center gap-2 px-space-sm py-2.5 w-full rounded-lg text-left cursor-pointer font-label-mono-sm text-xs uppercase tracking-wider text-sabotage-crimson hover:bg-sabotage-crimson/10 font-bold transition-all border border-sabotage-crimson/30"
+          >
+            <span className="material-symbols-outlined text-lg">logout</span>
+            <span>LOGOUT / EXIT</span>
+          </button>
+        </div>
       </aside>
 
       {/* Main Area */}

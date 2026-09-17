@@ -22,16 +22,20 @@ export default function PortalAccess() {
     setActiveFaction,
     arenaPin,
     setArenaPin,
-    playTone
+    playTone,
+    loginPlayer,
+    loginAdmin
   } = useGame();
 
   const [authMode, setAuthMode] = useState('player'); // 'player' | 'admin'
-  const [gmId, setGmId] = useState('GM_ARBITER_07');
-  const [sessionToken, setSessionToken] = useState('STG-TOURNAMENT-2025-Q1');
-  const [masterKey, setMasterKey] = useState('••••••••••••••••••••');
+  const [gmId, setGmId] = useState('cwc_thala');
+  const [sessionToken, setSessionToken] = useState('STG-TOURNAMENT-2026-Q1');
+  const [masterKey, setMasterKey] = useState('');
   const [showPlayerPassword, setShowPlayerPassword] = useState(false);
   const [showMasterPassword, setShowMasterPassword] = useState(false);
   const [keyVerified, setKeyVerified] = useState(false);
+  const [authError, setAuthError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   // Scroll detection for animated appearance
   const [hasScrolled, setHasScrolled] = useState(false);
@@ -76,16 +80,56 @@ export default function PortalAccess() {
     setTimeout(() => setKeyVerified(false), 3000);
   };
 
-  const handleEnterArena = () => {
-    playTone(900, 0.2);
-    setNammaAreaSubTab('kootani');
-    setCurrentView('arena');
+  const handleEnterArena = async () => {
+    if (!teamName || !teamName.trim()) {
+      setAuthError('Please enter your Squad / Team Name.');
+      playTone(280, 0.2, 'sawtooth');
+      return;
+    }
+    if (!playerPassword || !playerPassword.trim()) {
+      setAuthError('Please enter your Squad Access Key / Password.');
+      playTone(280, 0.2, 'sawtooth');
+      return;
+    }
+    setIsLoading(true);
+    setAuthError('');
+    try {
+      await loginPlayer(teamName.trim(), p1Handle, p2Handle, playerAvatar, playerPassword);
+      playTone(900, 0.2);
+      setNammaAreaSubTab('kootani');
+      setCurrentView('arena');
+    } catch (err) {
+      setAuthError(err.message || 'Authentication failed. Please verify squad credentials.');
+      playTone(280, 0.2, 'sawtooth');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleLaunchAdmin = () => {
-    playTone(1100, 0.2);
-    setAdminSubTab('thalaivar');
-    setCurrentView('admin');
+  const handleLaunchAdmin = async () => {
+    if (!gmId || !gmId.trim()) {
+      setAuthError('Please enter Game Master Identifier.');
+      playTone(280, 0.2, 'sawtooth');
+      return;
+    }
+    if (!masterKey || !masterKey.trim()) {
+      setAuthError('Please enter Master Override Security Password.');
+      playTone(280, 0.2, 'sawtooth');
+      return;
+    }
+    setIsLoading(true);
+    setAuthError('');
+    try {
+      await loginAdmin(gmId.trim(), masterKey);
+      playTone(1100, 0.2);
+      setAdminSubTab('thalaivar');
+      setCurrentView('admin');
+    } catch (err) {
+      setAuthError(err.message || 'Game Master authentication failed.');
+      playTone(280, 0.2, 'sawtooth');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -198,6 +242,7 @@ export default function PortalAccess() {
                 type="button"
                 onClick={() => {
                   setAuthMode('player');
+                  setAuthError('');
                   playTone(700, 0.08);
                 }}
                 className={`px-5 py-2.5 text-xs font-label-mono-sm tracking-wider uppercase transition-all duration-150 flex items-center gap-2 rounded-lg cursor-pointer ${authMode === 'player'
@@ -213,6 +258,7 @@ export default function PortalAccess() {
                 type="button"
                 onClick={() => {
                   setAuthMode('admin');
+                  setAuthError('');
                   playTone(850, 0.08);
                 }}
                 className={`px-5 py-2.5 text-xs font-label-mono-sm tracking-wider uppercase transition-all duration-150 flex items-center gap-2 rounded-lg cursor-pointer ${authMode === 'admin'
@@ -324,32 +370,37 @@ export default function PortalAccess() {
               </div>
 
               {/* 2 Player Member Handles */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-2">
-                  <label className="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
-                    MEMBER 01
-                  </label>
-                  <input
-                    type="text"
-                    value={p1Handle}
-                    onChange={(e) => setP1Handle(e.target.value)}
-                    placeholder="e.g. Alex Vance // VALKYRIE_01"
-                    className="w-full bg-surface-subtle text-primary font-body-base text-sm px-4 py-3 border border-hairline-light rounded-xl focus:outline-none focus:border-primary font-bold"
-                  />
-                </div>
+              <div className="flex flex-col gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-2">
+                    <label className="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
+                      MEMBER 01
+                    </label>
+                    <input
+                      type="text"
+                      value={p1Handle}
+                      onChange={(e) => setP1Handle(e.target.value)}
+                      placeholder="e.g. Alex Vance // VALKYRIE_01"
+                      className="w-full bg-surface-subtle text-primary font-body-base text-sm px-4 py-3 border border-hairline-light rounded-xl focus:outline-none focus:border-primary font-bold"
+                    />
+                  </div>
 
-                <div className="flex flex-col gap-2">
-                  <label className="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
-                    MEMBER 02
-                  </label>
-                  <input
-                    type="text"
-                    value={p2Handle}
-                    onChange={(e) => setP2Handle(e.target.value)}
-                    placeholder="e.g. Sarah Connor // NEXUS_CORE"
-                    className="w-full bg-surface-subtle text-primary font-body-base text-sm px-4 py-3 border border-hairline-light rounded-xl focus:outline-none focus:border-primary font-bold"
-                  />
+                  <div className="flex flex-col gap-2">
+                    <label className="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold">
+                      MEMBER 02
+                    </label>
+                    <input
+                      type="text"
+                      value={p2Handle}
+                      onChange={(e) => setP2Handle(e.target.value)}
+                      placeholder="e.g. Sarah Connor // NEXUS_CORE"
+                      className="w-full bg-surface-subtle text-primary font-body-base text-sm px-4 py-3 border border-hairline-light rounded-xl focus:outline-none focus:border-primary font-bold"
+                    />
+                  </div>
                 </div>
+                <span className="font-label-mono-sm text-[11px] text-on-surface-variant font-medium">
+                  * Required for initial squad registration. Returning squads need only Team Name &amp; Password to enter.
+                </span>
               </div>
 
               {/* Player Password Field */}
@@ -381,13 +432,22 @@ export default function PortalAccess() {
                 </div>
               </div>
 
+              {/* Error Banner */}
+              {authError && (
+                <div className="p-3 bg-error-container/30 border-2 border-sabotage-crimson rounded-xl flex items-center gap-2 text-sabotage-crimson font-label-mono-sm text-xs font-bold animate-pulse">
+                  <span className="material-symbols-outlined text-base">error</span>
+                  <span>{authError}</span>
+                </div>
+              )}
+
               {/* Action Submit Button */}
               <button
                 type="button"
+                disabled={isLoading}
                 onClick={handleEnterArena}
-                className="w-full py-4 sm:py-5 bg-primary text-on-primary font-label-mono-lg text-base sm:text-lg uppercase tracking-wider font-extrabold shadow-[4px_4px_0px_#CCFF00] hover:bg-black active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center justify-center gap-3 cursor-pointer rounded-xl"
+                className="w-full py-4 sm:py-5 bg-primary text-on-primary font-label-mono-lg text-base sm:text-lg uppercase tracking-wider font-extrabold shadow-[4px_4px_0px_#CCFF00] hover:bg-black active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center justify-center gap-3 cursor-pointer rounded-xl disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <span>ENTER NAMMA AREA WITH SQUAD</span>
+                <span>{isLoading ? 'VERIFYING SQUAD CREDENTIALS...' : 'ENTER NAMMA AREA WITH SQUAD'}</span>
                 <span className="material-symbols-outlined text-2xl text-acid-chartreuse">arrow_forward</span>
               </button>
             </div>
@@ -436,12 +496,21 @@ export default function PortalAccess() {
                 </div>
               </div>
 
+              {/* Error Banner */}
+              {authError && (
+                <div className="p-3 bg-error-container/30 border-2 border-sabotage-crimson rounded-xl flex items-center gap-2 text-sabotage-crimson font-label-mono-sm text-xs font-bold animate-pulse">
+                  <span className="material-symbols-outlined text-base">error</span>
+                  <span>{authError}</span>
+                </div>
+              )}
+
               <button
                 type="button"
+                disabled={isLoading}
                 onClick={handleLaunchAdmin}
-                className="w-full py-4 sm:py-5 bg-sabotage-crimson text-on-primary font-label-mono-lg text-base sm:text-lg uppercase tracking-wider font-extrabold shadow-[4px_4px_0px_#000] hover:bg-black active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center justify-center gap-3 cursor-pointer rounded-xl mt-2"
+                className="w-full py-4 sm:py-5 bg-sabotage-crimson text-on-primary font-label-mono-lg text-base sm:text-lg uppercase tracking-wider font-extrabold shadow-[4px_4px_0px_#000] hover:bg-black active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center justify-center gap-3 cursor-pointer rounded-xl mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <span>LAUNCH ADMIN COMMAND CONSOLE</span>
+                <span>{isLoading ? 'AUTHENTICATING COMMAND...' : 'LAUNCH ADMIN COMMAND CONSOLE'}</span>
                 <span className="material-symbols-outlined text-2xl">tune</span>
               </button>
             </div>
