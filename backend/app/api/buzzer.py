@@ -20,7 +20,8 @@ async def press_buzzer(
     result = await BuzzerService.press_buzzer(
         db=db,
         team_id=current_team.id,
-        client_timestamp=req.client_timestamp
+        client_timestamp=req.client_timestamp,
+        client_time_str=req.client_time_str
     )
     if not result.get("success"):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result.get("message"))

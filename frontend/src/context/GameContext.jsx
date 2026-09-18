@@ -125,10 +125,32 @@ export function GameProvider({ children }) {
       }
 
       if (queueData) {
-        setBuzzerQueue(queueData.queue || []);
+        const q = queueData.queue || [];
+        setBuzzerQueue(q);
         setQueueIndex(queueData.queueIndex || 0);
         if (typeof queueData.buzzersArmed === 'boolean') {
           setBuzzersArmed(queueData.buzzersArmed);
+        }
+
+        const storedUser = getStoredUser();
+        const activeTeamId = currentTeamId || storedUser?.team_data?.id || storedUser?.team_id || storedUser?.entity_id;
+        if (activeTeamId) {
+          const myBuzz = q.find((item) => item.teamId === activeTeamId);
+          if (myBuzz) {
+            setIsLockedIn(true);
+            setBuzzerPressResult({
+              pressed: true,
+              rank: myBuzz.rank,
+              time: myBuzz.timestamp || myBuzz.clientTime || '--:--:--',
+              clientTime: myBuzz.clientTime || myBuzz.timestamp,
+              serverTime: myBuzz.serverTime,
+              latency: myBuzz.latency,
+              title: myBuzz.rank === 1 ? '🎉 CONGRATS! YOU PRESSED 1ST!' : `BUZZER CONFIRMED: #${myBuzz.rank}`,
+              subtitle: `RESPONSE PRIORITY SECURED // QUEUE #${myBuzz.rank}`
+            });
+          } else {
+            setIsLockedIn(false);
+          }
         }
       }
 
@@ -138,48 +160,78 @@ export function GameProvider({ children }) {
     } catch (err) {
       console.warn('Error refreshing database state:', err);
     }
-  }, []);
+  }, [currentTeamId]);
 
-  // Connect WebSocket for live tournament telemetry
+  // Connect WebSocket for live tournament telemetry with keepalive and auto-reconnect
   useEffect(() => {
-    const token = getAuthToken();
-    const wsUrl = token ? `${WS_URL}?token=${encodeURIComponent(token)}` : WS_URL;
+    let socket = null;
+    let isMounted = true;
+    let pingInterval = null;
+    let reconnectTimeout = null;
 
-    let socket;
-    try {
-      socket = new WebSocket(wsUrl);
-      wsRef.current = socket;
+    const connectWebSocket = () => {
+      if (!isMounted) return;
 
-      socket.onopen = () => {
-        // Connected
-      };
+      const token = getAuthToken();
+      const wsUrl = token ? `${WS_URL}?token=${encodeURIComponent(token)}` : WS_URL;
 
-      socket.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          handleWebSocketMessage(data);
-        } catch (e) {
-          console.warn('WS parse error:', e);
+      try {
+        socket = new WebSocket(wsUrl);
+        wsRef.current = socket;
+
+        socket.onopen = () => {
+          // Send keepalive ping every 15 seconds to prevent idle drops
+          if (pingInterval) clearInterval(pingInterval);
+          pingInterval = setInterval(() => {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+              socket.send(JSON.stringify({ type: 'PING' }));
+            }
+          }, 15000);
+
+          // Re-hydrate baseline state on connect/reconnect
+          refreshDatabaseState();
+        };
+
+        socket.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            handleWebSocketMessage(data);
+          } catch (e) {
+            console.warn('WS parse error:', e);
+          }
+        };
+
+        socket.onerror = (e) => {
+          console.warn('WS socket error:', e);
+        };
+
+        socket.onclose = () => {
+          if (pingInterval) clearInterval(pingInterval);
+          if (isMounted) {
+            // Auto reconnect after 2 seconds
+            if (reconnectTimeout) clearTimeout(reconnectTimeout);
+            reconnectTimeout = setTimeout(connectWebSocket, 2000);
+          }
+        };
+      } catch (e) {
+        console.warn('WebSocket connection error:', e);
+        if (isMounted) {
+          reconnectTimeout = setTimeout(connectWebSocket, 3000);
         }
-      };
+      }
+    };
 
-      socket.onerror = (e) => {
-        console.warn('WS socket error:', e);
-      };
-
-      socket.onclose = () => {
-        // Socket closed
-      };
-    } catch (e) {
-      console.warn('WebSocket connection error:', e);
-    }
+    connectWebSocket();
 
     return () => {
-      if (socket && socket.readyState === WebSocket.OPEN) {
+      isMounted = false;
+      if (pingInterval) clearInterval(pingInterval);
+      if (reconnectTimeout) clearTimeout(reconnectTimeout);
+      if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
         socket.close();
       }
     };
-  }, [currentUser]);
+  }, [currentUser, refreshDatabaseState]);
 
   // Initial database hydration
   useEffect(() => {
@@ -194,10 +246,27 @@ export function GameProvider({ children }) {
       case 'INIT_STATE':
         if (data.teams) setTeams(data.teams);
         if (data.queueState) {
-          setBuzzerQueue(data.queueState.queue || []);
+          const q = data.queueState.queue || [];
+          setBuzzerQueue(q);
           setQueueIndex(data.queueState.queueIndex || 0);
           if (typeof data.queueState.buzzersArmed === 'boolean') {
             setBuzzersArmed(data.queueState.buzzersArmed);
+          }
+          if (currentTeamId) {
+            const myBuzz = q.find((item) => item.teamId === currentTeamId);
+            if (myBuzz) {
+              setIsLockedIn(true);
+              setBuzzerPressResult({
+                pressed: true,
+                rank: myBuzz.rank,
+                time: myBuzz.timestamp || myBuzz.clientTime || '--:--:--',
+                clientTime: myBuzz.clientTime || myBuzz.timestamp,
+                serverTime: myBuzz.serverTime,
+                latency: myBuzz.latency,
+                title: myBuzz.rank === 1 ? '🎉 CONGRATS! YOU PRESSED 1ST!' : `BUZZER CONFIRMED: #${myBuzz.rank}`,
+                subtitle: `RESPONSE PRIORITY SECURED // QUEUE #${myBuzz.rank}`
+              });
+            }
           }
         }
         if (data.recentLogs) setAuditLogs(data.recentLogs);
@@ -216,9 +285,11 @@ export function GameProvider({ children }) {
         }
         break;
 
+      case 'QUEUE_UPDATED':
       case 'BUZZER_STRIKE':
         if (data.queueState) {
-          setBuzzerQueue(data.queueState.queue || []);
+          const q = data.queueState.queue || [];
+          setBuzzerQueue(q);
           setQueueIndex(data.queueState.queueIndex || 0);
         }
         if (data.strike) {
@@ -229,7 +300,9 @@ export function GameProvider({ children }) {
             setBuzzerPressResult({
               pressed: true,
               rank: data.strike.rank,
-              time: data.strike.timestamp,
+              time: data.strike.timestamp || data.strike.clientTime || '--:--:--',
+              clientTime: data.strike.clientTime || data.strike.timestamp,
+              serverTime: data.strike.serverTime,
               latency: data.strike.latency,
               title: data.strike.rank === 1 ? '🎉 CONGRATS! YOU PRESSED 1ST!' : `BUZZER CONFIRMED: #${data.strike.rank}`,
               subtitle: `RESPONSE PRIORITY SECURED // QUEUE #${data.strike.rank}`
@@ -246,20 +319,51 @@ export function GameProvider({ children }) {
         }
         break;
 
+      case 'BUZZERS_STATE_CHANGED':
+        if (typeof data.buzzersArmed === 'boolean') {
+          setBuzzersArmed(data.buzzersArmed);
+          if (data.buzzersArmed) {
+            playTone(600, 0.1);
+          } else {
+            playTone(300, 0.15, 'square');
+          }
+        }
+        if (data.queueState) {
+          setBuzzerQueue(data.queueState.queue || []);
+          setQueueIndex(data.queueState.queueIndex || 0);
+        }
+        break;
+
       case 'BUZZERS_ARMED':
         setBuzzersArmed(true);
+        if (data.queueState) {
+          setBuzzerQueue(data.queueState.queue || []);
+          setQueueIndex(data.queueState.queueIndex || 0);
+        }
         playTone(600, 0.1);
         break;
 
       case 'BUZZERS_LOCKED':
         setBuzzersArmed(false);
+        if (data.queueState) {
+          setBuzzerQueue(data.queueState.queue || []);
+          setQueueIndex(data.queueState.queueIndex || 0);
+        }
         playTone(300, 0.15, 'square');
         break;
 
+      case 'BUZZERS_RESET':
       case 'BUZZER_RESET':
         setIsLockedIn(false);
         setQueueIndex(0);
-        setBuzzerPressResult((prev) => ({ ...prev, pressed: false }));
+        setBuzzerPressResult({
+          pressed: false,
+          rank: 1,
+          time: '--:--:--',
+          latency: '0.000s',
+          title: 'BUZZER STANDBY',
+          subtitle: 'AWAITING MASTER CIRCUIT ARBITRAGE'
+        });
         if (data.queueState) {
           setBuzzerQueue(data.queueState.queue || []);
         } else {
@@ -269,7 +373,13 @@ export function GameProvider({ children }) {
         break;
 
       case 'QUEUE_ADVANCED':
-        setQueueIndex(data.queueIndex || 0);
+        if (typeof data.queueIndex === 'number') {
+          setQueueIndex(data.queueIndex);
+        }
+        if (data.queueState) {
+          setBuzzerQueue(data.queueState.queue || []);
+          setQueueIndex(data.queueState.queueIndex || 0);
+        }
         playTone(780, 0.15);
         break;
 
@@ -494,26 +604,39 @@ export function GameProvider({ children }) {
     }
   };
 
-  // Buzzer Trigger in Mani Adi (Calls backend /api/buzzer/buzz)
+  // Buzzer Trigger in Mani Adi (Calls backend /api/buzzer/buzz with high precision telemetry)
   const executeBuzzIn = async () => {
     if (isLockedIn || !buzzersArmed) return;
 
     setIsLockedIn(true);
     playTone(950, 0.22, 'triangle');
 
+    // Get exact local system click time with millisecond precision
+    const now = new Date();
+    const pad = (n) => n.toString().padStart(2, '0');
+    const ms = now.getMilliseconds().toString().padStart(3, '0');
+    const clientTimeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}.${ms}`;
+    const clientTime = now.getTime() / 1000;
+
     try {
-      const clientTime = Date.now() / 1000;
-      const res = await api.buzzer.buzz(clientTime);
+      const res = await api.buzzer.buzz(clientTime, clientTimeStr);
 
       if (res && res.success) {
         setBuzzerPressResult({
           pressed: true,
           rank: res.rank,
-          time: res.timestamp,
+          time: res.time || res.timestamp || clientTimeStr,
+          clientTime: res.clientTime || clientTimeStr,
+          serverTime: res.serverTime,
           latency: res.latency,
           title: res.rank === 1 ? '🎉 CONGRATS! YOU PRESSED 1ST!' : `BUZZER REGISTERED: #${res.rank}`,
           subtitle: `RESPONSE PRIORITY SECURED // QUEUE #${res.rank}`
         });
+
+        if (res.queueState) {
+          setBuzzerQueue(res.queueState.queue || []);
+          setQueueIndex(res.queueState.queueIndex || 0);
+        }
 
         try {
           confetti({
@@ -526,51 +649,63 @@ export function GameProvider({ children }) {
       }
     } catch (err) {
       console.warn('Buzzer API strike returned error or already locked:', err);
+      // Re-hydrate state from database to ensure accuracy
+      refreshDatabaseState();
     }
-
-    if (resetTimeoutRef.current) clearTimeout(resetTimeoutRef.current);
-    resetTimeoutRef.current = setTimeout(() => {
-      setIsLockedIn(false);
-    }, 7000);
   };
 
   const armBuzzers = async () => {
     try {
-      await api.buzzer.arm();
-      setBuzzersArmed(true);
+      const res = await api.buzzer.arm();
+      if (res) {
+        setBuzzersArmed(true);
+        if (res.queue) setBuzzerQueue(res.queue);
+        if (typeof res.queueIndex === 'number') setQueueIndex(res.queueIndex);
+      }
       playTone(600, 0.1);
     } catch (err) {
-      console.warn('Buzzer arm fallback:', err);
-      setBuzzersArmed(true);
-      playTone(600, 0.1);
+      console.error('Buzzer arm failed:', err);
+      alert(`Buzzer Arm Failed: ${err.message || 'Unauthorized or server error. Please verify Admin login.'}`);
     }
   };
 
   const lockBuzzers = async () => {
     try {
-      await api.buzzer.lock();
-      setBuzzersArmed(false);
+      const res = await api.buzzer.lock();
+      if (res) {
+        setBuzzersArmed(false);
+        if (res.queue) setBuzzerQueue(res.queue);
+        if (typeof res.queueIndex === 'number') setQueueIndex(res.queueIndex);
+      }
       playTone(300, 0.15, 'square');
     } catch (err) {
-      console.warn('Buzzer lock fallback:', err);
-      setBuzzersArmed(false);
-      playTone(300, 0.15, 'square');
+      console.error('Buzzer lock failed:', err);
+      alert(`Buzzer Lock Failed: ${err.message || 'Unauthorized or server error. Please verify Admin login.'}`);
     }
   };
 
   const resetBuzzers = async () => {
     try {
-      await api.buzzer.reset();
+      const res = await api.buzzer.reset();
       setIsLockedIn(false);
       setQueueIndex(0);
-      setBuzzerPressResult((prev) => ({ ...prev, pressed: false }));
+      setBuzzerPressResult({
+        pressed: false,
+        rank: 1,
+        time: '--:--:--',
+        latency: '0.000s',
+        title: 'BUZZER STANDBY',
+        subtitle: 'AWAITING MASTER CIRCUIT ARBITRAGE'
+      });
+      if (res && res.queue) {
+        setBuzzerQueue(res.queue);
+      } else {
+        setBuzzerQueue([]);
+      }
       playTone(700, 0.1);
     } catch (err) {
-      console.warn('Buzzer reset fallback:', err);
-      setIsLockedIn(false);
-      setQueueIndex(0);
-      setBuzzerPressResult((prev) => ({ ...prev, pressed: false }));
-      playTone(700, 0.1);
+      console.error('Buzzer reset failed:', err);
+      alert(`Buzzer Reset Failed: ${err.message || 'Unauthorized or server error. Please verify Admin login.'}`);
     }
   };
 

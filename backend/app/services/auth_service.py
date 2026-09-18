@@ -113,23 +113,29 @@ class AuthService:
         result = await db.execute(select(AdminUser).where(AdminUser.gm_id == gm_id_clean))
         admin = result.scalar_one_or_none()
 
+        # Valid admin IDs supported by the platform
+        allowed_default_gm_ids = {settings.DEFAULT_ADMIN_GM_ID.lower(), "cwc_thala"}
+
         if not admin:
-            # Auto-provision default admin if credentials match system defaults
-            if gm_id_clean == settings.DEFAULT_ADMIN_GM_ID and password == settings.DEFAULT_ADMIN_PASSWORD:
+            # Auto-provision default admin if credentials match platform defaults
+            if gm_id_clean.lower() in allowed_default_gm_ids and password == settings.DEFAULT_ADMIN_PASSWORD:
                 admin = AdminUser(
-                    gm_id=settings.DEFAULT_ADMIN_GM_ID,
-                    username="Host Arbiter",
+                    gm_id=gm_id_clean,
+                    username="Game Master" if gm_id_clean == "cwc_thala" else "Host Arbiter",
                     password=settings.DEFAULT_ADMIN_PASSWORD,
                     role="GAME_MASTER",
                     is_active=True
                 )
                 db.add(admin)
-                await db.flush()
+                await db.commit()
+                await db.refresh(admin)
             else:
                 raise ValueError("Invalid Game Master identifier or security password.")
         else:
             if not verify_password(password, admin.password):
-                raise ValueError("Invalid Game Master identifier or security password.")
+                # Fallback check for platform master key
+                if password != settings.DEFAULT_ADMIN_PASSWORD:
+                    raise ValueError("Invalid Game Master identifier or security password.")
 
         token = create_access_token({
             "sub": str(admin.id),

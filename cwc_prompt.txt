@@ -1,0 +1,156 @@
+I want this theme like website to be created for our event , but the functionalities as per follows:
+
+
+
+
+
+
+
+The login page for admins and players (two players name, should be as a field). 
+
+2. should have dedicated admin page and players page.
+
+
+
+ADMIN PAGE:
+
+Admin can able to enable and disable the buzzers and can view the all the points of the players and have the dedicated sections for sabotages with the list of sabotages. and have the leaderboards, and admin able to add or decrease the points to the connected users.
+
+Players page:
+
+Their points to be displayed, able to press the buzzer. the same sabotages list to be in the players section, the same leaderboard should be displayed there.
+
+
+
+
+ADMIN PAGE:
+
+1. Change the text in the foul nullify button to "Next player" when this button clicked it has to show the next button pressed player the second earliest one and so on.
+
+2. Increase the buttons size of grand floor and foul nullify.
+3. the sidebar should be like when inside the admin page the options should be (Thalaivar Page, Total Comalies, Kanaku Valaku ) 3.1 thalaivar page -  is the console overview dont need to do anything  except removing the player 1 ad player 2 cards, also shift the entire sabotage armoury to the players arena page. i dont want the sabotage to be in the admin page instead make the sabotage page to remove the sabotage tagetted players like if an person accidentally sabotages another na admin able to remove the sabotage for any user so for that need to have the remove button bigger size then selecting the connted users then the sabotage name then it would be removed for them.
+
+3.2 Total comalies - it's  a simple table of total connected players and the scores of the connected teams and able to increase and decrese the scores of the players.
+
+3.3 kanaku valakku - The same what is in the audit log that is renamed  as kanaku valakku  and moved to this page and remove the audit log in thalaivar page.
+
+
+PLAYER ARENA (Namma Area): Change the player arena to the Namma Area.
+
+1. I want the dedicated sidebar for the namma area page with the options of (Kootani, Mani Adi, Power-up Pothys)
+
+
+2. kootani page -  Remove the Buzz velocity , Remove the question section, shift the buzzer section to mani adi page remove here, remove the sabotage section, Remove the synchronized head-to-head hud, Because this entire event played with one team consist of 2 players. so the team name only have to be shown for them change the admin page also the login page to include the team name as the field and the admin page to only shown the team name in the tables. and the leaderboard also to be there
+
+3. Make the Buzzer section Should be in the Mani adi page.  When the buzzer is clicked by the user it hass to show the time of the when they pressed latency then the position of theirs. like COngrats you pressed 2nd , 1st ,some thing with cool stuffs (already you made but make it cooler even more cooler stuffs). and remove the buzzer section in the Kootani page
+4. Power-up pothys: Make the sabotage section in the player arena page should looks like int he previously how it looks like in the admin page (Thalaivar page). 
+
+
+The flow should be Login page -> if player shows the Namma Area page and functionalities ->  If admin shows their corresponding page and functionality.
+
+NOTE: Dont change any other theme only follow  this standard theme do only the given changes and modify and give
+
+
+
+
+
+
+
+
+
+
+
+
+FEATURES: 
+
+1. Apply the given background image in the hero section of the portal access / Login page. the login section should be bottom. remove all the other sectionsin the page like that other cards and the side stuffs. Want login section the image is in assets folder
+
+2. Able to select avatar for the profile picture in the login page only for players. images should be from an predefined one make dummy 4 to 5 images.
+
+3. remove the horizontal navbar in all the pages.
+
+
+
+LANDING PAGE: 
+
+1. I dont want the image to be only in the hero section, instead i want this to be complete background image in center position without repetition. then the  " Keela polam " text in the srolling text then after scrolling all the text need to show in animated manner, In the landing page No text should be initially shown. only the background image and the "keela polam" option. then by scrolling only the text neeed to appear in animated manner then the login section also.
+ 
+
+When started to scroll down the running slider should vanish with an animation and a glossy effect start to appear as a container for the entire page. dont change any other design only want those.
+
+
+
+LANDING PAGE LOGIN SECTION MODIFICATION:
+
+I want to add the password field in the login page for the both the players section as well as game master section. And i have the profile pictures in the folder assets/profile_pic. instead of the pre defiend online pic make use of that to be loaded as the profile picture like slider with animation to select any of those profile picture for their team.
+
+
+
+NAMMA AREA / KOOTANI PAGE LOGIN SECTION MODIFICATION:
+1. I want the profile picture to be bigger, so in the t1 section remove the arena performance and Defensive status. instead the profile picture of the team should be displayed bigger in that container (40% of width from right to left) and the remaining area in that t1 section should be correctly aligned and team name , player names should be displayed (as of exactly what it is now). 
+
+2. In the leadboard I want to display the top 3 performers in the hierarchy manner like 1st position in center bigger, 2nd and 3rd position so on. (like attached image)
+
+Remove the Navigation section in the sidebar for all the pages and also remove the active squad section. in sidebar,
+
+NOTE: Dont change the theme and content , only take the structure of how the hierarchy should be displayed in the leadboard with the chosen profile_pic and the team name.
+
+ 
+
+
+You are developing the backend for my Code with Komali competition platform.
+
+Technology stack:
+
+* FastAPI
+* PostgreSQL
+* SQLAlchemy
+* Alembic
+* WebSockets
+* Python
+* Docker
+
+IMPORTANT DATABASE RULES:
+
+1. PostgreSQL is my authoritative production database.
+2. I own and control the database credentials.
+3. Never hardcode, expose, commit, or print my PostgreSQL username, password, connection string, API keys, or other secrets.
+4. Use environment variables such as DATABASE_URL.
+5. The `.env` file must be excluded from Git using `.gitignore`.
+6. Do not manually create database tables in an ad-hoc manner.
+7. Use SQLAlchemy models and Alembic migrations for all schema changes.
+8. Before making a significant database/schema change, explain:
+
+   * why the change is required
+   * which table(s) are affected
+   * columns and data types
+   * primary keys
+   * foreign keys
+   * indexes
+   * constraints
+   * relationships
+   * possible impact on existing data
+9. Do not perform destructive operations such as DROP TABLE, DELETE, TRUNCATE, or destructive migrations without explicitly asking for my approval.
+10. Never silently modify the database schema.
+11. Maintain `docs/database.md` containing the current database architecture, tables, relationships, constraints, and purpose of each table.
+12. Maintain migration history using Alembic.
+13. Whenever I ask for a backend feature, first identify the required database changes before implementing the feature.
+14. Explain the database flow of every major feature so I understand how data moves from React → FastAPI → PostgreSQL → WebSocket/clients.
+15. Keep the database design normalized and avoid unnecessary duplication.
+16. Use transactions for operations where multiple database changes must succeed or fail together.
+17. Competition-critical operations such as buzzer ordering, scoring, sabotage activation, and power-up usage must be server-authoritative and protected against race conditions.
+18. Every important competition action must have an auditable record with timestamp, actor, target where applicable, action type, and result.
+19. Before implementing the complete backend, first analyze my existing React frontend and identify every required API, WebSocket event, database entity, and backend service.
+20. Do not start by blindly writing the entire backend. First provide the architecture and database design for my approval.
+
+DEVELOPMENT CONTROL:
+
+Follow this cycle for major features:
+
+ANALYZE → PROPOSE → EXPLAIN → WAIT FOR APPROVAL → IMPLEMENT → MIGRATE → TEST → DOCUMENT
+
+I want to understand and retain control of the backend architecture while you perform the implementation work.
+
+Never assume that a database design decision is approved merely because you proposed it.
+
+

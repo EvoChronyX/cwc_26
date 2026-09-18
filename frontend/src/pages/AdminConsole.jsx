@@ -8,6 +8,7 @@ export default function AdminConsole() {
     setCurrentView,
     adminSubTab,
     setAdminSubTab,
+    currentUser,
     teams,
     buzzersArmed,
     buzzerQueue,
@@ -170,10 +171,28 @@ export default function AdminConsole() {
                     <span className="px-3 py-1 bg-surface-subtle font-label-mono-sm text-label-mono-sm uppercase text-on-surface tracking-wider rounded-full">
                       THALAIVAR CONSOLE // OVERVIEW
                     </span>
-                    <span className="px-3 py-1 bg-signal-emerald/20 text-on-surface font-label-mono-sm text-label-mono-sm uppercase tracking-wider rounded-full flex items-center gap-1.5 font-bold">
-                      <span className="w-1.5 h-1.5 rounded-full bg-signal-emerald"></span> Host Master Active
+                    <span className={`px-3 py-1 font-label-mono-sm text-label-mono-sm uppercase tracking-wider rounded-full flex items-center gap-1.5 font-bold ${
+                      currentUser?.role === 'admin' ? 'bg-signal-emerald/20 text-on-surface' : 'bg-sabotage-crimson/20 text-sabotage-crimson'
+                    }`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${currentUser?.role === 'admin' ? 'bg-signal-emerald' : 'bg-sabotage-crimson animate-pulse'}`}></span>
+                      {currentUser?.role === 'admin' ? `Host Master Active (${currentUser.display_name || 'GM'})` : 'ADMIN SESSION INACTIVE'}
                     </span>
                   </div>
+                  {currentUser?.role !== 'admin' && (
+                    <div className="w-full bg-error-container/30 border border-sabotage-crimson text-sabotage-crimson p-3.5 rounded-xl flex items-center justify-between gap-4 font-label-mono-sm text-xs font-bold my-1">
+                      <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-lg">warning</span>
+                        <span>Game Master is not logged in. Controls will not persist. Please sign in via Portal.</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setCurrentView('portal')}
+                        className="px-3 py-1.5 bg-sabotage-crimson text-on-primary rounded uppercase font-bold cursor-pointer hover:bg-black transition-colors shrink-0"
+                      >
+                        Login as Admin
+                      </button>
+                    </div>
+                  )}
                   <h1 className="font-headline-xl text-headline-xl tracking-tight text-primary font-bold">
                     Executive Arena Orchestration
                   </h1>
@@ -251,18 +270,18 @@ export default function AdminConsole() {
                       </div>
                     </div>
 
-                    {/* Buzzer Queue Mini Indicator */}
+                    {/* Buzzer Queue Mini Indicator & Real-Time Contenders List */}
                     <div className="mt-6 flex flex-col gap-2">
                       <div className="flex justify-between text-body-sm font-body-sm text-on-surface-variant">
                         <span>Queue Position</span>
                         <span className="font-label-mono-sm text-label-mono-sm text-primary font-bold">
-                          {queueIndex + 1} of {buzzerQueue.length} Buzzers
+                          {buzzerQueue.length === 0 ? '0 Buzzers' : `${queueIndex + 1} of ${buzzerQueue.length} Buzzers`}
                         </span>
                       </div>
                       <div className="grid grid-cols-4 gap-1.5 h-2 w-full">
                         {buzzerQueue.map((item, idx) => (
                           <div
-                            key={item.id}
+                            key={item.id || idx}
                             className={`h-full transition-colors ${
                               idx === queueIndex
                                 ? 'bg-acid-chartreuse'
@@ -273,6 +292,38 @@ export default function AdminConsole() {
                           ></div>
                         ))}
                       </div>
+
+                      {/* Live Contenders Queue List */}
+                      {buzzerQueue.length > 0 && (
+                        <div className="mt-3 flex flex-col gap-1.5 max-h-48 overflow-y-auto pr-1">
+                          <span className="font-label-mono-sm text-[10px] text-on-surface-variant uppercase font-bold tracking-wider">
+                            Live Order of Press:
+                          </span>
+                          {buzzerQueue.map((item, idx) => (
+                            <div
+                              key={item.id || idx}
+                              className={`px-2.5 py-1.5 rounded flex items-center justify-between text-xs font-label-mono-sm transition-all border ${
+                                idx === queueIndex
+                                  ? 'bg-acid-chartreuse/20 border-acid-chartreuse text-primary font-bold shadow-sm'
+                                  : 'bg-surface-container-lowest border-hairline-light text-on-surface-variant'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] ${
+                                  idx === queueIndex ? 'bg-acid-chartreuse text-canvas-dark' : 'bg-surface-subtle text-primary'
+                                }`}>
+                                  #{item.rank || idx + 1}
+                                </span>
+                                <span className="font-bold text-primary truncate max-w-[120px]">{item.teamName}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-acid-chartreuse font-bold">{item.clientTime || item.timestamp}</span>
+                                <span className="text-[10px] bg-surface-subtle px-1.5 py-0.5 rounded text-on-surface-variant font-bold">{item.latency}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -288,7 +339,7 @@ export default function AdminConsole() {
                       <div>
                         <div className="flex items-center gap-2 mb-1">
                           <span className="px-2 py-0.5 bg-acid-chartreuse text-canvas-dark font-label-mono-sm text-label-mono-sm uppercase font-bold">
-                            QUEUE POSITION #{currentBuzzerWinner.rank || queueIndex + 1}
+                            QUEUE POSITION #{currentBuzzerWinner.rank || (buzzerQueue.length > 0 ? queueIndex + 1 : 0)}
                           </span>
                           <span className="font-label-mono-sm text-label-mono-sm text-primary-fixed uppercase tracking-wider">
                             VALIDATED SIGNAL
@@ -297,8 +348,15 @@ export default function AdminConsole() {
                         <h3 className="font-headline-lg text-headline-lg font-bold text-white tracking-tight">
                           {currentBuzzerWinner.teamName} <span className="text-acid-chartreuse">// {currentBuzzerWinner.name}</span>
                         </h3>
-                        <p className="font-body-sm text-body-sm text-surface-variant mt-1">
-                          Microsecond circuit lock registered at {currentBuzzerWinner.timestamp}
+                        <p className="font-body-sm text-body-sm text-surface-variant mt-1.5 flex flex-wrap items-center gap-2">
+                          <span>
+                            Client Click Time: <strong className="text-acid-chartreuse font-label-mono-sm">{currentBuzzerWinner.clientTime || currentBuzzerWinner.timestamp}</strong>
+                          </span>
+                          {currentBuzzerWinner.serverTime && currentBuzzerWinner.serverTime !== '--:--:--' && (
+                            <span className="text-on-surface-variant text-xs">
+                              (Server Log: {currentBuzzerWinner.serverTime})
+                            </span>
+                          )}
                         </p>
                       </div>
 

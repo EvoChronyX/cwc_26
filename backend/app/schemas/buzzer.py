@@ -4,12 +4,15 @@ from pydantic import BaseModel, Field
 
 class BuzzerPressRequest(BaseModel):
     client_timestamp: Optional[float] = None
+    client_time_str: Optional[str] = None
 
 
 class BuzzerPressResult(BaseModel):
     pressed: bool
     rank: int
     time: str
+    clientTime: Optional[str] = None
+    serverTime: Optional[str] = None
     latency: str
     title: str
     subtitle: str
@@ -23,6 +26,8 @@ class BuzzerQueueItem(BaseModel):
     handle: str
     latency: str
     timestamp: str
+    clientTime: Optional[str] = None
+    serverTime: Optional[str] = None
     rank: int
 
 

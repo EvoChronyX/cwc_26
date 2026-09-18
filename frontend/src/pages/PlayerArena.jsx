@@ -523,10 +523,10 @@ export default function PlayerArena() {
                       isLockedIn ? 'text-acid-chartreuse' : buzzersArmed ? 'text-signal-emerald' : 'text-sabotage-crimson'
                     }`}>
                       {isLockedIn
-                        ? 'BUZZER LOCKED // TRANSMITTED'
+                        ? `BUZZER LOCKED // TRANSMITTED (#${buzzerPressResult.rank || 1})`
                         : buzzersArmed
                         ? 'BUZZER ACTIVE (READY)'
-                        : 'BUZZER CIRCUIT LOCKED'}
+                        : 'BUZZER CIRCUIT LOCKED (BUSY)'}
                     </span>
                   </div>
                   <span className="font-label-mono-sm text-label-mono-sm text-on-primary-container hidden sm:inline-block">
@@ -538,7 +538,7 @@ export default function PlayerArena() {
                 <div className="relative z-10 my-6 flex items-center justify-center">
                   {/* Outer Pulsing Ring */}
                   <div className={`absolute w-72 h-72 sm:w-96 sm:h-96 rounded-full bg-acid-chartreuse/10 pointer-events-none transition-all duration-1000 ${
-                    isLockedIn ? 'scale-125 opacity-0' : 'animate-ping'
+                    isLockedIn || !buzzersArmed ? 'scale-125 opacity-0' : 'animate-ping'
                   }`}></div>
                   
                   {/* Secondary Halo */}
@@ -557,17 +557,17 @@ export default function PlayerArena() {
                         : 'bg-surface-dark border-4 border-sabotage-crimson opacity-60 cursor-not-allowed'
                     }`}
                   >
-                    <span className={`material-symbols-outlined text-6xl mb-2 ${isLockedIn ? 'text-signal-emerald' : 'text-acid-chartreuse'}`}>
-                      {isLockedIn ? 'task_alt' : 'notifications_active'}
+                    <span className={`material-symbols-outlined text-6xl mb-2 ${isLockedIn ? 'text-signal-emerald' : buzzersArmed ? 'text-acid-chartreuse' : 'text-sabotage-crimson'}`}>
+                      {isLockedIn ? 'task_alt' : buzzersArmed ? 'notifications_active' : 'lock'}
                     </span>
                     <span className="font-headline-lg text-2xl sm:text-3xl font-bold text-on-primary tracking-tight leading-tight uppercase">
-                      {isLockedIn ? 'LOCKED' : 'MANI ADI'}
+                      {isLockedIn ? 'LOCKED' : buzzersArmed ? 'MANI ADI' : 'LOCKED'}
                     </span>
                     <span className="font-label-mono-sm text-label-mono-sm text-acid-chartreuse tracking-widest uppercase mt-1 font-bold">
-                      {isLockedIn ? 'TRANSMITTED' : 'BUZZ IN NOW'}
+                      {isLockedIn ? `POSITION #${buzzerPressResult.rank || 1}` : buzzersArmed ? 'BUZZ IN NOW' : 'CIRCUIT FROZEN'}
                     </span>
                     <span className="font-label-mono-sm text-[10px] text-on-primary-container tracking-wider uppercase mt-3">
-                      TAP SCREEN // SPACEBAR
+                      {isLockedIn ? 'PRIORITY SECURED' : buzzersArmed ? 'TAP SCREEN // SPACEBAR' : 'WAIT FOR GAME MASTER'}
                     </span>
                   </button>
                 </div>
@@ -575,7 +575,7 @@ export default function PlayerArena() {
                 {/* Real-Time Ultra-Cool Feedback Banner */}
                 <div className="relative z-10 mt-6 w-full max-w-2xl transition-all duration-300">
                   {isLockedIn ? (
-                    <div className="bg-primary border-2 border-acid-chartreuse rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-5 shadow-[4px_4px_0px_#CCFF00] animate-bounce">
+                    <div className="bg-primary border-2 border-acid-chartreuse rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-5 shadow-[4px_4px_0px_#CCFF00]">
                       <div className="flex items-center gap-4 text-left">
                         <div className="w-14 h-14 rounded-2xl bg-signal-emerald text-primary flex items-center justify-center font-bold text-2xl shadow-md">
                           <span className="material-symbols-outlined text-3xl">workspace_premium</span>
@@ -585,12 +585,31 @@ export default function PlayerArena() {
                             {buzzerPressResult.title} ({buzzerPressResult.latency})
                           </span>
                           <span className="font-body-base text-sm text-on-primary block mt-0.5">
-                            Precision timestamp: <strong className="text-signal-emerald">{buzzerPressResult.time}</strong> • Priority lock registered for <strong>{currentTeam.teamName}</strong>.
+                            System Click Time: <strong className="text-signal-emerald">{buzzerPressResult.clientTime || buzzerPressResult.time}</strong> • Priority lock registered for <strong>{currentTeam.teamName}</strong>.
                           </span>
                         </div>
                       </div>
                       <span className="bg-surface-dark text-signal-emerald font-label-mono-sm text-xs px-4 py-2 rounded-full uppercase font-bold border border-hairline-dark tracking-wider whitespace-nowrap">
-                        1ST IN QUEUE
+                        #{buzzerPressResult.rank || 1} IN QUEUE
+                      </span>
+                    </div>
+                  ) : !buzzersArmed ? (
+                    <div className="bg-surface-dark border border-sabotage-crimson/50 rounded-2xl p-5 flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-sabotage-crimson/20 text-sabotage-crimson flex items-center justify-center">
+                          <span className="material-symbols-outlined font-bold">lock</span>
+                        </div>
+                        <div className="text-left">
+                          <span className="font-label-mono-sm text-label-mono-sm text-sabotage-crimson font-bold block">
+                            CIRCUIT LOCKED // CONTENDERS BUSY
+                          </span>
+                          <span className="font-body-sm text-body-sm text-on-primary-container">
+                            The Game Master has locked all buzzers. Stand by for the circuit to be armed.
+                          </span>
+                        </div>
+                      </div>
+                      <span className="font-label-mono-sm text-xs text-sabotage-crimson font-bold px-3 py-1 bg-sabotage-crimson/10 rounded-full border border-sabotage-crimson/30">
+                        LOCKED
                       </span>
                     </div>
                   ) : (
@@ -608,7 +627,7 @@ export default function PlayerArena() {
                           </span>
                         </div>
                       </div>
-                      <span className="font-label-mono-sm text-label-mono-sm text-on-primary-container hidden sm:block">READY</span>
+                      <span className="font-label-mono-sm text-label-mono-sm text-signal-emerald font-bold hidden sm:block">READY</span>
                     </div>
                   )}
                 </div>

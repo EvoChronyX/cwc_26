@@ -1,5 +1,8 @@
-const API_BASE = 'http://localhost:8000/api';
-export const WS_URL = 'ws://localhost:8000/ws';
+const backendHost = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+const backendProtocol = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'https' : 'http';
+const websocketProtocol = backendProtocol === 'https' ? 'wss' : 'ws';
+const API_BASE = `${backendProtocol}://${backendHost}:8000/api`;
+export const WS_URL = `${websocketProtocol}://${backendHost}:8000/ws`;
 
 export const getAuthToken = () => {
   return localStorage.getItem('cwc_auth_token') || sessionStorage.getItem('cwc_auth_token') || null;
@@ -100,11 +103,12 @@ export const api = {
 
   buzzer: {
     getQueue: () => request('/buzzer/queue'),
-    buzz: (clientTimestamp) =>
+    buzz: (clientTimestamp, clientTimeStr) =>
       request('/buzzer/buzz', {
         method: 'POST',
         body: JSON.stringify({
           client_timestamp: clientTimestamp || Date.now() / 1000,
+          client_time_str: clientTimeStr || null,
         }),
       }),
     arm: () => request('/buzzer/arm', { method: 'POST' }),

@@ -38,13 +38,14 @@ async def test_buzzer_lifecycle_and_queue(client: AsyncClient):
     # 2. Team 1 buzzes in
     buzz1_res = await client.post(
         "/api/buzzer/buzz",
-        json={"client_timestamp": 1234567.89},
+        json={"client_timestamp": 1234567.89, "client_time_str": "09:15:32.450"},
         headers={"Authorization": f"Bearer {token1}"}
     )
     assert buzz1_res.status_code == 200
     buzz1_data = buzz1_res.json()
     assert buzz1_data["pressed"] is True
     assert buzz1_data["rank"] == 1
+    assert buzz1_data["clientTime"] == "09:15:32.450"
 
     # 3. Duplicate buzz by Team 1 -> Rejected
     dup_res = await client.post(
@@ -70,6 +71,8 @@ async def test_buzzer_lifecycle_and_queue(client: AsyncClient):
     q_data = queue_res.json()
     assert len(q_data["queue"]) == 2
     assert q_data["currentWinner"]["teamName"] == "SQUAD ALPHA"
+    assert q_data["queue"][0]["clientTime"] == "09:15:32.450"
+    assert q_data["currentWinner"]["clientTime"] == "09:15:32.450"
 
     # 6. Admin advances queue to next player
     advance_res = await client.post("/api/buzzer/advance", headers=admin_headers)

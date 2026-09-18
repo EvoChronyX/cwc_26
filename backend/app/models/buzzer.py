@@ -14,6 +14,8 @@ class BuzzerEvent(Base):
     round_number = Column(Integer, nullable=False)
     team_id = Column(Integer, ForeignKey("teams.id", ondelete="CASCADE"), nullable=False)
     server_timestamp = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    client_timestamp = Column(Float, nullable=True)
+    client_time_str = Column(String(50), nullable=True)
     latency_seconds = Column(Float, nullable=False)
     queue_rank = Column(Integer, nullable=False)
     status = Column(String(30), nullable=False, default="ACCEPTED")

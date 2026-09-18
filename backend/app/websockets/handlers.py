@@ -71,11 +71,13 @@ async def handle_websocket(websocket: WebSocket, token: Optional[str] = None):
                 if client_info.get("role") == "player" and client_info.get("team_id"):
                     team_id = client_info["team_id"]
                     client_time = data.get("client_time")
+                    client_time_str = data.get("client_time_str")
                     async with AsyncSessionLocal() as db:
                         res = await BuzzerService.press_buzzer(
                             db=db,
                             team_id=team_id,
-                            client_timestamp=client_time
+                            client_timestamp=client_time,
+                            client_time_str=client_time_str
                         )
                         await manager.send_personal(websocket, {
                             "type": "BUZZ_ACK",

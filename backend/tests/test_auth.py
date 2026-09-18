@@ -55,3 +55,12 @@ async def test_admin_login(client: AsyncClient):
     }
     res_bad = await client.post("/api/auth/admin/login", json=bad_payload)
     assert res_bad.status_code == 401
+
+    # 3. Login with cwc_thala
+    thala_payload = {
+        "gm_id": "cwc_thala",
+        "password": settings.DEFAULT_ADMIN_PASSWORD
+    }
+    res_thala = await client.post("/api/auth/admin/login", json=thala_payload)
+    assert res_thala.status_code == 200
+    assert res_thala.json()["role"] == "admin"
