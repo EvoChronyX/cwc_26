@@ -1,0 +1,2 @@
+# Blackoutscreen
+# Disable Copy Paste

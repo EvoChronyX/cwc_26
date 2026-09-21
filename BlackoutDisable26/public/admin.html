@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Control Deck — Participant Console</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet"
+    >
+
+    <script src="/socket.io/socket.io.js"></script>
+
+    <style>
+
+        :root {
+            --backdrop: #1c1e1f;
+            --panel: #242628;
+            --panel-raised: #2b2e30;
+            --line: #383b3d;
+            --ink: #eae7df;
+            --muted: #92979b;
+            --amber: #d98f34;
+            --amber-dim: #a86e2a;
+            --green: #55a374;
+            --red: #c1483f;
+            --sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            --mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: var(--sans);
+            background: var(--backdrop);
+            background-image:
+                radial-gradient(circle at 15% 0%, rgba(217, 143, 52, 0.05), transparent 55%);
+            color: var(--ink);
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 20px 28px;
+
+            border-bottom: 1px solid var(--line);
+        }
+
+        .brand {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+        }
+
+        .brand h1 {
+            margin: 0;
+            font-size: 17px;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+        }
+
+        .brand span {
+            font-family: var(--mono);
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .signal {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+
+            font-family: var(--mono);
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .signal-bars {
+            display: flex;
+            align-items: flex-end;
+            gap: 3px;
+            height: 14px;
+        }
+
+        .signal-bars i {
+            width: 4px;
+            border-radius: 1px;
+            background: var(--line);
+            display: block;
+        }
+
+        .signal-bars i:nth-child(1) { height: 5px; }
+        .signal-bars i:nth-child(2) { height: 9px; }
+        .signal-bars i:nth-child(3) { height: 14px; }
+
+        .signal.live .signal-bars i {
+            background: var(--green);
+        }
+
+        main {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 32px 24px 60px;
+
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .module {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .module-head {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+
+            padding: 16px 20px 14px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .module-tag {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--amber);
+            border: 1px solid var(--amber-dim);
+            border-radius: 2px;
+            padding: 1px 6px;
+            flex-shrink: 0;
+        }
+
+        .module-head h2 {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .module-head p {
+            margin: 4px 0 0;
+            font-size: 13px;
+            color: var(--muted);
+            flex-basis: 100%;
+        }
+
+        .duration-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--line);
+            background: var(--panel-raised);
+        }
+
+        .duration-row label {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        input[type="number"] {
+            width: 90px;
+            padding: 8px 10px;
+
+            background: var(--backdrop);
+            border: 1px solid var(--line);
+            border-radius: 2px;
+            color: var(--ink);
+            font-family: var(--mono);
+            font-size: 14px;
+        }
+
+        input[type="number"]:focus,
+        input[type="password"]:focus {
+            outline: 2px solid var(--amber-dim);
+            outline-offset: 1px;
+        }
+
+        .duration-row span {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .controls {
+            padding: 16px 20px;
+
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        button {
+            border: 1px solid var(--line);
+            background: var(--panel-raised);
+            color: var(--ink);
+
+            padding: 9px 16px;
+            border-radius: 2px;
+            font-family: var(--sans);
+            font-size: 13px;
+            font-weight: 500;
+
+            cursor: pointer;
+            transition: border-color 0.15s ease;
+        }
+
+        button:hover {
+            border-color: var(--muted);
+        }
+
+        button:focus-visible {
+            outline: 2px solid var(--amber);
+            outline-offset: 2px;
+        }
+
+        button.on {
+            background: var(--red);
+            border-color: var(--red);
+            color: #fff;
+        }
+
+        button.on:hover {
+            border-color: #e0655b;
+        }
+
+        button.off {
+            background: var(--green);
+            border-color: var(--green);
+            color: #10231a;
+        }
+
+        button.off:hover {
+            border-color: #7dbf98;
+        }
+
+        button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .roster-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 12px 20px;
+            background: var(--panel-raised);
+            border-bottom: 1px solid var(--line);
+        }
+
+        .roster-count {
+            font-family: var(--mono);
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .roster-count b {
+            color: var(--ink);
+            font-weight: 600;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 11px 16px;
+            border-bottom: 1px solid var(--line);
+            text-align: left;
+            font-size: 13px;
+        }
+
+        th {
+            font-family: var(--mono);
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--muted);
+        }
+
+        td {
+            font-family: var(--mono);
+        }
+
+        td.team-name {
+            font-family: var(--sans);
+            font-weight: 500;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background: rgba(217, 143, 52, 0.04);
+        }
+
+        .empty-row td {
+            padding: 34px 16px;
+            text-align: center;
+            color: var(--muted);
+            font-family: var(--sans);
+        }
+
+        input[type="checkbox"] {
+            accent-color: var(--amber);
+            width: 15px;
+            height: 15px;
+        }
+
+        /* ==================================================
+           LOGIN
+        ================================================== */
+
+        .login-screen {
+            position: fixed;
+            inset: 0;
+
+            background: var(--backdrop);
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            z-index: 1000;
+        }
+
+        .login-box {
+            width: 320px;
+            padding: 30px;
+
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 3px;
+        }
+
+        .login-box .module-tag {
+            margin-bottom: 14px;
+            display: inline-block;
+        }
+
+        .login-box h1 {
+            margin: 0 0 6px;
+            font-size: 18px;
+        }
+
+        .login-box p {
+            margin: 0 0 20px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .login-box input[type="password"] {
+            width: 100%;
+            padding: 10px 12px;
+
+            background: var(--backdrop);
+            border: 1px solid var(--line);
+            border-radius: 2px;
+            color: var(--ink);
+            font-family: var(--mono);
+            font-size: 14px;
+
+            margin-bottom: 12px;
+        }
+
+        .login-box button {
+            width: 100%;
+            background: var(--amber);
+            border-color: var(--amber);
+            color: #1c1200;
+        }
+
+        .login-box button:hover {
+            border-color: #f0a850;
+        }
+
+        .login-error {
+            margin-top: 12px;
+            color: var(--red);
+            font-size: 13px;
+            display: none;
+        }
+
+        .toast {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+
+            background: var(--panel-raised);
+            border: 1px solid var(--line);
+            color: var(--ink);
+
+            padding: 11px 16px;
+            border-radius: 2px;
+            font-size: 13px;
+
+            display: none;
+        }
+
+        @media (max-width: 560px) {
+
+            .duration-row {
+                flex-wrap: wrap;
+            }
+
+            table, thead, tbody, th, td, tr {
+                display: block;
+            }
+
+            thead {
+                display: none;
+            }
+
+            tbody tr {
+                border-bottom: 1px solid var(--line);
+                padding: 10px 16px;
+            }
+
+            td {
+                border-bottom: none;
+                padding: 3px 0;
+            }
+
+            td:first-child {
+                padding-bottom: 8px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<!-- ======================================================
+     LOGIN
+====================================================== -->
+
+<div
+    id="loginScreen"
+    class="login-screen"
+>
+
+    <div class="login-box">
+
+        <span class="module-tag">ADM</span>
+
+        <h1>Console access</h1>
+
+        <p>
+            Enter the administrator password to open the
+            participant console.
+        </p>
+
+        <input
+            id="adminPassword"
+            type="password"
+            placeholder="Administrator password"
+            autocomplete="off"
+        >
+
+        <button onclick="login()">
+            Sign in
+        </button>
+
+        <div
+            id="loginError"
+            class="login-error"
+        ></div>
+
+    </div>
+
+</div>
+
+
+<!-- ======================================================
+     HEADER
+====================================================== -->
+
+<header>
+
+    <div class="brand">
+        <h1>Control Deck</h1>
+        <span>participant console</span>
+    </div>
+
+    <div id="signal" class="signal">
+
+        <div class="signal-bars">
+            <i></i><i></i><i></i>
+        </div>
+
+        <span id="statusText">
+            Connecting
+        </span>
+
+    </div>
+
+</header>
+
+
+<main>
+
+
+<!-- ======================================================
+     BLACKOUT
+====================================================== -->
+
+<section class="module">
+
+    <div class="module-head">
+        <span class="module-tag">CH.1</span>
+        <h2>Screen blackout</h2>
+        <p>
+            Drop a full-screen overlay onto selected or all
+            connected machines for a fixed duration.
+        </p>
+    </div>
+
+    <div class="duration-row">
+
+        <label for="duration">
+            Duration
+        </label>
+
+        <input
+            id="duration"
+            type="number"
+            value="60"
+            min="1"
+        >
+
+        <span>
+            seconds
+        </span>
+
+    </div>
+
+    <div class="controls">
+
+        <button class="on" onclick="blackoutSelected()">
+            Blackout selected
+        </button>
+
+        <button onclick="endSelectedBlackout()">
+            End selected
+        </button>
+
+        <button class="on" onclick="blackoutAll()">
+            Blackout all
+        </button>
+
+        <button onclick="endAllBlackout()">
+            End all
+        </button>
+
+    </div>
+
+</section>
+
+
+<!-- ======================================================
+     INPUT LOCK
+====================================================== -->
+
+<section class="module">
+
+    <div class="module-head">
+        <span class="module-tag">CH.2</span>
+        <h2>Clipboard &amp; input lock</h2>
+        <p>
+            Continuously wipes the clipboard on the selected
+            machines so nothing can be pasted in or out.
+        </p>
+    </div>
+
+    <div class="controls">
+
+        <button class="on" onclick="lockSelected()">
+            Lock selected
+        </button>
+
+        <button class="off" onclick="unlockSelected()">
+            Unlock selected
+        </button>
+
+        <button class="on" onclick="lockAll()">
+            Lock all
+        </button>
+
+        <button class="off" onclick="unlockAll()">
+            Unlock all
+        </button>
+
+    </div>
+
+</section>
+
+
+<!-- ======================================================
+     PARTICIPANTS
+====================================================== -->
+
+<section class="module">
+
+    <div class="module-head">
+        <span class="module-tag">ROSTER</span>
+        <h2>Connected teams</h2>
+        <p>
+            Select rows to target the controls above at
+            specific teams instead of everyone.
+        </p>
+    </div>
+
+    <div class="roster-bar">
+
+        <div class="roster-count">
+            <b id="selectedCount">0</b> selected
+        </div>
+
+        <button onclick="selectAll()">
+            Select all
+        </button>
+
+    </div>
+
+    <table>
+
+        <thead>
+            <tr>
+                <th></th>
+                <th>Team</th>
+                <th>Socket ID</th>
+                <th>Hostname</th>
+                <th>IP address</th>
+            </tr>
+        </thead>
+
+        <tbody id="participantTable">
+            <tr class="empty-row">
+                <td colspan="5">
+                    No teams connected yet.
+                </td>
+            </tr>
+        </tbody>
+
+    </table>
+
+</section>
+
+
+</main>
+
+
+<div id="toast" class="toast"></div>
+
+
+<script>
+
+    const socket = io();
+
+    let authenticated = false;
+    let participants = [];
+
+
+    // ======================================================
+    // CONNECTION
+    // ======================================================
+
+    socket.on("connect", () => {
+
+        document
+            .getElementById("signal")
+            .classList.add("live");
+
+        document
+            .getElementById("statusText")
+            .textContent = "Live";
+
+    });
+
+
+    socket.on("disconnect", () => {
+
+        document
+            .getElementById("signal")
+            .classList.remove("live");
+
+        document
+            .getElementById("statusText")
+            .textContent = "Disconnected";
+
+    });
+
+
+    // ======================================================
+    // LOGIN
+    // ======================================================
+
+    function login() {
+
+        const password =
+            document.getElementById(
+                "adminPassword"
+            ).value;
+
+        if (!password) {
+
+            showLoginError(
+                "Enter the administrator password."
+            );
+
+            return;
+        }
+
+        socket.emit(
+            "register_admin",
+            password
+        );
+    }
+
+
+    socket.on(
+        "admin_auth_result",
+        (result) => {
+
+            if (result.success) {
+
+                authenticated = true;
+
+                document
+                    .getElementById("loginScreen")
+                    .style.display = "none";
+
+                showToast(
+                    "Console access granted."
+                );
+
+            } else {
+
+                showLoginError(
+                    result.message ||
+                    "Authentication failed."
+                );
+
+            }
+
+        }
+    );
+
+
+    document
+        .getElementById("adminPassword")
+        .addEventListener(
+            "keydown",
+            (event) => {
+
+                if (event.key === "Enter") {
+                    login();
+                }
+
+            }
+        );
+
+
+    function showLoginError(message) {
+
+        const element =
+            document.getElementById(
+                "loginError"
+            );
+
+        element.textContent = message;
+
+        element.style.display = "block";
+    }
+
+
+    // ======================================================
+    // PARTICIPANTS
+    // ======================================================
+
+    socket.on(
+        "update_players",
+        (players) => {
+
+            if (!authenticated) {
+                return;
+            }
+
+            participants = players || [];
+
+            renderParticipants();
+
+        }
+    );
+
+
+    function renderParticipants() {
+
+        const table =
+            document.getElementById(
+                "participantTable"
+            );
+
+        table.innerHTML = "";
+
+
+        if (participants.length === 0) {
+
+            table.innerHTML = `
+                <tr class="empty-row">
+                    <td colspan="5">
+                        No teams connected yet.
+                    </td>
+                </tr>
+            `;
+
+            updateSelectedCount();
+
+            return;
+        }
+
+
+        participants.forEach(
+            (player) => {
+
+                const row =
+                    document.createElement("tr");
+
+                row.innerHTML = `
+
+                    <td>
+
+                        <input
+                            type="checkbox"
+                            class="participant-checkbox"
+                            value="${escapeHtml(player.id)}"
+                            onchange="updateSelectedCount()"
+                        >
+
+                    </td>
+
+
+                    <td class="team-name">
+                        ${escapeHtml(player.username)}
+                    </td>
+
+
+                    <td>
+                        ${escapeHtml(player.id)}
+                    </td>
+
+
+                    <td>
+                        ${escapeHtml(player.hostname)}
+                    </td>
+
+
+                    <td>
+                        ${escapeHtml(player.ip)}
+                    </td>
+
+                `;
+
+                table.appendChild(row);
+
+            }
+        );
+
+
+        updateSelectedCount();
+    }
+
+
+    function escapeHtml(value) {
+
+        return String(value ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+
+    function getSelectedPlayers() {
+
+        return [
+            ...document.querySelectorAll(
+                ".participant-checkbox:checked"
+            )
+        ].map(
+            checkbox => checkbox.value
+        );
+    }
+
+
+    function updateSelectedCount() {
+
+        const count =
+            getSelectedPlayers().length;
+
+        document.getElementById(
+            "selectedCount"
+        ).textContent = count;
+    }
+
+
+    function selectAll() {
+
+        document
+            .querySelectorAll(
+                ".participant-checkbox"
+            )
+            .forEach(
+                checkbox => {
+                    checkbox.checked = true;
+                }
+            );
+
+        updateSelectedCount();
+    }
+
+
+    // ======================================================
+    // BLACKOUT
+    // ======================================================
+
+    function getDuration() {
+
+        const seconds =
+            Number(
+                document.getElementById(
+                    "duration"
+                ).value
+            );
+
+
+        if (
+            !Number.isFinite(seconds) ||
+            seconds <= 0
+        ) {
+
+            showToast(
+                "Enter a valid blackout duration."
+            );
+
+            return null;
+        }
+
+
+        return Math.round(
+            seconds * 1000
+        );
+    }
+
+
+    function blackoutSelected() {
+
+        const players =
+            getSelectedPlayers();
+
+
+        if (players.length === 0) {
+
+            showToast(
+                "Select at least one team."
+            );
+
+            return;
+        }
+
+
+        const duration =
+            getDuration();
+
+
+        if (duration === null) {
+            return;
+        }
+
+
+        socket.emit(
+            "selectiveBlackout",
+            {
+                players,
+                duration
+            }
+        );
+
+
+        showToast(
+            "Blackout sent to selected teams."
+        );
+    }
+
+
+    function endSelectedBlackout() {
+
+        const players =
+            getSelectedPlayers();
+
+
+        if (players.length === 0) {
+
+            showToast(
+                "Select at least one team."
+            );
+
+            return;
+        }
+
+
+        socket.emit(
+            "selectiveEndBlackout",
+            {
+                players
+            }
+        );
+
+
+        showToast(
+            "Blackout ended for selected teams."
+        );
+    }
+
+
+    function blackoutAll() {
+
+        const duration =
+            getDuration();
+
+
+        if (duration === null) {
+            return;
+        }
+
+
+        socket.emit(
+            "blackoutAll",
+            duration
+        );
+
+
+        showToast(
+            "Blackout sent to all teams."
+        );
+    }
+
+
+    function endAllBlackout() {
+
+        socket.emit(
+            "endBlackoutAll"
+        );
+
+
+        showToast(
+            "Blackout ended for all teams."
+        );
+    }
+
+
+    // ======================================================
+    // INPUT / CLIPBOARD LOCK
+    // ======================================================
+
+    function lockSelected() {
+
+        const players =
+            getSelectedPlayers();
+
+
+        if (players.length === 0) {
+
+            showToast(
+                "Select at least one team."
+            );
+
+            return;
+        }
+
+
+        socket.emit(
+            "selectiveClipboardLock",
+            {
+                players
+            }
+        );
+
+
+        showToast(
+            "Clipboard lock enabled for selected teams."
+        );
+    }
+
+
+    function unlockSelected() {
+
+        const players =
+            getSelectedPlayers();
+
+
+        if (players.length === 0) {
+
+            showToast(
+                "Select at least one team."
+            );
+
+            return;
+        }
+
+
+        socket.emit(
+            "selectiveClipboardUnlock",
+            {
+                players
+            }
+        );
+
+
+        showToast(
+            "Clipboard lock disabled for selected teams."
+        );
+    }
+
+
+    function lockAll() {
+
+        socket.emit(
+            "clipboardLockAll"
+        );
+
+
+        showToast(
+            "Clipboard lock enabled for all teams."
+        );
+    }
+
+
+    function unlockAll() {
+
+        socket.emit(
+            "clipboardUnlockAll"
+        );
+
+
+        showToast(
+            "Clipboard lock disabled for all teams."
+        );
+    }
+
+
+    // ======================================================
+    // TOAST
+    // ======================================================
+
+    function showToast(message) {
+
+        const toast =
+            document.getElementById(
+                "toast"
+            );
+
+
+        toast.textContent = message;
+
+        toast.style.display = "block";
+
+
+        clearTimeout(
+            showToast.timeout
+        );
+
+
+        showToast.timeout =
+            setTimeout(
+                () => {
+                    toast.style.display = "none";
+                },
+                2500
+            );
+    }
+
+</script>
+
+</body>
+
+</html>
