@@ -12,6 +12,36 @@ from dotenv import load_dotenv
 
 
 # ============================================================
+# OPTIONAL X11 IMPORT
+# ============================================================
+
+X11_AVAILABLE = False
+
+if platform.system() == "Linux":
+
+    try:
+        from Xlib import X
+        from Xlib import XK
+        from Xlib.display import Display
+
+        X11_AVAILABLE = True
+
+    except ImportError:
+
+        print(
+            "WARNING: python-xlib is not installed."
+        )
+
+        print(
+            "Install it with:"
+        )
+
+        print(
+            "python3 -m pip install python-xlib"
+        )
+
+
+# ============================================================
 # CONFIGURATION
 # ============================================================
 
@@ -27,6 +57,7 @@ SERVER_PORT = int(
 )
 
 if not SERVER_IP:
+
     raise RuntimeError(
         "SERVER_IP is missing from .env"
     )
@@ -56,6 +87,8 @@ overlay_label = None
 stop_event = threading.Event()
 
 team_name = ""
+
+x11_thread = None
 
 
 # ============================================================
@@ -93,7 +126,9 @@ def prompt_team_name():
         ).strip()
 
         if entered:
+
             team_name = entered
+
             return
 
         print(
@@ -112,7 +147,9 @@ def create_overlay():
 
     overlay = tk.Tk()
 
-    overlay.title("Participant")
+    overlay.title(
+        "Participant"
+    )
 
     overlay.configure(
         bg="#111111"
@@ -133,7 +170,6 @@ def create_overlay():
         lambda: None
     )
 
-
     container = tk.Frame(
         overlay,
         bg="#111111"
@@ -143,7 +179,6 @@ def create_overlay():
         expand=True,
         fill="both"
     )
-
 
     title = tk.Label(
         container,
@@ -157,7 +192,6 @@ def create_overlay():
         pady=(0, 25)
     )
 
-
     overlay_label = tk.Label(
         container,
         text="Blackout",
@@ -167,7 +201,6 @@ def create_overlay():
     )
 
     overlay_label.pack()
-
 
     overlay.withdraw()
 
@@ -186,14 +219,12 @@ def show_blackout(duration_ms):
     blackout_active = True
 
     blackout_end_time = (
-        time.time() +
-        duration_ms / 1000
+        time.time()
+        + duration_ms / 1000
     )
-
 
     if overlay is None:
         return
-
 
     try:
 
@@ -211,6 +242,7 @@ def show_blackout(duration_ms):
         update_blackout_label()
 
     except tk.TclError:
+
         pass
 
 
@@ -223,15 +255,15 @@ def hide_blackout():
 
     blackout_end_time = 0
 
-
     if overlay is None:
         return
 
-
     try:
+
         overlay.withdraw()
 
     except tk.TclError:
+
         pass
 
 
@@ -240,12 +272,10 @@ def update_blackout_label():
     if not blackout_active:
         return
 
-
     remaining = (
-        blackout_end_time -
-        time.time()
+        blackout_end_time
+        - time.time()
     )
-
 
     if remaining <= 0:
 
@@ -253,11 +283,9 @@ def update_blackout_label():
 
         return
 
-
     total_seconds = int(
         remaining
     )
-
 
     minutes = (
         total_seconds // 60
@@ -267,12 +295,10 @@ def update_blackout_label():
         total_seconds % 60
     )
 
-
     text = (
         f"Blackout • Ends in "
         f"{minutes}m {seconds:02d}s"
     )
-
 
     try:
 
@@ -286,23 +312,13 @@ def update_blackout_label():
         )
 
     except tk.TclError:
+
         pass
 
 
 # ============================================================
 # WINDOWS CLIPBOARD
 # ============================================================
-#
-# NOTE: A low-level Windows keyboard hook (blocking Ctrl+C/V/X,
-# Shift/Ctrl+Insert, Space) used to live here. It was removed:
-# clipboard/input lock is already enforced by continuously
-# wiping the clipboard below, the hook duplicated that
-# protection, it only ever worked on Windows, and it relied on
-# `ctypes.wintypes` without importing that submodule (it isn't
-# pulled in by a bare `import ctypes`), so it would have raised
-# an AttributeError the first time it ran. If you need to block
-# keystrokes at the OS level again, re-add it deliberately and
-# `import ctypes.wintypes` explicitly.
 
 if IS_WINDOWS:
 
@@ -310,6 +326,9 @@ if IS_WINDOWS:
 
 
 def clear_windows_clipboard():
+
+    if not IS_WINDOWS:
+        return
 
     try:
 
@@ -326,6 +345,7 @@ def clear_windows_clipboard():
             user32.CloseClipboard()
 
     except Exception:
+
         pass
 
 
@@ -337,11 +357,13 @@ def windows_clipboard_thread():
 
             clear_windows_clipboard()
 
-        time.sleep(0.15)
+        time.sleep(
+            0.15
+        )
 
 
 # ============================================================
-# LINUX
+# LINUX SESSION
 # ============================================================
 
 linux_session = ""
@@ -352,7 +374,6 @@ if IS_LINUX:
         "XDG_SESSION_TYPE",
         ""
     ).lower()
-
 
     print(
         "Linux session type:",
@@ -366,46 +387,30 @@ if IS_LINUX:
 
 def linux_clear_clipboard():
 
-    if linux_session == "wayland":
+    if not IS_LINUX:
+        return
 
-        try:
+    if linux_session != "x11":
+        return
 
-            subprocess.run(
-                [
-                    "wl-copy",
-                    "--clear"
-                ],
+    try:
 
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
+        subprocess.run(
+            [
+                "xclip",
+                "-selection",
+                "clipboard",
+                "-i"
+            ],
+            input=b"",
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=1
+        )
 
-                timeout=1
-            )
+    except Exception:
 
-        except Exception:
-            pass
-
-
-    elif linux_session == "x11":
-
-        try:
-
-            subprocess.run(
-                [
-                    "xclip",
-                    "-selection",
-                    "clipboard",
-                    "/dev/null"
-                ],
-
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-
-                timeout=1
-            )
-
-        except Exception:
-            pass
+        pass
 
 
 def linux_clipboard_thread():
@@ -416,7 +421,498 @@ def linux_clipboard_thread():
 
             linux_clear_clipboard()
 
-        time.sleep(0.15)
+        time.sleep(
+            0.05
+        )
+
+
+# ============================================================
+# X11 KEY HELPERS
+# ============================================================
+
+def x11_get_keycode(
+    display,
+    key_name
+):
+
+    keysym = XK.string_to_keysym(
+        key_name
+    )
+
+    if keysym == 0:
+
+        return 0
+
+    return display.keysym_to_keycode(
+        keysym
+    )
+
+
+def x11_modifier_variants(
+    modifier
+):
+
+    # Normal
+    # CapsLock
+    # NumLock
+    # CapsLock + NumLock
+
+    return [
+
+        modifier,
+
+        modifier | X.LockMask,
+
+        modifier | X.Mod2Mask,
+
+        modifier | X.LockMask | X.Mod2Mask
+
+    ]
+
+
+def x11_grab_key(
+    display,
+    root,
+    key_name,
+    modifier
+):
+
+    keycode = x11_get_keycode(
+        display,
+        key_name
+    )
+
+    if keycode == 0:
+
+        print(
+            f"WARNING: could not find "
+            f"X11 key: {key_name}"
+        )
+
+        return
+
+    for mod in x11_modifier_variants(
+        modifier
+    ):
+
+        try:
+
+            root.grab_key(
+                keycode,
+                mod,
+                True,
+                X.GrabModeAsync,
+                X.GrabModeAsync
+            )
+
+        except Exception as exc:
+
+            print(
+                f"Could not grab "
+                f"{key_name}: {exc}"
+            )
+
+
+def x11_ungrab_key(
+    display,
+    root,
+    key_name,
+    modifier
+):
+
+    keycode = x11_get_keycode(
+        display,
+        key_name
+    )
+
+    if keycode == 0:
+        return
+
+    for mod in x11_modifier_variants(
+        modifier
+    ):
+
+        try:
+
+            root.ungrab_key(
+                keycode,
+                mod
+            )
+
+        except Exception:
+
+            pass
+
+
+# ============================================================
+# X11 KEYBOARD LOCK
+# ============================================================
+
+def x11_enable_keyboard_lock(
+    display,
+    root
+):
+
+    # Ctrl+C
+
+    x11_grab_key(
+        display,
+        root,
+        "c",
+        X.ControlMask
+    )
+
+    # Ctrl+V
+
+    x11_grab_key(
+        display,
+        root,
+        "v",
+        X.ControlMask
+    )
+
+    # Ctrl+X
+
+    x11_grab_key(
+        display,
+        root,
+        "x",
+        X.ControlMask
+    )
+
+    # Ctrl+Insert
+
+    x11_grab_key(
+        display,
+        root,
+        "Insert",
+        X.ControlMask
+    )
+
+    # Shift+Insert
+
+    x11_grab_key(
+        display,
+        root,
+        "Insert",
+        X.ShiftMask
+    )
+
+    # Ctrl+Shift+C
+
+    x11_grab_key(
+        display,
+        root,
+        "c",
+        X.ControlMask | X.ShiftMask
+    )
+
+    # Ctrl+Shift+V
+
+    x11_grab_key(
+        display,
+        root,
+        "v",
+        X.ControlMask | X.ShiftMask
+    )
+
+    display.flush()
+
+    print(
+        "X11 keyboard copy/paste LOCKED"
+    )
+
+
+def x11_disable_keyboard_lock(
+    display,
+    root
+):
+
+    # Ctrl+C
+
+    x11_ungrab_key(
+        display,
+        root,
+        "c",
+        X.ControlMask
+    )
+
+    # Ctrl+V
+
+    x11_ungrab_key(
+        display,
+        root,
+        "v",
+        X.ControlMask
+    )
+
+    # Ctrl+X
+
+    x11_ungrab_key(
+        display,
+        root,
+        "x",
+        X.ControlMask
+    )
+
+    # Ctrl+Insert
+
+    x11_ungrab_key(
+        display,
+        root,
+        "Insert",
+        X.ControlMask
+    )
+
+    # Shift+Insert
+
+    x11_ungrab_key(
+        display,
+        root,
+        "Insert",
+        X.ShiftMask
+    )
+
+    # Ctrl+Shift+C
+
+    x11_ungrab_key(
+        display,
+        root,
+        "c",
+        X.ControlMask | X.ShiftMask
+    )
+
+    # Ctrl+Shift+V
+
+    x11_ungrab_key(
+        display,
+        root,
+        "v",
+        X.ControlMask | X.ShiftMask
+    )
+
+    display.flush()
+
+    print(
+        "X11 keyboard copy/paste UNLOCKED"
+    )
+
+
+# ============================================================
+# X11 MOUSE LOCK
+# ============================================================
+
+def x11_enable_mouse_lock(
+    display,
+    root
+):
+
+    # --------------------------------------------------------
+    # Button 2 = middle click
+    # Button 3 = right click
+    # --------------------------------------------------------
+
+    for button in (2, 3):
+
+        try:
+
+            root.grab_button(
+                button,
+                X.AnyModifier,
+                False,
+                X.ButtonPressMask,
+                X.GrabModeAsync,
+                X.GrabModeAsync,
+                X.NONE,
+                X.NONE
+            )
+
+        except Exception as exc:
+
+            print(
+                f"Could not grab "
+                f"mouse button {button}: {exc}"
+            )
+
+    display.flush()
+
+    print(
+        "X11 mouse copy/paste LOCKED"
+    )
+
+
+def x11_disable_mouse_lock(
+    display,
+    root
+):
+
+    for button in (2, 3):
+
+        try:
+
+            root.ungrab_button(
+                button,
+                X.AnyModifier
+            )
+
+        except Exception:
+
+            pass
+
+    display.flush()
+
+    print(
+        "X11 mouse copy/paste UNLOCKED"
+    )
+
+
+# ============================================================
+# X11 LOCK THREAD
+# ============================================================
+
+def x11_keyboard_lock_loop():
+
+    if not IS_LINUX:
+        return
+
+    if linux_session != "x11":
+
+        print(
+            "Linux session is not X11."
+        )
+
+        return
+
+    if not X11_AVAILABLE:
+
+        print(
+            "python-xlib is unavailable."
+        )
+
+        return
+
+    display = None
+
+    try:
+
+        display = Display()
+
+        root = display.screen().root
+
+        lock_state = False
+
+        print(
+            "X11 input lock thread started."
+        )
+
+        while not stop_event.is_set():
+
+            # =================================================
+            # LOCK
+            # =================================================
+
+            if (
+                input_lock_active
+                and not lock_state
+            ):
+
+                x11_enable_keyboard_lock(
+                    display,
+                    root
+                )
+
+                x11_enable_mouse_lock(
+                    display,
+                    root
+                )
+
+                lock_state = True
+
+                print(
+                    "X11 FULL COPY/PASTE LOCK ENABLED"
+                )
+
+            # =================================================
+            # UNLOCK
+            # =================================================
+
+            elif (
+                not input_lock_active
+                and lock_state
+            ):
+
+                x11_disable_keyboard_lock(
+                    display,
+                    root
+                )
+
+                x11_disable_mouse_lock(
+                    display,
+                    root
+                )
+
+                lock_state = False
+
+                print(
+                    "X11 FULL COPY/PASTE LOCK DISABLED"
+                )
+
+            # =================================================
+            # PROCESS GRABBED EVENTS
+            # =================================================
+
+            while display.pending_events():
+
+                try:
+
+                    display.next_event()
+
+                except Exception:
+
+                    break
+
+            time.sleep(
+                0.01
+            )
+
+        # =====================================================
+        # CLEANUP
+        # =====================================================
+
+        if lock_state:
+
+            x11_disable_keyboard_lock(
+                display,
+                root
+            )
+
+            x11_disable_mouse_lock(
+                display,
+                root
+            )
+
+    except Exception as exc:
+
+        print(
+            "X11 input lock error:",
+            exc
+        )
+
+    finally:
+
+        if display is not None:
+
+            try:
+
+                display.close()
+
+            except Exception:
+
+                pass
+
+        print(
+            "X11 input lock thread stopped."
+        )
 
 
 # ============================================================
@@ -457,7 +953,6 @@ def connect():
         SERVER_URL
     )
 
-
     sio.emit(
         "register_client",
         {
@@ -489,7 +984,9 @@ def on_blackout(duration):
 
     try:
 
-        duration = int(duration)
+        duration = int(
+            duration
+        )
 
     except (
         TypeError,
@@ -498,11 +995,9 @@ def on_blackout(duration):
 
         return
 
-
     print(
         f"Blackout received: {duration}ms"
     )
-
 
     if overlay is not None:
 
@@ -520,7 +1015,6 @@ def on_end_blackout():
     print(
         "Blackout ended by admin."
     )
-
 
     if overlay is not None:
 
@@ -565,7 +1059,9 @@ def connect_to_server():
                 f"Could not connect to server: {exc}"
             )
 
-            time.sleep(3)
+            time.sleep(
+                3
+            )
 
 
 # ============================================================
@@ -573,6 +1069,8 @@ def connect_to_server():
 # ============================================================
 
 def main():
+
+    global x11_thread
 
     print(
         "================================"
@@ -600,7 +1098,6 @@ def main():
         f"Platform: {platform.system()}"
     )
 
-
     if IS_LINUX:
 
         print(
@@ -608,10 +1105,16 @@ def main():
             f"{linux_session or 'unknown'}"
         )
 
+        print(
+            "X11 support:",
+            "available"
+            if X11_AVAILABLE
+            else "unavailable"
+        )
 
-    # --------------------------------------------------------
-    # Tkinter
-    # --------------------------------------------------------
+    # ========================================================
+    # TKINTER
+    # ========================================================
 
     overlay_thread = threading.Thread(
         target=create_overlay,
@@ -620,10 +1123,9 @@ def main():
 
     overlay_thread.start()
 
-
-    # --------------------------------------------------------
-    # Windows
-    # --------------------------------------------------------
+    # ========================================================
+    # WINDOWS
+    # ========================================================
 
     if IS_WINDOWS:
 
@@ -632,31 +1134,52 @@ def main():
             daemon=True
         ).start()
 
-
-    # --------------------------------------------------------
-    # Linux
-    # --------------------------------------------------------
+    # ========================================================
+    # LINUX
+    # ========================================================
 
     elif IS_LINUX:
+
+        # Clipboard clearing
 
         threading.Thread(
             target=linux_clipboard_thread,
             daemon=True
         ).start()
 
+        # X11 keyboard + mouse grabs
 
-    # --------------------------------------------------------
-    # Socket.IO
-    # --------------------------------------------------------
+        if (
+            linux_session == "x11"
+            and X11_AVAILABLE
+        ):
+
+            x11_thread = threading.Thread(
+                target=x11_keyboard_lock_loop,
+                daemon=True
+            )
+
+            x11_thread.start()
+
+        else:
+
+            print(
+                "X11 input locking is unavailable."
+            )
+
+    # ========================================================
+    # SOCKET.IO
+    # ========================================================
 
     connect_to_server()
-
 
     try:
 
         while True:
 
-            time.sleep(1)
+            time.sleep(
+                1
+            )
 
     except KeyboardInterrupt:
 
@@ -666,6 +1189,7 @@ def main():
 
         stop_event.set()
 
+        disable_input_lock()
 
         try:
 
@@ -675,6 +1199,10 @@ def main():
 
             pass
 
+
+# ============================================================
+# ENTRY POINT
+# ============================================================
 
 if __name__ == "__main__":
 
