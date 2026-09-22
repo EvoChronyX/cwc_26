@@ -89,8 +89,9 @@ function sendToSelected(
 
         if (
             players.includes(
-                socket.clientInfo?.id
-            )
+    socket.clientInfo && socket.clientInfo.id
+)
+
         ) {
 
             socket.emit(
