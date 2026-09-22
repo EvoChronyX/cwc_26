@@ -50,6 +50,16 @@ export function GameProvider({ children }) {
 
   // Connected Teams Roster (Synchronized with PostgreSQL DB)
   const [teams, setTeams] = useState([]);
+  const [activeTeamIds, setActiveTeamIds] = useState([]);
+
+  // Round 0 (Mani Adi) Control & State
+  const [roundState, setRoundState] = useState({
+    round: 0,
+    roundName: 'Round 0 - Mani Adi',
+    isActive: false,
+    isEnded: false,
+    highestScorer: null
+  });
 
   // Buzzer & Lock-in State with sequential queue
   const [buzzersArmed, setBuzzersArmed] = useState(true);
@@ -245,6 +255,7 @@ export function GameProvider({ children }) {
     switch (data.type) {
       case 'INIT_STATE':
         if (data.teams) setTeams(data.teams);
+        if (Array.isArray(data.activeTeamIds)) setActiveTeamIds(data.activeTeamIds);
         if (data.queueState) {
           const q = data.queueState.queue || [];
           setBuzzerQueue(q);
@@ -272,9 +283,44 @@ export function GameProvider({ children }) {
         if (data.recentLogs) setAuditLogs(data.recentLogs);
         break;
 
+      case 'ACTIVE_TEAMS_UPDATE':
+        if (Array.isArray(data.activeTeamIds)) {
+          setActiveTeamIds(data.activeTeamIds);
+        }
+        break;
+
+      case 'ROUND_STATE_CHANGED':
+        setRoundState({
+          round: data.round ?? 0,
+          roundName: data.roundName || 'Round 0 - Mani Adi',
+          isActive: !!data.isActive,
+          isEnded: !!data.isEnded,
+          highestScorer: data.highestScorer || null,
+        });
+        if (typeof data.buzzersArmed === 'boolean') {
+          setBuzzersArmed(data.buzzersArmed);
+        }
+        if (data.queueState) {
+          setBuzzerQueue(data.queueState.queue || []);
+          setQueueIndex(data.queueState.queueIndex || 0);
+        }
+        if (Array.isArray(data.teams)) {
+          setTeams(data.teams);
+        }
+        break;
+
       case 'SCORE_UPDATED':
         setTeams((prev) =>
-          prev.map((t) => (t.id === data.team_id ? { ...t, score: data.score } : t))
+          prev.map((t) =>
+            t.id === data.team_id
+              ? {
+                  ...t,
+                  score: data.score,
+                  r0: data.r0_score !== undefined ? data.r0_score : t.r0,
+                  r0Score: data.r0_score !== undefined ? data.r0_score : t.r0Score,
+                }
+              : t
+          )
         );
         break;
 
@@ -526,6 +572,12 @@ export function GameProvider({ children }) {
 
   // LOGOUT: Clears tokens and redirects back to portal
   const logout = () => {
+    try {
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({ type: 'PLAYER_LOGOUT' }));
+        wsRef.current.close();
+      }
+    } catch (e) {}
     clearAuthToken();
     setCurrentUser(null);
     setCurrentTeamId(null);
@@ -557,6 +609,73 @@ export function GameProvider({ children }) {
           return t;
         })
       );
+    }
+  };
+
+  // Start Round 0 (Mani Adi)
+  const startRound0 = async () => {
+    try {
+      const res = await api.buzzer.startRound(0, 'Round 0 - Mani Adi');
+      setRoundState({
+        round: 0,
+        roundName: 'Round 0 - Mani Adi',
+        isActive: true,
+        isEnded: false,
+        highestScorer: null
+      });
+      setBuzzersArmed(true);
+      setBuzzerQueue([]);
+      setQueueIndex(0);
+      setIsLockedIn(false);
+      playTone(850, 0.15);
+      return res;
+    } catch (err) {
+      console.error('Failed to start Round 0:', err);
+      setRoundState((prev) => ({ ...prev, isActive: true, isEnded: false }));
+      armBuzzers();
+    }
+  };
+
+  // End Round 0 (Mani Adi)
+  const endRound0 = async () => {
+    try {
+      const res = await api.buzzer.endRound(0);
+      setRoundState({
+        round: 0,
+        roundName: 'Round 0 - Mani Adi',
+        isActive: false,
+        isEnded: true,
+        highestScorer: res?.highestScorer || null
+      });
+      setBuzzersArmed(false);
+      playTone(400, 0.25, 'sawtooth');
+      return res;
+    } catch (err) {
+      console.error('Failed to end Round 0:', err);
+      const sortedByR0 = [...teams].sort((a, b) => (b.r0 || 0) - (a.r0 || 0));
+      setRoundState((prev) => ({
+        ...prev,
+        isActive: false,
+        isEnded: true,
+        highestScorer: sortedByR0[0] || null
+      }));
+      lockBuzzers();
+    }
+  };
+
+  // Award Correct Answer (+1 Point in Round 0 Mani Adi)
+  const awardCorrectAnswer = async (teamIdOverride) => {
+    const targetTeamId = teamIdOverride || currentBuzzerWinner.teamId || 1;
+    try {
+      const res = await api.scores.awardCorrectAnswer(targetTeamId, 0);
+      playTone(1100, 0.2);
+      await resetBuzzers();
+      return res;
+    } catch (err) {
+      console.warn('Award correct answer API fallback:', err);
+      adjustTeamScore(targetTeamId, 1);
+      playTone(1100, 0.2);
+      await resetBuzzers();
     }
   };
 
@@ -819,7 +938,12 @@ export function GameProvider({ children }) {
         loginPlayer,
         loginAdmin,
         logout,
-        refreshDatabaseState
+        refreshDatabaseState,
+        activeTeamIds,
+        roundState,
+        startRound0,
+        endRound0,
+        awardCorrectAnswer
       }}
     >
       {children}

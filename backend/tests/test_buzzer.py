@@ -88,3 +88,43 @@ async def test_buzzer_lifecycle_and_queue(client: AsyncClient):
         headers={"Authorization": f"Bearer {token2}"}
     )
     assert lock_test_res.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_start_and_end_round_lifecycle(client: AsyncClient):
+    from app.core.config import settings
+
+    admin_res = await client.post("/api/auth/admin/login", json={
+        "gm_id": settings.DEFAULT_ADMIN_GM_ID,
+        "password": settings.DEFAULT_ADMIN_PASSWORD
+    })
+    admin_token = admin_res.json()["access_token"]
+    admin_headers = {"Authorization": f"Bearer {admin_token}"}
+
+    # 1. Start Round 0
+    start_res = await client.post(
+        "/api/buzzer/round/start",
+        json={"round_number": 0, "round_name": "Round 0 - Mani Adi"},
+        headers=admin_headers
+    )
+    assert start_res.status_code == 200
+    start_data = start_res.json()
+    assert start_data["round"] == 0
+    assert start_data["isActive"] is True
+    assert start_data["isEnded"] is False
+    assert start_data["buzzersArmed"] is True
+
+    # 2. End Round 0
+    end_res = await client.post(
+        "/api/buzzer/round/end",
+        json={"round_number": 0},
+        headers=admin_headers
+    )
+    assert end_res.status_code == 200
+    end_data = end_res.json()
+    assert end_data["isActive"] is False
+    assert end_data["isEnded"] is True
+    assert end_data["buzzersArmed"] is False
+    assert "highestScorer" in end_data
+
+

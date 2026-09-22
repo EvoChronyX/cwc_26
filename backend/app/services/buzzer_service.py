@@ -375,3 +375,96 @@ class BuzzerService:
             "queueState": updated_state
         })
         return updated_state
+
+    @staticmethod
+    async def start_round(
+        db: AsyncSession,
+        round_number: int = 0,
+        round_name: str = "Round 0 - Mani Adi",
+        admin_id: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """Starts a round (default Round 0 - Mani Adi), resets its buzzer queue, arms buzzers, and broadcasts."""
+        session = await BuzzerService.get_active_session(db)
+        session.current_round = round_number
+        session.round_name = round_name
+        session.buzzers_armed = True
+        session.buzzers_armed_at = datetime.now(timezone.utc)
+
+        await db.execute(
+            delete(BuzzerEvent).where(
+                BuzzerEvent.session_id == session.id,
+                BuzzerEvent.round_number == round_number
+            )
+        )
+        BuzzerService.set_queue_index(0)
+        await db.commit()
+
+        await AuditService.log_event(
+            db=db,
+            category="ROUND CONTROL",
+            actor_type="ADMIN" if admin_id else "SYSTEM",
+            actor_id=admin_id,
+            action_type="ROUND_STARTED",
+            message=f"{round_name.upper()} STARTED. Master buzzers armed.",
+            color_class="text-signal-emerald font-bold",
+            broadcast=True
+        )
+
+        state = await BuzzerService.get_queue_state(db)
+        payload = {
+            "type": "ROUND_STATE_CHANGED",
+            "round": round_number,
+            "roundName": round_name,
+            "isActive": True,
+            "isEnded": False,
+            "buzzersArmed": True,
+            "queueState": state
+        }
+        await manager.broadcast(payload)
+        return payload
+
+    @staticmethod
+    async def end_round(
+        db: AsyncSession,
+        round_number: int = 0,
+        admin_id: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """Ends the active round, locks buzzers, determines the highest scoring player for this round, and broadcasts."""
+        session = await BuzzerService.get_active_session(db)
+        session.buzzers_armed = False
+        await db.commit()
+
+        from app.services.score_service import ScoreService
+        teams = await ScoreService.get_all_teams(db)
+        sorted_by_r0 = sorted(teams, key=lambda t: (t.get("r0", 0), t.get("score", 0)), reverse=True)
+        highest_scorer = sorted_by_r0[0] if sorted_by_r0 else None
+
+        msg = f"{session.round_name.upper()} ENDED."
+        if highest_scorer and highest_scorer.get("r0", 0) > 0:
+            msg += f" Winner / Highest Scorer: {highest_scorer['teamName']} with {highest_scorer['r0']} Points!"
+
+        await AuditService.log_event(
+            db=db,
+            category="ROUND CONTROL",
+            actor_type="ADMIN" if admin_id else "SYSTEM",
+            actor_id=admin_id,
+            action_type="ROUND_ENDED",
+            message=msg,
+            color_class="text-acid-chartreuse font-bold",
+            broadcast=True
+        )
+
+        state = await BuzzerService.get_queue_state(db)
+        payload = {
+            "type": "ROUND_STATE_CHANGED",
+            "round": round_number,
+            "roundName": session.round_name,
+            "isActive": False,
+            "isEnded": True,
+            "buzzersArmed": False,
+            "highestScorer": highest_scorer,
+            "queueState": state,
+            "teams": sorted_by_r0
+        }
+        await manager.broadcast(payload)
+        return payload

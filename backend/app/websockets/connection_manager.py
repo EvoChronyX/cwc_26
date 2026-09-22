@@ -16,6 +16,9 @@ class ConnectionManager:
         # Socket metadata
         self.socket_info: Dict[WebSocket, Dict[str, Any]] = {}
 
+    def get_active_team_ids(self) -> list:
+        return list(self.team_connections.keys())
+
     async def connect(self, websocket: WebSocket, client_info: Dict[str, Any]):
         await websocket.accept()
         self.active_connections.add(websocket)
@@ -30,6 +33,11 @@ class ConnectionManager:
                 if team_id not in self.team_connections:
                     self.team_connections[team_id] = set()
                 self.team_connections[team_id].add(websocket)
+                # Immediately broadcast updated active teams list
+                await self.broadcast({
+                    "type": "ACTIVE_TEAMS_UPDATE",
+                    "activeTeamIds": self.get_active_team_ids()
+                })
 
         logger.info(f"WebSocket client connected: role={role}, total={len(self.active_connections)}")
 
@@ -47,6 +55,16 @@ class ConnectionManager:
                     del self.team_connections[team_id]
 
         logger.info(f"WebSocket client disconnected: total={len(self.active_connections)}")
+
+    async def disconnect_and_broadcast(self, websocket: WebSocket):
+        info = self.socket_info.get(websocket, {})
+        was_player = info.get("role") == "player" and info.get("team_id")
+        self.disconnect(websocket)
+        if was_player:
+            await self.broadcast({
+                "type": "ACTIVE_TEAMS_UPDATE",
+                "activeTeamIds": self.get_active_team_ids()
+            })
 
     async def broadcast(self, message: Dict[str, Any]):
         """Broadcasts a JSON message to all connected clients."""

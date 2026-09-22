@@ -24,8 +24,16 @@ export default function AdminConsole() {
     removeSabotageFromTeam,
     clearLogs,
     playTone,
-    logout
+    logout,
+    activeTeamIds,
+    roundState,
+    startRound0,
+    endRound0,
+    awardCorrectAnswer
   } = useGame();
+
+  // Active filter in Total Comalies
+  const [onlyActive, setOnlyActive] = useState(false);
 
   // Sabotage Neutralizer States in Thalaivar Page
   const [selectedNeutralizeTeamId, setSelectedNeutralizeTeamId] = useState(2); // default Team Vortex
@@ -202,10 +210,6 @@ export default function AdminConsole() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <div className="bg-surface-subtle px-4 py-3 rounded-lg flex flex-col items-end border border-hairline-light">
-                    <span className="font-label-mono-sm text-label-mono-sm uppercase text-on-surface-variant">Round Clock</span>
-                    <span className="font-label-mono-lg text-label-mono-lg font-bold text-primary">03:42.89</span>
-                  </div>
                   <button
                     type="button"
                     onClick={lockBuzzers}
@@ -223,31 +227,57 @@ export default function AdminConsole() {
                     <span className="font-label-mono-sm text-label-mono-sm uppercase text-on-surface-variant block mb-1">
                       Subsystem 01 // Input Lock &amp; Sequential Queue Arbitrage
                     </span>
-                    <h2 className="font-headline-lg text-headline-lg font-bold text-primary">
-                      Buzzer Signal Command
-                    </h2>
+                    <div className="flex items-center gap-3">
+                      <h2 className="font-headline-lg text-headline-lg font-bold text-primary">
+                        Buzzer Signal Command
+                      </h2>
+                      <span className={`px-2.5 py-0.5 rounded-full font-label-mono-sm text-xs font-bold uppercase tracking-wider ${
+                        roundState.isActive
+                          ? 'bg-signal-emerald/20 text-signal-emerald border border-signal-emerald/40 animate-pulse'
+                          : roundState.isEnded
+                          ? 'bg-acid-chartreuse/20 text-primary border border-acid-chartreuse'
+                          : 'bg-surface-subtle text-on-surface-variant'
+                      }`}>
+                        {roundState.isActive ? 'ROUND 0 // ACTIVE' : roundState.isEnded ? 'ROUND 0 // ENDED' : 'STANDBY'}
+                      </span>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <button
                       type="button"
-                      onClick={armBuzzers}
+                      onClick={startRound0}
                       className="px-5 py-2.5 bg-signal-emerald text-on-surface font-label-mono-sm text-label-mono-sm uppercase rounded-none shadow-[2px_2px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center gap-1.5 cursor-pointer font-bold"
                     >
-                      <span className="material-symbols-outlined text-base">sensors</span> Arm Buzzers
+                      <span className="material-symbols-outlined text-base">play_circle</span> Start Round
+                    </button>
+                    <button
+                      type="button"
+                      onClick={endRound0}
+                      className="px-5 py-2.5 bg-sabotage-crimson text-on-primary font-label-mono-sm text-label-mono-sm uppercase rounded-none shadow-[2px_2px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center gap-1.5 cursor-pointer font-bold"
+                    >
+                      <span className="material-symbols-outlined text-base">stop_circle</span> End Round
+                    </button>
+                    <div className="h-6 w-px bg-hairline-light mx-1 hidden sm:block"></div>
+                    <button
+                      type="button"
+                      onClick={armBuzzers}
+                      className="px-4 py-2 bg-surface-subtle hover:bg-surface-container-high text-primary font-label-mono-sm text-xs uppercase rounded-none transition-all flex items-center gap-1.5 cursor-pointer font-bold border border-hairline-light"
+                    >
+                      <span className="material-symbols-outlined text-sm">sensors</span> Arm
                     </button>
                     <button
                       type="button"
                       onClick={lockBuzzers}
-                      className="px-5 py-2.5 bg-sabotage-crimson text-on-primary font-label-mono-sm text-label-mono-sm uppercase rounded-none shadow-[2px_2px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center gap-1.5 cursor-pointer font-bold"
+                      className="px-4 py-2 bg-surface-subtle hover:bg-surface-container-high text-sabotage-crimson font-label-mono-sm text-xs uppercase rounded-none transition-all flex items-center gap-1.5 cursor-pointer font-bold border border-hairline-light"
                     >
-                      <span className="material-symbols-outlined text-base">block</span> Lock Buzzers
+                      <span className="material-symbols-outlined text-sm">block</span> Lock
                     </button>
                     <button
                       type="button"
                       onClick={resetBuzzers}
-                      className="px-4 py-2.5 bg-surface-subtle hover:bg-surface-container-high text-primary font-label-mono-sm text-label-mono-sm uppercase rounded-none transition-all flex items-center gap-1.5 cursor-pointer font-bold"
+                      className="px-4 py-2 bg-surface-subtle hover:bg-surface-container-high text-primary font-label-mono-sm text-xs uppercase rounded-none transition-all flex items-center gap-1.5 cursor-pointer font-bold border border-hairline-light"
                     >
-                      <span className="material-symbols-outlined text-base">refresh</span> Reset Signal
+                      <span className="material-symbols-outlined text-sm">refresh</span> Reset
                     </button>
                   </div>
                 </div>
@@ -379,14 +409,19 @@ export default function AdminConsole() {
                       </div>
 
                       <div className="flex items-center gap-4">
-                        {/* Enlarged "Grant Floor" Button */}
+                        {/* Enlarged "Correct Answer (+1 Pt)" Button */}
                         <button
                           type="button"
-                          onClick={() => awardFastestAnswer(currentBuzzerWinner.teamId)}
-                          className="px-8 py-4 bg-acid-chartreuse text-canvas-dark font-headline-md text-headline-md uppercase font-bold tracking-wider hover:bg-white hover:scale-105 active:scale-95 transition-all duration-150 cursor-pointer shadow-[4px_4px_0px_#050505] flex items-center gap-2"
+                          onClick={() => awardCorrectAnswer(currentBuzzerWinner.teamId)}
+                          disabled={!currentBuzzerWinner.teamId}
+                          className={`px-8 py-4 font-headline-md text-headline-md uppercase font-bold tracking-wider transition-all duration-150 flex items-center gap-2 ${
+                            !currentBuzzerWinner.teamId
+                              ? 'bg-hairline-dark text-on-surface-variant opacity-50 cursor-not-allowed'
+                              : 'bg-acid-chartreuse text-canvas-dark hover:bg-white hover:scale-105 active:scale-95 cursor-pointer shadow-[4px_4px_0px_#050505]'
+                          }`}
                         >
-                          <span className="material-symbols-outlined text-xl">workspace_premium</span>
-                          <span>Grant Floor (+50)</span>
+                          <span className="material-symbols-outlined text-xl">check_circle</span>
+                          <span>Correct Answer (+1 Pt)</span>
                         </button>
 
                         {/* Enlarged "Next player" Button */}
@@ -400,7 +435,7 @@ export default function AdminConsole() {
                               : 'bg-primary text-on-primary hover:bg-surface-dark hover:scale-105 active:scale-95 border-2 border-acid-chartreuse'
                           }`}
                         >
-                          <span>Next player</span>
+                          <span>Wrong / Next</span>
                           <span className="material-symbols-outlined text-xl">skip_next</span>
                         </button>
                       </div>
@@ -539,9 +574,23 @@ export default function AdminConsole() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <div className="bg-surface-subtle px-4 py-2 rounded-lg font-label-mono-sm text-label-mono-sm text-primary font-bold border border-hairline-light">
-                    CONNECTED TEAMS: {teams.length}
+                  <div className="bg-surface-subtle px-4 py-2 rounded-lg font-label-mono-sm text-label-mono-sm text-primary font-bold border border-hairline-light flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-signal-emerald animate-pulse"></span>
+                    <span>
+                      ACTIVE NOW: <strong className="text-signal-emerald">{teams.filter((t) => activeTeamIds.includes(t.id) || t.isOnline).length}</strong> / {teams.length}
+                    </span>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setOnlyActive(!onlyActive)}
+                    className={`px-3.5 py-2 rounded-lg font-label-mono-sm text-xs font-bold uppercase transition-all cursor-pointer border ${
+                      onlyActive
+                        ? 'bg-signal-emerald text-on-surface border-signal-emerald shadow-[2px_2px_0px_#000]'
+                        : 'bg-surface-subtle hover:bg-surface-container-high text-primary border-hairline-light'
+                    }`}
+                  >
+                    {onlyActive ? 'Showing Active Only' : 'Filter: Active Only'}
+                  </button>
                 </div>
               </div>
 
@@ -560,95 +609,138 @@ export default function AdminConsole() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-surface-subtle font-body-base text-body-base">
-                      {teams.map((team) => (
-                        <tr key={team.id} className="hover:bg-surface-subtle/50 transition-colors">
-                          {/* Team Name & 2 Squad Members */}
-                          <td className="py-5 px-6">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-lg bg-primary text-on-primary flex items-center justify-center font-bold text-sm shadow-[1px_1px_0px_#CCFF00]">
-                                T{team.id}
-                              </div>
-                              <div>
-                                <div className="font-bold text-primary text-base">{team.teamName}</div>
-                                <span className="font-label-mono-sm text-xs text-on-surface-variant uppercase">
-                                  {team.p1} &amp; {team.p2}
-                                </span>
-                              </div>
-                            </div>
-                          </td>
-
-                          {/* Lane & Tag */}
-                          <td className="py-5 px-6">
-                            <span className="px-2.5 py-1 bg-surface-subtle rounded font-label-mono-sm text-xs font-bold text-primary border border-hairline-light">
-                              {team.lane}
-                            </span>
-                          </td>
-
-                          {/* Active Sabotages */}
-                          <td className="py-5 px-6">
-                            {team.activeSabotages.length > 0 ? (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-error-container text-sabotage-crimson rounded-full font-label-mono-sm text-xs font-bold">
-                                <span className="w-1.5 h-1.5 rounded-full bg-sabotage-crimson animate-ping"></span>
-                                {team.activeSabotages.join(', ')}
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-signal-emerald/10 text-secondary font-label-mono-sm text-xs font-bold rounded-full">
-                                CLEAR
-                              </span>
-                            )}
-                          </td>
-
-                          {/* Live Score */}
-                          <td className="py-5 px-6">
-                            <div className="flex items-baseline gap-1">
-                              <span className="font-headline-lg text-headline-lg font-bold text-primary">
-                                {team.score.toLocaleString()}
-                              </span>
-                              <span className="font-label-mono-sm text-xs text-on-surface-variant">PTS</span>
-                            </div>
-                          </td>
-
-                          {/* Rapid Adjusters (+100, +50, +10, -10, -50, -100) */}
-                          <td className="py-5 px-6">
-                            <div className="flex items-center gap-1 flex-wrap">
-                              {[100, 50, 10, -10, -50, -100].map((delta) => (
-                                <button
-                                  key={delta}
-                                  type="button"
-                                  onClick={() => adjustTeamScore(team.id, delta)}
-                                  className={`px-2.5 py-1.5 rounded font-label-mono-sm text-xs font-bold transition-all cursor-pointer ${
-                                    delta > 0
-                                      ? 'bg-surface-subtle hover:bg-primary hover:text-on-primary text-primary'
-                                      : 'bg-surface-subtle hover:bg-sabotage-crimson hover:text-on-primary text-primary'
+                      {(onlyActive
+                        ? teams.filter((t) => activeTeamIds.includes(t.id) || t.isOnline)
+                        : teams
+                      ).map((team) => {
+                        const isOnline = activeTeamIds.includes(team.id) || !!team.isOnline;
+                        return (
+                          <tr
+                            key={team.id}
+                            className={`transition-all ${
+                              isOnline
+                                ? 'hover:bg-surface-subtle/60 bg-surface-container-lowest'
+                                : 'opacity-35 grayscale hover:opacity-65 bg-surface-subtle/10'
+                            }`}
+                          >
+                            {/* Team Name & 2 Squad Members */}
+                            <td className="py-5 px-6">
+                              <div className="flex items-center gap-3">
+                                <div
+                                  className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm shadow-[1px_1px_0px_#CCFF00] ${
+                                    isOnline
+                                      ? 'bg-primary text-on-primary'
+                                      : 'bg-surface-subtle text-on-surface-variant/60 border border-hairline-light'
                                   }`}
                                 >
-                                  {delta > 0 ? `+${delta}` : delta}
-                                </button>
-                              ))}
-                            </div>
-                          </td>
+                                  T{team.id}
+                                </div>
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <span
+                                      className={`font-bold text-base ${
+                                        isOnline ? 'text-primary' : 'text-on-surface-variant'
+                                      }`}
+                                    >
+                                      {team.teamName}
+                                    </span>
+                                    {isOnline ? (
+                                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full font-label-mono-sm text-[10px] font-bold bg-signal-emerald/20 text-signal-emerald border border-signal-emerald/40 shadow-sm">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-signal-emerald animate-pulse"></span>
+                                        ONLINE
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full font-label-mono-sm text-[10px] font-bold bg-surface-subtle text-on-surface-variant/50 border border-hairline-light">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-on-surface-variant/30"></span>
+                                        OFFLINE
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span className="font-label-mono-sm text-xs text-on-surface-variant uppercase">
+                                    {team.p1} &amp; {team.p2}
+                                  </span>
+                                </div>
+                              </div>
+                            </td>
 
-                          {/* Custom Delta Input */}
-                          <td className="py-5 px-6 text-right">
-                            <div className="inline-flex items-center gap-1.5">
-                              <input
-                                type="number"
-                                placeholder="± Delta"
-                                className="w-24 px-2.5 py-1.5 bg-surface-subtle text-primary font-label-mono-sm text-xs rounded border border-hairline-light outline-none focus:bg-white"
-                                value={customScoreDeltas[team.id] || ''}
-                                onChange={(e) => handleCustomDeltaChange(team.id, e.target.value)}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => handleApplyCustomScore(team.id)}
-                                className="px-3 py-1.5 bg-primary text-on-primary font-label-mono-sm text-xs uppercase rounded cursor-pointer font-bold shadow-[1px_1px_0px_#CCFF00]"
-                              >
-                                Set
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                            {/* Lane & Tag */}
+                            <td className="py-5 px-6">
+                              <span className="px-2.5 py-1 bg-surface-subtle rounded font-label-mono-sm text-xs font-bold text-primary border border-hairline-light">
+                                {team.lane}
+                              </span>
+                            </td>
+
+                            {/* Active Sabotages */}
+                            <td className="py-5 px-6">
+                              {team.activeSabotages.length > 0 ? (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-error-container text-sabotage-crimson rounded-full font-label-mono-sm text-xs font-bold">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-sabotage-crimson animate-ping"></span>
+                                  {team.activeSabotages.join(', ')}
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-signal-emerald/10 text-secondary font-label-mono-sm text-xs font-bold rounded-full">
+                                  CLEAR
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Live Score */}
+                            <td className="py-5 px-6">
+                              <div className="flex flex-col">
+                                <div className="flex items-baseline gap-1">
+                                  <span className="font-headline-lg text-headline-lg font-bold text-primary">
+                                    {team.score.toLocaleString()}
+                                  </span>
+                                  <span className="font-label-mono-sm text-xs text-on-surface-variant">PTS</span>
+                                </div>
+                                <span className="font-label-mono-sm text-[10px] text-acid-chartreuse font-bold">
+                                  ROUND 0: {team.r0 || team.r0Score || 0} PTS
+                                </span>
+                              </div>
+                            </td>
+
+                            {/* Rapid Adjusters (+100, +50, +10, -10, -50, -100) */}
+                            <td className="py-5 px-6">
+                              <div className="flex items-center gap-1 flex-wrap">
+                                {[100, 50, 10, -10, -50, -100].map((delta) => (
+                                  <button
+                                    key={delta}
+                                    type="button"
+                                    onClick={() => adjustTeamScore(team.id, delta)}
+                                    className={`px-2.5 py-1.5 rounded font-label-mono-sm text-xs font-bold transition-all cursor-pointer ${
+                                      delta > 0
+                                        ? 'bg-surface-subtle hover:bg-primary hover:text-on-primary text-primary'
+                                        : 'bg-surface-subtle hover:bg-sabotage-crimson hover:text-on-primary text-primary'
+                                    }`}
+                                  >
+                                    {delta > 0 ? `+${delta}` : delta}
+                                  </button>
+                                ))}
+                              </div>
+                            </td>
+
+                            {/* Custom Delta Input */}
+                            <td className="py-5 px-6 text-right">
+                              <div className="inline-flex items-center gap-1.5">
+                                <input
+                                  type="number"
+                                  placeholder="± Delta"
+                                  className="w-24 px-2.5 py-1.5 bg-surface-subtle text-primary font-label-mono-sm text-xs rounded border border-hairline-light outline-none focus:bg-white"
+                                  value={customScoreDeltas[team.id] || ''}
+                                  onChange={(e) => handleCustomDeltaChange(team.id, e.target.value)}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => handleApplyCustomScore(team.id)}
+                                  className="px-3 py-1.5 bg-primary text-on-primary font-label-mono-sm text-xs uppercase rounded cursor-pointer font-bold shadow-[1px_1px_0px_#CCFF00]"
+                                >
+                                  Set
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

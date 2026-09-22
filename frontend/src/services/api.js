@@ -115,6 +115,21 @@ export const api = {
     lock: () => request('/buzzer/lock', { method: 'POST' }),
     reset: () => request('/buzzer/reset', { method: 'POST' }),
     advance: () => request('/buzzer/advance', { method: 'POST' }),
+    startRound: (roundNumber = 0, roundName = 'Round 0 - Mani Adi') =>
+      request('/buzzer/round/start', {
+        method: 'POST',
+        body: JSON.stringify({
+          round_number: roundNumber,
+          round_name: roundName,
+        }),
+      }),
+    endRound: (roundNumber = 0) =>
+      request('/buzzer/round/end', {
+        method: 'POST',
+        body: JSON.stringify({
+          round_number: roundNumber,
+        }),
+      }),
   },
 
   scores: {
@@ -134,6 +149,15 @@ export const api = {
         body: JSON.stringify({
           team_id: teamId,
           delta: delta,
+        }),
+      }),
+
+    awardCorrectAnswer: (teamId, roundNumber = 0) =>
+      request('/scores/correct-answer', {
+        method: 'POST',
+        body: JSON.stringify({
+          team_id: teamId,
+          delta: 1,
         }),
       }),
   },

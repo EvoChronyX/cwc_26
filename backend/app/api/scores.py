@@ -47,3 +47,23 @@ async def grant_floor(
         return result
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.post("/correct-answer")
+async def award_correct_answer(
+    req: FloorGrantRequest,
+    admin: AdminUser = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db)
+):
+    if not req.team_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="team_id is required")
+    try:
+        result = await ScoreService.award_correct_answer(
+            db=db,
+            team_id=req.team_id,
+            round_number=0,
+            admin_id=admin.id
+        )
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

@@ -1,4 +1,6 @@
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -68,3 +70,40 @@ async def advance_queue(
 ):
     state = await BuzzerService.advance_queue(db=db, admin_id=admin.id)
     return state
+
+
+class RoundControlRequest(BaseModel):
+    round_number: int = 0
+    round_name: str = "Round 0 - Mani Adi"
+
+
+@router.post("/round/start")
+async def start_round(
+    req: Optional[RoundControlRequest] = None,
+    admin: AdminUser = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db)
+):
+    round_num = req.round_number if req else 0
+    round_name = req.round_name if req else "Round 0 - Mani Adi"
+    res = await BuzzerService.start_round(
+        db=db,
+        round_number=round_num,
+        round_name=round_name,
+        admin_id=admin.id
+    )
+    return res
+
+
+@router.post("/round/end")
+async def end_round(
+    req: Optional[RoundControlRequest] = None,
+    admin: AdminUser = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db)
+):
+    round_num = req.round_number if req else 0
+    res = await BuzzerService.end_round(
+        db=db,
+        round_number=round_num,
+        admin_id=admin.id
+    )
+    return res

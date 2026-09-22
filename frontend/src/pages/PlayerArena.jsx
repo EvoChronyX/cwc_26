@@ -22,8 +22,14 @@ export default function PlayerArena() {
     deploySabotageToTeam,
     playTone,
     currentTeamId,
-    logout
+    logout,
+    roundState,
+    startRound0,
+    endRound0,
+    activeTeamIds
   } = useGame();
+
+  const [sortByR0, setSortByR0] = useState(false);
 
   const selectedAvatarObj = PREDEFINED_AVATARS.find((a) => a.id === playerAvatar) || PREDEFINED_AVATARS[0];
 
@@ -39,19 +45,27 @@ export default function PlayerArena() {
                       teams.find((t) => t.teamName?.toUpperCase() === teamName?.toUpperCase()) ||
                       teams[0] || {
     id: 1,
-    score: 1450,
+    score: 0,
+    r0: 0,
+    r0Score: 0,
     teamName: teamName || 'TEAM KINETIC',
     p1: p1Handle || 'Alex Vance',
     p2: p2Handle || 'Sarah Connor',
     lane: 'Lane #01',
-    winRate: '78%',
+    winRate: '0%',
     activeSabotages: []
   };
 
   const rivalTeams = teams.filter((t) => t.id !== currentTeam?.id);
 
   // Top 3 Leaderboard hierarchy sorting & avatar mapping
-  const sortedTeams = [...teams].sort((a, b) => b.score - a.score);
+  const sortedTeams = [...teams].sort((a, b) => {
+    if (sortByR0 || roundState.isEnded) {
+      const diffR0 = (b.r0 || b.r0Score || 0) - (a.r0 || a.r0Score || 0);
+      if (diffR0 !== 0) return diffR0;
+    }
+    return b.score - a.score;
+  });
   const rank1 = sortedTeams[0] || currentTeam;
   const rank2 = sortedTeams[1] || teams[1] || currentTeam;
   const rank3 = sortedTeams[2] || teams[2] || currentTeam;
@@ -179,10 +193,6 @@ export default function PlayerArena() {
                 </div>
 
                 <div className="flex items-center gap-4">
-                  <div className="bg-surface-subtle p-4 rounded-xl flex flex-col items-start min-w-[130px] border border-hairline-light">
-                    <span className="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase">ROUND CLOCK</span>
-                    <span className="font-label-mono-lg text-headline-md text-primary font-bold tracking-tight">01:42.85</span>
-                  </div>
                   <div className="bg-primary text-on-primary p-4 rounded-xl flex flex-col items-start min-w-[140px] shadow-[3px_3px_0px_#CCFF00]">
                     <span className="font-label-mono-sm text-label-mono-sm text-acid-chartreuse uppercase">TEAM SCORE</span>
                     <span className="font-label-mono-lg text-headline-md text-on-primary font-bold tracking-tight">
@@ -411,60 +421,93 @@ export default function PlayerArena() {
                       All Connected Squads
                     </h3>
                   </div>
-                  <span className="bg-primary text-on-primary px-3 py-1 rounded-full font-label-mono-sm text-label-mono-sm uppercase font-bold">
-                    SORTED BY: TOTAL SCORE (PTS)
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSortByR0(!sortByR0)}
+                      className={`px-3 py-1 rounded-full font-label-mono-sm text-xs uppercase font-bold transition-all cursor-pointer border ${
+                        sortByR0
+                          ? 'bg-acid-chartreuse text-canvas-dark border-acid-chartreuse shadow-[2px_2px_0px_#000]'
+                          : 'bg-surface-subtle hover:bg-surface-container text-primary border-hairline-light'
+                      }`}
+                    >
+                      {sortByR0 ? 'Ranked: Round 0 (Mani Adi)' : 'Sort by: Round 0 (Mani Adi)'}
+                    </button>
+                    <span className="bg-primary text-on-primary px-3 py-1 rounded-full font-label-mono-sm text-label-mono-sm uppercase font-bold">
+                      {sortByR0 ? 'SORTED BY: ROUND 0 PTS' : 'SORTED BY: TOTAL SCORE'}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="w-full overflow-x-auto">
-                  <table className="w-full text-left border-collapse min-w-[750px]">
+                  <table className="w-full text-left border-collapse min-w-[850px]">
                     <thead>
                       <tr className="border-b border-hairline-light bg-surface-subtle font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase">
-                        <th className="py-4 px-6">RANK</th>
+                        <th className="py-4 px-4">RANK</th>
                         <th className="py-4 px-6">TEAM IDENTITY</th>
-                        <th className="py-4 px-6">SQUAD MEMBERS</th>
-                        <th className="py-4 px-6">R1 SCORE</th>
-                        <th className="py-4 px-6">R2 SCORE</th>
+                        <th className="py-4 px-4">SQUAD MEMBERS</th>
+                        <th className="py-4 px-4 text-acid-chartreuse">R0 (MANI ADI)</th>
+                        <th className="py-4 px-4">R1 SCORE</th>
+                        <th className="py-4 px-4">R2 SCORE</th>
                         <th className="py-4 px-6">TOTAL PTS</th>
                         <th className="py-4 px-6 text-right">STATUS</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-hairline-light font-body-base text-body-base">
-                      {teams.map((t, idx) => (
-                        <tr key={t.id} className={`hover:bg-surface-subtle/50 transition-colors ${t.id === 1 ? 'bg-surface-subtle/40' : ''}`}>
-                          <td className="py-4 px-6 font-label-mono-lg text-label-mono-lg font-bold text-primary">
-                            <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold ${
-                              idx === 0 ? 'bg-acid-chartreuse text-canvas-dark' : 'bg-surface-container text-on-surface-variant'
-                            }`}>
-                              #0{idx + 1}
-                            </span>
-                          </td>
-                          <td className="py-4 px-6">
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-primary text-base">{t.teamName}</span>
-                              {t.id === 1 && (
-                                <span className="bg-acid-chartreuse text-canvas-dark text-[9px] font-bold px-1.5 py-0.2 rounded uppercase">
-                                  YOU
+                      {[...teams]
+                        .sort((a, b) => {
+                          if (sortByR0) {
+                            return ((b.r0 || b.r0Score || 0) - (a.r0 || a.r0Score || 0)) || (b.score - a.score);
+                          }
+                          return b.score - a.score;
+                        })
+                        .map((t, idx) => {
+                          const isOnline = activeTeamIds.includes(t.id) || t.isOnline;
+                          return (
+                            <tr key={t.id} className={`hover:bg-surface-subtle/50 transition-colors ${t.id === currentTeamId ? 'bg-surface-subtle/40' : ''}`}>
+                              <td className="py-4 px-4 font-label-mono-lg text-label-mono-lg font-bold text-primary">
+                                <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold ${
+                                  idx === 0 ? 'bg-acid-chartreuse text-canvas-dark' : 'bg-surface-container text-on-surface-variant'
+                                }`}>
+                                  #0{idx + 1}
                                 </span>
-                              )}
-                            </div>
-                            <span className="font-label-mono-sm text-xs text-on-surface-variant uppercase">{t.lane}</span>
-                          </td>
-                          <td className="py-4 px-6 font-body-base text-sm text-on-surface-variant">
-                            {t.p1} &amp; {t.p2}
-                          </td>
-                          <td className="py-4 px-6 font-label-mono-sm text-label-mono-sm">{t.r1}</td>
-                          <td className="py-4 px-6 font-label-mono-sm text-label-mono-sm">{t.r2}</td>
-                          <td className="py-4 px-6 font-headline-md text-headline-md font-bold text-primary">
-                            {t.score.toLocaleString()}
-                          </td>
-                          <td className="py-4 px-6 text-right">
-                            <span className="inline-block bg-primary text-acid-chartreuse px-2.5 py-0.5 rounded-full font-label-mono-sm text-[10px] font-bold uppercase">
-                              {t.status}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
+                              </td>
+                              <td className="py-4 px-6">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-bold text-primary text-base">{t.teamName}</span>
+                                  {t.id === currentTeamId && (
+                                    <span className="bg-acid-chartreuse text-canvas-dark text-[9px] font-bold px-1.5 py-0.2 rounded uppercase">
+                                      YOU
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="font-label-mono-sm text-xs text-on-surface-variant uppercase">{t.lane}</span>
+                              </td>
+                              <td className="py-4 px-4 font-body-base text-sm text-on-surface-variant">
+                                {t.p1} &amp; {t.p2}
+                              </td>
+                              <td className="py-4 px-4 font-headline-md text-acid-chartreuse font-bold">
+                                {t.r0 || t.r0Score || 0} PTS
+                              </td>
+                              <td className="py-4 px-4 font-label-mono-sm text-label-mono-sm">{t.r1}</td>
+                              <td className="py-4 px-4 font-label-mono-sm text-label-mono-sm">{t.r2}</td>
+                              <td className="py-4 px-6 font-headline-md text-headline-md font-bold text-primary">
+                                {t.score.toLocaleString()}
+                              </td>
+                              <td className="py-4 px-6 text-right">
+                                {isOnline ? (
+                                  <span className="inline-block bg-primary text-acid-chartreuse px-2.5 py-0.5 rounded-full font-label-mono-sm text-[10px] font-bold uppercase">
+                                    ONLINE
+                                  </span>
+                                ) : (
+                                  <span className="inline-block bg-surface-subtle text-on-surface-variant/60 px-2.5 py-0.5 rounded-full font-label-mono-sm text-[10px] font-bold uppercase border border-hairline-light">
+                                    OFFLINE
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
                     </tbody>
                   </table>
                 </div>
@@ -498,14 +541,37 @@ export default function PlayerArena() {
                   </p>
                 </div>
 
-                <div className="flex items-center gap-4">
-                  <div className="bg-surface-subtle p-4 rounded-xl flex flex-col items-start min-w-[130px] border border-hairline-light">
-                    <span className="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase">ROUND CLOCK</span>
-                    <span className="font-label-mono-lg text-headline-md text-primary font-bold tracking-tight">01:42.85</span>
-                  </div>
-                  <div className="bg-primary text-on-primary p-4 rounded-xl flex flex-col items-start min-w-[140px] shadow-[3px_3px_0px_#CCFF00]">
-                    <span className="font-label-mono-sm text-label-mono-sm text-acid-chartreuse uppercase">BUZZ SENSITIVITY</span>
-                    <span className="font-label-mono-lg text-headline-md text-on-primary font-bold tracking-tight">0.002 SEC</span>
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    onClick={startRound0}
+                    disabled={roundState.isActive}
+                    className={`px-4 py-2.5 rounded-xl font-label-mono-sm text-xs font-bold uppercase tracking-wider flex items-center gap-2 border transition-all ${
+                      roundState.isActive
+                        ? 'bg-surface-subtle text-on-surface-variant/40 border-hairline-light cursor-not-allowed'
+                        : 'bg-signal-emerald text-canvas-dark border-signal-emerald hover:bg-signal-emerald/90 shadow-[2px_2px_0px_#000]'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-sm font-bold">play_arrow</span>
+                    Start Round
+                  </button>
+                  <button
+                    onClick={endRound0}
+                    disabled={!roundState.isActive}
+                    className={`px-4 py-2.5 rounded-xl font-label-mono-sm text-xs font-bold uppercase tracking-wider flex items-center gap-2 border transition-all ${
+                      !roundState.isActive
+                        ? 'bg-surface-subtle text-on-surface-variant/40 border-hairline-light cursor-not-allowed'
+                        : 'bg-sabotage-crimson text-white border-sabotage-crimson hover:bg-sabotage-crimson/90 shadow-[2px_2px_0px_#000]'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-sm font-bold">stop</span>
+                    End Round
+                  </button>
+                  <div className="bg-primary text-on-primary p-3 rounded-xl flex flex-col items-start min-w-[140px] shadow-[3px_3px_0px_#CCFF00]">
+                    <span className="font-label-mono-sm text-[10px] text-acid-chartreuse uppercase font-bold">ROUND 0 STATUS</span>
+                    <span className="font-label-mono-sm text-xs text-on-primary font-bold tracking-tight flex items-center gap-1.5 mt-0.5">
+                      <span className={`w-2 h-2 rounded-full ${roundState.isActive ? 'bg-signal-emerald animate-pulse' : 'bg-on-surface-variant/50'}`}></span>
+                      {roundState.isActive ? 'IN PROGRESS' : roundState.isEnded ? 'CONCLUDED' : 'STANDBY'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -642,6 +708,172 @@ export default function PlayerArena() {
                     <span className="material-symbols-outlined text-[16px] text-acid-chartreuse">lock_clock</span>
                     FALSE BUZZ PENALTY: -50 PTS
                   </span>
+                </div>
+              </div>
+
+              {/* ROUND 0 CONCLUSION // HIGHEST SCORER BANNER */}
+              {roundState.isEnded && roundState.highestScorer && (
+                <div className="w-full bg-surface-dark text-on-primary rounded-3xl p-6 sm:p-8 border-2 border-acid-chartreuse shadow-[6px_6px_0px_#CCFF00] flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+                  <div className="absolute -right-10 -bottom-10 opacity-10 pointer-events-none text-acid-chartreuse">
+                    <span className="material-symbols-outlined text-[160px]">emoji_events</span>
+                  </div>
+                  <div className="flex items-center gap-5 relative z-10">
+                    <div className="w-16 h-16 rounded-2xl bg-acid-chartreuse text-canvas-dark flex items-center justify-center font-bold shadow-lg">
+                      <span className="material-symbols-outlined text-4xl">military_tech</span>
+                    </div>
+                    <div className="text-left">
+                      <div className="flex items-center gap-2">
+                        <span className="bg-acid-chartreuse text-canvas-dark font-label-mono-sm text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase">
+                          Round 0 Winner
+                        </span>
+                        <span className="font-label-mono-sm text-xs text-acid-chartreuse font-bold">
+                          HIGHEST SCORER IDENTIFIED
+                        </span>
+                      </div>
+                      <h2 className="font-headline-xl text-2xl sm:text-3xl font-bold text-white mt-1">
+                        {roundState.highestScorer.teamName}
+                      </h2>
+                      <p className="font-body-base text-sm text-on-surface-variant/80">
+                        Seized top seed with <strong className="text-acid-chartreuse">{roundState.highestScorer.r0Score ?? roundState.highestScorer.score} PTS</strong> in Mani Adi (+1 pt per correct floor answer).
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 relative z-10">
+                    <div className="bg-canvas-dark px-5 py-3 rounded-2xl border border-hairline-dark text-right">
+                      <span className="font-label-mono-sm text-[10px] text-on-surface-variant uppercase block">ROUND 0 SCORE</span>
+                      <span className="font-label-mono-lg text-2xl font-bold text-acid-chartreuse">
+                        +{roundState.highestScorer.r0Score ?? roundState.highestScorer.score} PTS
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* DEDICATED MANI ADI (ROUND 0) LEADERBOARD */}
+              <div className="bg-surface rounded-3xl p-6 sm:p-8 border border-hairline-light flex flex-col gap-6 shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-hairline-light pb-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-acid-chartreuse bg-primary p-1 rounded-lg text-lg">leaderboard</span>
+                      <h3 className="font-headline-lg text-xl font-bold text-primary">
+                        Mani Adi Leaderboard // Round 0 Standings
+                      </h3>
+                    </div>
+                    <p className="font-body-sm text-xs text-on-surface-variant mt-1">
+                      Ranked by direct floor correct answers (+1 pt per verified response). Highest scorer takes the round.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-label-mono-sm text-xs text-on-surface-variant">
+                      ACTIVE SQUADS: <strong className="text-primary">{activeTeamIds.length}</strong> / {teams.length}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-hairline-light text-on-surface-variant font-label-mono-sm text-xs uppercase">
+                        <th className="py-3 px-4">Rank</th>
+                        <th className="py-3 px-4">Squad</th>
+                        <th className="py-3 px-4">Roster</th>
+                        <th className="py-3 px-4">Status</th>
+                        <th className="py-3 px-4 text-center">Correct Answers (R0)</th>
+                        <th className="py-3 px-6 text-right">Total Arena Score</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-hairline-light">
+                      {[...teams]
+                        .sort((a, b) => {
+                          const r0Diff = (b.r0 || b.r0Score || 0) - (a.r0 || a.r0Score || 0);
+                          if (r0Diff !== 0) return r0Diff;
+                          return b.score - a.score;
+                        })
+                        .map((team, idx) => {
+                          const isOnline = activeTeamIds.includes(team.id) || team.status === 'CONNECTED';
+                          const isSelf = team.id === currentTeam.id;
+                          const r0Pts = team.r0 || team.r0Score || 0;
+                          const isLeader = idx === 0 && r0Pts > 0;
+
+                          return (
+                            <tr
+                              key={team.id}
+                              className={`transition-colors ${
+                                isSelf
+                                  ? 'bg-acid-chartreuse/10 font-bold'
+                                  : isOnline
+                                  ? 'hover:bg-surface-subtle/60'
+                                  : 'opacity-40 grayscale bg-surface-subtle/30'
+                              }`}
+                            >
+                              <td className="py-4 px-4 font-label-mono-sm text-sm">
+                                <div className="flex items-center gap-1.5">
+                                  {isLeader ? (
+                                    <span className="w-6 h-6 rounded-full bg-acid-chartreuse text-primary flex items-center justify-center font-bold text-xs shadow-sm">
+                                      ★
+                                    </span>
+                                  ) : (
+                                    <span className="w-6 h-6 rounded-full bg-surface-subtle text-on-surface-variant flex items-center justify-center text-xs font-bold border border-hairline-light">
+                                      {idx + 1}
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="py-4 px-4">
+                                <div className="flex items-center gap-3">
+                                  <img
+                                    src={getTeamAvatar(team)}
+                                    alt={team.teamName}
+                                    className="w-9 h-9 rounded-xl border border-hairline-light bg-surface-subtle object-cover"
+                                  />
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-headline-md text-sm text-primary font-bold">
+                                        {team.teamName}
+                                      </span>
+                                      {isSelf && (
+                                        <span className="bg-primary text-acid-chartreuse text-[9px] font-label-mono-sm uppercase px-2 py-0.5 rounded-full font-bold">
+                                          YOU
+                                        </span>
+                                      )}
+                                    </div>
+                                    <span className="font-label-mono-sm text-[11px] text-on-surface-variant uppercase">
+                                      {team.lane}
+                                    </span>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="py-4 px-4 font-body-base text-xs text-on-surface-variant">
+                                {team.p1} &amp; {team.p2}
+                              </td>
+                              <td className="py-4 px-4">
+                                {isOnline ? (
+                                  <span className="inline-flex items-center gap-1.5 bg-signal-emerald/10 text-signal-emerald px-2.5 py-1 rounded-full font-label-mono-sm text-[10px] font-bold uppercase border border-signal-emerald/30">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-signal-emerald animate-pulse"></span>
+                                    ONLINE
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1.5 bg-surface-subtle text-on-surface-variant/60 px-2.5 py-1 rounded-full font-label-mono-sm text-[10px] font-bold uppercase border border-hairline-light">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-on-surface-variant/40"></span>
+                                    OFFLINE
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-4 px-4 text-center">
+                                <span className={`inline-block px-3 py-1 rounded-xl font-label-mono-sm text-sm font-bold ${
+                                  r0Pts > 0 ? 'bg-primary text-acid-chartreuse' : 'bg-surface-subtle text-on-surface-variant'
+                                }`}>
+                                  {r0Pts} {r0Pts === 1 ? 'PT' : 'PTS'}
+                                </span>
+                              </td>
+                              <td className="py-4 px-6 text-right font-headline-md text-base font-bold text-primary">
+                                {team.score.toLocaleString()}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                    </tbody>
+                  </table>
                 </div>
               </div>
 

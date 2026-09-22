@@ -48,7 +48,8 @@ async def handle_websocket(websocket: WebSocket, token: Optional[str] = None):
                 "teams": teams,
                 "queueState": queue_state,
                 "recentLogs": recent_logs,
-                "clientInfo": client_info
+                "clientInfo": client_info,
+                "activeTeamIds": manager.get_active_team_ids()
             }
             await manager.send_personal(websocket, init_payload)
     except Exception as e:
@@ -66,6 +67,10 @@ async def handle_websocket(websocket: WebSocket, token: Optional[str] = None):
 
             if msg_type == "PING":
                 await manager.send_personal(websocket, {"type": "PONG"})
+
+            elif msg_type in ("LOGOUT", "PLAYER_LOGOUT"):
+                await manager.disconnect_and_broadcast(websocket)
+                break
 
             elif msg_type == "BUZZ_IN":
                 if client_info.get("role") == "player" and client_info.get("team_id"):
@@ -85,7 +90,7 @@ async def handle_websocket(websocket: WebSocket, token: Optional[str] = None):
                         })
 
     except WebSocketDisconnect:
-        manager.disconnect(websocket)
+        await manager.disconnect_and_broadcast(websocket)
     except Exception as e:
         logger.error(f"Unexpected WebSocket error: {e}")
-        manager.disconnect(websocket)
+        await manager.disconnect_and_broadcast(websocket)

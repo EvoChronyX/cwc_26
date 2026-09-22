@@ -72,13 +72,14 @@ INITIAL_TEAMS = [
         "avatar_id": "avatar-1",
         "password": "kinetic_pass_2026",
         "lane": "Lane #01",
-        "score": 1450,
-        "r1_score": 450,
-        "r2_score": 600,
-        "r3_live_score": 400,
-        "win_rate": "78%",
-        "streak": 4,
-        "status": "CONNECTED"
+        "score": 0,
+        "r0_score": 0,
+        "r1_score": 0,
+        "r2_score": 0,
+        "r3_live_score": 0,
+        "win_rate": "0%",
+        "streak": 0,
+        "status": "DISCONNECTED"
     },
     {
         "team_name": "TEAM VORTEX",
@@ -87,13 +88,14 @@ INITIAL_TEAMS = [
         "avatar_id": "avatar-2",
         "password": "vortex_pass_2026",
         "lane": "Lane #02",
-        "score": 1200,
-        "r1_score": 500,
-        "r2_score": 450,
-        "r3_live_score": 250,
-        "win_rate": "54%",
-        "streak": 1,
-        "status": "CONNECTED"
+        "score": 0,
+        "r0_score": 0,
+        "r1_score": 0,
+        "r2_score": 0,
+        "r3_live_score": 0,
+        "win_rate": "0%",
+        "streak": 0,
+        "status": "DISCONNECTED"
     },
     {
         "team_name": "TEAM NULL POINTER",
@@ -102,13 +104,14 @@ INITIAL_TEAMS = [
         "avatar_id": "avatar-3",
         "password": "null_pass_2026",
         "lane": "Lane #03",
-        "score": 950,
-        "r1_score": 400,
-        "r2_score": 350,
-        "r3_live_score": 200,
-        "win_rate": "42%",
+        "score": 0,
+        "r0_score": 0,
+        "r1_score": 0,
+        "r2_score": 0,
+        "r3_live_score": 0,
+        "win_rate": "0%",
         "streak": 0,
-        "status": "CONNECTED"
+        "status": "DISCONNECTED"
     },
     {
         "team_name": "TEAM CYBER SPECTRE",
@@ -117,13 +120,14 @@ INITIAL_TEAMS = [
         "avatar_id": "avatar-4",
         "password": "cyber_pass_2026",
         "lane": "Lane #04",
-        "score": 750,
-        "r1_score": 300,
-        "r2_score": 300,
-        "r3_live_score": 150,
-        "win_rate": "36%",
+        "score": 0,
+        "r0_score": 0,
+        "r1_score": 0,
+        "r2_score": 0,
+        "r3_live_score": 0,
+        "win_rate": "0%",
         "streak": 0,
-        "status": "CONNECTED"
+        "status": "DISCONNECTED"
     }
 ]
 

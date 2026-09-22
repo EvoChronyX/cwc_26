@@ -18,6 +18,7 @@ class Team(Base):
     lane = Column(String(50), nullable=False, default="Lane #01")
     status = Column(String(30), nullable=False, default="CONNECTED")
     score = Column(Integer, nullable=False, default=0)
+    r0_score = Column(Integer, nullable=False, default=0)
     r1_score = Column(Integer, nullable=False, default=0)
     r2_score = Column(Integer, nullable=False, default=0)
     r3_live_score = Column(Integer, nullable=False, default=0)
