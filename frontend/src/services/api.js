@@ -99,6 +99,19 @@ export const api = {
   teams: {
     getAll: () => request('/teams'),
     getById: (teamId) => request(`/teams/${teamId}`),
+    deleteAll: () => request('/teams/all', { method: 'DELETE' }),
+  },
+
+  rounds: {
+    getState: () => request('/rounds/state'),
+    setLockState: (roundNumber, unlocked) =>
+      request('/rounds/lock-state', {
+        method: 'POST',
+        body: JSON.stringify({
+          round_number: roundNumber,
+          unlocked: unlocked,
+        }),
+      }),
   },
 
   buzzer: {
@@ -172,6 +185,13 @@ export const api = {
           target_team_id: targetTeamId,
         }),
       }),
+    activatePowerUp: (powerupSlug) =>
+      request('/sabotages/activate-powerup', {
+        method: 'POST',
+        body: JSON.stringify({
+          powerup_slug: powerupSlug,
+        }),
+      }),
     neutralize: (targetTeamId, sabotageName = null) =>
       request('/sabotages/neutralize', {
         method: 'POST',
@@ -186,6 +206,7 @@ export const api = {
     getLogs: (category = 'ALL', limit = 100) =>
       request(`/audit/logs?category=${category}&limit=${limit}`),
     clear: () => request('/audit/clear', { method: 'POST' }),
+    deleteAllRecords: () => request('/audit/clear-all-records', { method: 'POST' }),
     getExportUrl: () => `${API_BASE}/audit/export-csv`,
   },
 };

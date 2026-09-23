@@ -54,7 +54,7 @@ class AuthService:
                 password=password,  # Stored directly as plain text per user instruction
                 lane=f"Lane #0{((await db.scalar(select(func.count(Team.id)))) or 0) + 1}",
                 status="CONNECTED",
-                score=0,
+                score=100,
                 r1_score=0,
                 r2_score=0,
                 r3_live_score=0,

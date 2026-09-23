@@ -16,6 +16,11 @@ class Sabotage(Base):
     default_duration = Column(Integer, nullable=False)
     category = Column(String(50), nullable=False, default="DISRUPTION")
     badge_label = Column(String(50), nullable=False, default="Available")
+    item_type = Column(String(30), nullable=False, default="SABOTAGE")  # POWERUP or SABOTAGE
+    round_number = Column(Integer, nullable=False, default=1)           # 1 or 2
+    cost = Column(Integer, nullable=False, default=15)                  # Points cost
+    level = Column(String(20), nullable=False, default="Medium")        # Easy, Medium, Hard
+    duration_effect = Column(String(100), nullable=True)                # e.g. "5 min", "Skip 1 task"
 
     # Relationships
     instances = relationship("SabotageInstance", back_populates="sabotage")

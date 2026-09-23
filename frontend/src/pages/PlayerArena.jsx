@@ -20,32 +20,32 @@ export default function PlayerArena() {
     activeThreat,
     executeBuzzIn,
     deploySabotageToTeam,
+    activatePowerUp,
     playTone,
     currentTeamId,
     logout,
     roundState,
-    startRound0,
-    endRound0,
-    activeTeamIds
+    activeTeamIds,
+    potisRound,
+    setPotisRound,
+    roundLocks,
+    catalog
   } = useGame();
 
   const [sortByR0, setSortByR0] = useState(false);
 
-  const selectedAvatarObj = PREDEFINED_AVATARS.find((a) => a.id === playerAvatar) || PREDEFINED_AVATARS[0];
+  // Dynamic Sabotage Targets and Action feedback for Power of Potis
+  const [sabotageTargets, setSabotageTargets] = useState({});
+  const [actionFeedback, setActionFeedback] = useState(null);
+  const [isDeploying, setIsDeploying] = useState(false);
 
-  // Sabotage Target state per card in Power-up Pothys
-  const [targetTeam1, setTargetTeam1] = useState(2);
-  const [targetTeam2, setTargetTeam2] = useState(2);
-  const [targetTeam3, setTargetTeam3] = useState(2);
-  const [targetTeam4, setTargetTeam4] = useState(2);
-  const [targetTeam5, setTargetTeam5] = useState(2);
-  const [targetTeam6, setTargetTeam6] = useState(2);
+  const selectedAvatarObj = PREDEFINED_AVATARS.find((a) => a.id === playerAvatar) || PREDEFINED_AVATARS[0];
 
   const currentTeam = teams.find((t) => t.id === currentTeamId) ||
                       teams.find((t) => t.teamName?.toUpperCase() === teamName?.toUpperCase()) ||
                       teams[0] || {
     id: 1,
-    score: 0,
+    score: 100,
     r0: 0,
     r0Score: 0,
     teamName: teamName || 'TEAM KINETIC',
@@ -57,6 +57,67 @@ export default function PlayerArena() {
   };
 
   const rivalTeams = teams.filter((t) => t.id !== currentTeam?.id);
+
+  const parseDurationSeconds = (str) => {
+    if (!str) return 30;
+    const lower = str.toLowerCase();
+    if (lower.includes('min')) {
+      const num = parseInt(lower, 10);
+      return isNaN(num) ? 60 : num * 60;
+    }
+    const match = lower.match(/\d+/);
+    if (match) return parseInt(match[0], 10);
+    return 30;
+  };
+
+  const handleActivatePowerUp = async (item) => {
+    if (currentTeam.score < item.cost) {
+      playTone(300, 0.2);
+      setActionFeedback({ message: `Insufficient points! You have ${currentTeam.score} PTS, need ${item.cost} PTS.`, type: 'error' });
+      setTimeout(() => setActionFeedback(null), 4000);
+      return;
+    }
+    try {
+      setIsDeploying(true);
+      await activatePowerUp(item.name);
+      playTone(850, 0.15);
+      setActionFeedback({ message: `Power-Up Activated: ${item.name} (-${item.cost} PTS)!`, type: 'success' });
+      setTimeout(() => setActionFeedback(null), 4000);
+    } catch (err) {
+      console.error(err);
+      setActionFeedback({ message: err.message || 'Failed to activate power-up', type: 'error' });
+      setTimeout(() => setActionFeedback(null), 4000);
+    } finally {
+      setIsDeploying(false);
+    }
+  };
+
+  const handleDeploySabotage = async (item) => {
+    if (currentTeam.score < item.cost) {
+      playTone(300, 0.2);
+      setActionFeedback({ message: `Insufficient points! You have ${currentTeam.score} PTS, need ${item.cost} PTS.`, type: 'error' });
+      setTimeout(() => setActionFeedback(null), 4000);
+      return;
+    }
+    const defaultRivalId = rivalTeams[0]?.id || 2;
+    const targetTeamId = sabotageTargets[item.name] || defaultRivalId;
+    const duration = parseDurationSeconds(item.duration_effect);
+
+    try {
+      setIsDeploying(true);
+      await deploySabotageToTeam(item.name, duration, targetTeamId);
+      playTone(550, 0.2);
+      const targetName = teams.find((t) => t.id === Number(targetTeamId))?.teamName || 'Rival Squad';
+      setActionFeedback({ message: `Sabotage Deployed: ${item.name} on ${targetName} (-${item.cost} PTS)!`, type: 'success' });
+      setTimeout(() => setActionFeedback(null), 4000);
+    } catch (err) {
+      console.error(err);
+      setActionFeedback({ message: err.message || 'Failed to deploy sabotage', type: 'error' });
+      setTimeout(() => setActionFeedback(null), 4000);
+    } finally {
+      setIsDeploying(false);
+    }
+  };
 
   // Top 3 Leaderboard hierarchy sorting & avatar mapping
   const sortedTeams = [...teams].sort((a, b) => {
@@ -541,31 +602,7 @@ export default function PlayerArena() {
                   </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3">
-                  <button
-                    onClick={startRound0}
-                    disabled={roundState.isActive}
-                    className={`px-4 py-2.5 rounded-xl font-label-mono-sm text-xs font-bold uppercase tracking-wider flex items-center gap-2 border transition-all ${
-                      roundState.isActive
-                        ? 'bg-surface-subtle text-on-surface-variant/40 border-hairline-light cursor-not-allowed'
-                        : 'bg-signal-emerald text-canvas-dark border-signal-emerald hover:bg-signal-emerald/90 shadow-[2px_2px_0px_#000]'
-                    }`}
-                  >
-                    <span className="material-symbols-outlined text-sm font-bold">play_arrow</span>
-                    Start Round
-                  </button>
-                  <button
-                    onClick={endRound0}
-                    disabled={!roundState.isActive}
-                    className={`px-4 py-2.5 rounded-xl font-label-mono-sm text-xs font-bold uppercase tracking-wider flex items-center gap-2 border transition-all ${
-                      !roundState.isActive
-                        ? 'bg-surface-subtle text-on-surface-variant/40 border-hairline-light cursor-not-allowed'
-                        : 'bg-sabotage-crimson text-white border-sabotage-crimson hover:bg-sabotage-crimson/90 shadow-[2px_2px_0px_#000]'
-                    }`}
-                  >
-                    <span className="material-symbols-outlined text-sm font-bold">stop</span>
-                    End Round
-                  </button>
+                <div className="flex items-center gap-3">
                   <div className="bg-primary text-on-primary p-3 rounded-xl flex flex-col items-start min-w-[140px] shadow-[3px_3px_0px_#CCFF00]">
                     <span className="font-label-mono-sm text-[10px] text-acid-chartreuse uppercase font-bold">ROUND 0 STATUS</span>
                     <span className="font-label-mono-sm text-xs text-on-primary font-bold tracking-tight flex items-center gap-1.5 mt-0.5">
@@ -881,270 +918,375 @@ export default function PlayerArena() {
           )}
 
           {/* ========================================================================= */}
-          {/* SUBTAB 3: POWER-UP POTHYS (Sabotages Armory in Previous Admin Style)      */}
+          {/* SUBTAB 3: POWER-UP POTHYS (Round 1 & Round 2 Power-Ups and Sabotages)      */}
           {/* ========================================================================= */}
-          {nammaAreaSubTab === 'power-up-pothys' && (
-            <div className="flex flex-col gap-8">
-              
-              {/* Header */}
-              <div className="flex flex-col lg:flex-row lg:items-end justify-between pb-6 gap-6 border-b border-hairline-light">
-                <div className="flex flex-col gap-2 max-w-2xl">
-                  <div className="flex items-center gap-3">
-                    <span className="px-3 py-1 bg-surface-subtle font-label-mono-sm text-label-mono-sm uppercase text-sabotage-crimson tracking-wider rounded-full font-bold">
-                      POWER-UP POTHYS // DISRUPTION ARMORY
-                    </span>
-                    <span className="px-3 py-1 bg-primary text-on-primary font-label-mono-sm text-label-mono-sm uppercase tracking-wider rounded-full">
-                      SQUAD ARSENAL ACTIVE
-                    </span>
-                  </div>
-                  <h1 className="font-headline-xl text-headline-xl tracking-tight text-primary font-bold">
-                    Tactical Sabotages Armory
-                  </h1>
-                  <p className="font-body-base text-body-base text-on-surface-variant">
-                    Deploy cognitive and sensory disruption payloads against rival contending teams to scramble their response buffers and clocks.
-                  </p>
-                </div>
+          {nammaAreaSubTab === 'power-up-pothys' && (() => {
+            const isCurrentRoundUnlocked = potisRound === 1 ? roundLocks.round1Unlocked : roundLocks.round2Unlocked;
+            const currentRoundItems = catalog.filter((item) => item.round_number === potisRound);
+            const powerUps = currentRoundItems.filter((item) => item.item_type === 'POWERUP');
+            const sabotages = currentRoundItems.filter((item) => item.item_type === 'SABOTAGE');
 
-                <div className="flex items-center gap-4 text-body-sm font-body-sm text-on-surface-variant">
-                  <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-signal-emerald"></span> Armed</span>
-                  <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-sabotage-crimson"></span> Active</span>
-                  <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-outline"></span> Cooldown</span>
-                </div>
-              </div>
-
-              {/* Incoming Threat Monitor Pill */}
-              <div className={`p-5 rounded-2xl flex items-center justify-between transition-colors border ${
-                activeThreat.isActive
-                  ? 'bg-error-container border-sabotage-crimson shadow-[3px_3px_0px_#FF2A3B]'
-                  : 'bg-surface-subtle border-hairline-light'
-              }`}>
-                <div className="flex items-center gap-4">
-                  <span className={`w-4 h-4 rounded-full ${activeThreat.isActive ? 'bg-sabotage-crimson animate-ping' : 'bg-signal-emerald'}`}></span>
-                  <div>
-                    <span className={`font-label-mono-sm text-label-mono-sm uppercase font-bold block ${
-                      activeThreat.isActive ? 'text-sabotage-crimson' : 'text-primary'
-                    }`}>
-                      {activeThreat.name}
-                    </span>
-                    <span className="font-body-base text-sm text-on-surface-variant">
-                      {activeThreat.sub}
-                    </span>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <span className="font-label-mono-sm text-xs text-on-surface-variant uppercase block">REMAINING DURATION</span>
-                  <span className={`font-headline-lg text-headline-lg font-bold ${
-                    activeThreat.isActive ? 'text-sabotage-crimson' : 'text-on-surface-variant'
-                  }`}>
-                    00:{activeThreat.timeLeft < 10 ? `0${activeThreat.timeLeft}` : activeThreat.timeLeft}
-                  </span>
-                </div>
-              </div>
-
-              {/* 6 Sabotages in 3-Column Grid (Modeled after Previous Admin Armory) */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            return (
+              <div className="flex flex-col gap-8">
                 
-                {/* Sabotage 1: Static Blind */}
-                <div className="bg-surface-subtle p-6 rounded-xl flex flex-col justify-between gap-4 border border-hairline-light hover:bg-surface-container/60 transition-colors">
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center justify-between">
-                      <span className="px-2.5 py-0.5 bg-signal-emerald/20 text-on-surface font-label-mono-sm text-label-mono-sm uppercase rounded-full">Available</span>
-                      <span className="font-label-mono-sm text-label-mono-sm text-on-surface-variant">DUR: 15s</span>
+                {/* Header Banner */}
+                <div className="flex flex-col lg:flex-row lg:items-end justify-between pb-6 gap-6 border-b border-hairline-light">
+                  <div className="flex flex-col gap-2 max-w-2xl">
+                    <div className="flex items-center gap-3">
+                      <span className="px-3 py-1 bg-surface-subtle font-label-mono-sm text-label-mono-sm uppercase text-primary tracking-wider rounded-full font-bold">
+                        POWER OF POTIS // SQUAD ARSENAL
+                      </span>
+                      <span className="px-3 py-1 bg-primary text-on-primary font-label-mono-sm text-label-mono-sm uppercase tracking-wider rounded-full">
+                        TACTICAL MATRIX ACTIVE
+                      </span>
                     </div>
-                    <h3 className="font-headline-md text-headline-md font-bold text-primary mt-1">Static Blind</h3>
-                    <p className="font-body-sm text-body-sm text-on-surface-variant">Injects heavy analog grain and severe optical blurring to target player HUD.</p>
+                    <h1 className="font-headline-xl text-headline-xl tracking-tight text-primary font-bold">
+                      Power-up Pothys
+                    </h1>
+                    <p className="font-body-base text-body-base text-on-surface-variant">
+                      Unlock strategic advantage power-ups for your squad or deploy crippling sabotage disruptions onto rival contenders.
+                    </p>
                   </div>
-                  <div className="flex flex-col gap-3 pt-2">
-                    <div className="flex items-center gap-2">
-                      <span className="font-label-mono-sm text-label-mono-sm uppercase text-on-surface-variant">Target Team:</span>
-                      <select
-                        className="bg-surface-container-lowest px-2 py-1 text-body-sm font-body-sm rounded outline-none flex-1 border border-hairline-light"
-                        value={targetTeam1}
-                        onChange={(e) => setTargetTeam1(Number(e.target.value))}
-                      >
-                        {rivalTeams.map((t) => (
-                          <option key={t.id} value={t.id}>{t.teamName}</option>
-                        ))}
-                      </select>
+
+                  {/* Wallet Points Balance Pill */}
+                  <div className="flex items-center gap-3">
+                    <div className="bg-surface-dark border-2 border-acid-chartreuse p-4 rounded-2xl flex items-center gap-4 shadow-[3px_3px_0px_#CCFF00]">
+                      <div className="w-10 h-10 rounded-xl bg-acid-chartreuse text-canvas-dark flex items-center justify-center font-bold">
+                        <span className="material-symbols-outlined text-2xl">account_balance_wallet</span>
+                      </div>
+                      <div>
+                        <span className="font-label-mono-sm text-[10px] uppercase text-on-surface-variant block font-bold">
+                          SQUAD WALLET BALANCE
+                        </span>
+                        <div className="flex items-baseline gap-1">
+                          <span className="font-headline-lg text-2xl font-black text-white">
+                            {currentTeam.score.toLocaleString()}
+                          </span>
+                          <span className="font-label-mono-sm text-xs text-acid-chartreuse font-bold">PTS</span>
+                        </div>
+                      </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => deploySabotageToTeam('Static Blind', 15, targetTeam1)}
-                      className="w-full py-3 bg-primary text-on-primary hover:bg-acid-chartreuse hover:text-primary font-label-mono-sm text-label-mono-sm uppercase font-bold transition-all cursor-pointer shadow-[2px_2px_0px_#CCFF00]"
-                    >
-                      Deploy Disruption
-                    </button>
                   </div>
                 </div>
 
-                {/* Sabotage 2: Reverse Controls */}
-                <div className="bg-surface-subtle p-6 rounded-xl flex flex-col justify-between gap-4 border border-hairline-light hover:bg-surface-container/60 transition-colors">
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center justify-between">
-                      <span className="px-2.5 py-0.5 bg-signal-emerald/20 text-on-surface font-label-mono-sm text-label-mono-sm uppercase rounded-full">Available</span>
-                      <span className="font-label-mono-sm text-label-mono-sm text-on-surface-variant">DUR: 20s</span>
+                {/* Round 1 & Round 2 Clickable Selector Tabs (As Requested) */}
+                <div className="flex items-center gap-4 border-b border-hairline-light pb-4">
+                  {/* Round 1 Button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPotisRound(1);
+                      playTone(750, 0.08);
+                    }}
+                    className={`flex-1 py-4 px-6 rounded-2xl font-headline-md text-base sm:text-lg uppercase tracking-wider font-bold transition-all cursor-pointer flex items-center justify-between border-2 ${
+                      potisRound === 1
+                        ? 'bg-primary text-on-primary border-primary shadow-[4px_4px_0px_#CCFF00]'
+                        : 'bg-surface-subtle hover:bg-surface-container text-on-surface-variant border-hairline-light'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="material-symbols-outlined text-2xl">quiz</span>
+                      <span>ROUND 1 ARSENAL</span>
                     </div>
-                    <h3 className="font-headline-md text-headline-md font-bold text-primary mt-1">Reverse Controls</h3>
-                    <p className="font-body-sm text-body-sm text-on-surface-variant">Inverts buzzer touch triggers and directional multiple choice selection matrix.</p>
-                  </div>
-                  <div className="flex flex-col gap-3 pt-2">
-                    <div className="flex items-center gap-2">
-                      <span className="font-label-mono-sm text-label-mono-sm uppercase text-on-surface-variant">Target Team:</span>
-                      <select
-                        className="bg-surface-container-lowest px-2 py-1 text-body-sm font-body-sm rounded outline-none flex-1 border border-hairline-light"
-                        value={targetTeam2}
-                        onChange={(e) => setTargetTeam2(Number(e.target.value))}
-                      >
-                        {rivalTeams.map((t) => (
-                          <option key={t.id} value={t.id}>{t.teamName}</option>
-                        ))}
-                      </select>
+                    <span className={`px-3 py-1 rounded-full font-label-mono-sm text-xs font-bold uppercase flex items-center gap-1.5 ${
+                      roundLocks.round1Unlocked
+                        ? 'bg-signal-emerald text-on-surface font-bold'
+                        : 'bg-sabotage-crimson/20 text-sabotage-crimson border border-sabotage-crimson/30'
+                    }`}>
+                      <span className="material-symbols-outlined text-sm">{roundLocks.round1Unlocked ? 'lock_open' : 'lock'}</span>
+                      {roundLocks.round1Unlocked ? 'UNLOCKED' : 'LOCKED'}
+                    </span>
+                  </button>
+
+                  {/* Round 2 Button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPotisRound(2);
+                      playTone(850, 0.08);
+                    }}
+                    className={`flex-1 py-4 px-6 rounded-2xl font-headline-md text-base sm:text-lg uppercase tracking-wider font-bold transition-all cursor-pointer flex items-center justify-between border-2 ${
+                      potisRound === 2
+                        ? 'bg-primary text-on-primary border-primary shadow-[4px_4px_0px_#CCFF00]'
+                        : 'bg-surface-subtle hover:bg-surface-container text-on-surface-variant border-hairline-light'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="material-symbols-outlined text-2xl">code</span>
+                      <span>ROUND 2 ARSENAL</span>
+                    </div>
+                    <span className={`px-3 py-1 rounded-full font-label-mono-sm text-xs font-bold uppercase flex items-center gap-1.5 ${
+                      roundLocks.round2Unlocked
+                        ? 'bg-signal-emerald text-on-surface font-bold'
+                        : 'bg-sabotage-crimson/20 text-sabotage-crimson border border-sabotage-crimson/30'
+                    }`}>
+                      <span className="material-symbols-outlined text-sm">{roundLocks.round2Unlocked ? 'lock_open' : 'lock'}</span>
+                      {roundLocks.round2Unlocked ? 'UNLOCKED' : 'LOCKED'}
+                    </span>
+                  </button>
+                </div>
+
+                {/* Action Feedback Banner */}
+                {actionFeedback && (
+                  <div className={`p-4 rounded-xl flex items-center justify-between gap-3 border transition-all ${
+                    actionFeedback.type === 'success'
+                      ? 'bg-signal-emerald/15 border-signal-emerald text-on-surface'
+                      : 'bg-sabotage-crimson/15 border-sabotage-crimson text-sabotage-crimson'
+                  }`}>
+                    <div className="flex items-center gap-2.5 font-label-mono-sm text-sm font-bold">
+                      <span className="material-symbols-outlined text-xl">
+                        {actionFeedback.type === 'success' ? 'check_circle' : 'error'}
+                      </span>
+                      <span>{actionFeedback.message}</span>
                     </div>
                     <button
                       type="button"
-                      onClick={() => deploySabotageToTeam('Reverse Controls', 20, targetTeam2)}
-                      className="w-full py-3 bg-primary text-on-primary hover:bg-acid-chartreuse hover:text-primary font-label-mono-sm text-label-mono-sm uppercase font-bold transition-all cursor-pointer shadow-[2px_2px_0px_#CCFF00]"
+                      onClick={() => setActionFeedback(null)}
+                      className="text-on-surface-variant hover:text-primary text-xs uppercase font-label-mono-sm font-bold cursor-pointer"
                     >
-                      Deploy Disruption
+                      Dismiss
                     </button>
+                  </div>
+                )}
+
+                {/* Incoming Threat Monitor Pill */}
+                <div className={`p-5 rounded-2xl flex items-center justify-between transition-colors border ${
+                  activeThreat.isActive
+                    ? 'bg-error-container border-sabotage-crimson shadow-[3px_3px_0px_#FF2A3B]'
+                    : 'bg-surface-subtle border-hairline-light'
+                }`}>
+                  <div className="flex items-center gap-4">
+                    <span className={`w-4 h-4 rounded-full ${activeThreat.isActive ? 'bg-sabotage-crimson animate-ping' : 'bg-signal-emerald'}`}></span>
+                    <div>
+                      <span className={`font-label-mono-sm text-label-mono-sm uppercase font-bold block ${
+                        activeThreat.isActive ? 'text-sabotage-crimson' : 'text-primary'
+                      }`}>
+                        {activeThreat.name}
+                      </span>
+                      <span className="font-body-base text-sm text-on-surface-variant">
+                        {activeThreat.sub}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-label-mono-sm text-xs text-on-surface-variant uppercase block">REMAINING DURATION</span>
+                    <span className={`font-headline-lg text-headline-lg font-bold ${
+                      activeThreat.isActive ? 'text-sabotage-crimson' : 'text-on-surface-variant'
+                    }`}>
+                      00:{activeThreat.timeLeft < 10 ? `0${activeThreat.timeLeft}` : activeThreat.timeLeft}
+                    </span>
                   </div>
                 </div>
 
-                {/* Sabotage 3: Sound Distortion */}
-                <div className="bg-surface-subtle p-6 rounded-xl flex flex-col justify-between gap-4 border border-hairline-light hover:bg-surface-container/60 transition-colors">
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center justify-between">
-                      <span className="px-2.5 py-0.5 bg-signal-emerald/20 text-on-surface font-label-mono-sm text-label-mono-sm uppercase rounded-full">Available</span>
-                      <span className="font-label-mono-sm text-label-mono-sm text-on-surface-variant">DUR: 10s</span>
+                {/* If Round is LOCKED by Admin, Display Locked HUD Screen */}
+                {!isCurrentRoundUnlocked ? (
+                  <div className="bg-surface-dark border-2 border-sabotage-crimson/50 rounded-3xl p-8 sm:p-12 text-center flex flex-col items-center justify-center gap-5 shadow-[0_0_40px_rgba(255,42,59,0.15)]">
+                    <div className="w-20 h-20 rounded-2xl bg-sabotage-crimson/15 border border-sabotage-crimson/30 text-sabotage-crimson flex items-center justify-center">
+                      <span className="material-symbols-outlined text-5xl">lock</span>
                     </div>
-                    <h3 className="font-headline-md text-headline-md font-bold text-primary mt-1">Sound Distortion</h3>
-                    <p className="font-body-sm text-body-sm text-on-surface-variant">Streams 85dB filtered pink noise and synthetic radio fuzz into target earpiece.</p>
-                  </div>
-                  <div className="flex flex-col gap-3 pt-2">
-                    <div className="flex items-center gap-2">
-                      <span className="font-label-mono-sm text-label-mono-sm uppercase text-on-surface-variant">Target Team:</span>
-                      <select
-                        className="bg-surface-container-lowest px-2 py-1 text-body-sm font-body-sm rounded outline-none flex-1 border border-hairline-light"
-                        value={targetTeam3}
-                        onChange={(e) => setTargetTeam3(Number(e.target.value))}
-                      >
-                        {rivalTeams.map((t) => (
-                          <option key={t.id} value={t.id}>{t.teamName}</option>
-                        ))}
-                      </select>
+                    <div>
+                      <span className="font-label-mono-sm text-xs uppercase tracking-widest text-sabotage-crimson font-bold block mb-1">
+                        ACCESS RESTRICTED // GAME MASTER LOCK ENGAGED
+                      </span>
+                      <h2 className="font-headline-xl text-2xl sm:text-3xl font-bold text-white uppercase tracking-tight">
+                        Round 0{potisRound} Arsenal is Locked
+                      </h2>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => deploySabotageToTeam('Sound Distortion', 10, targetTeam3)}
-                      className="w-full py-3 bg-primary text-on-primary hover:bg-acid-chartreuse hover:text-primary font-label-mono-sm text-label-mono-sm uppercase font-bold transition-all cursor-pointer shadow-[2px_2px_0px_#CCFF00]"
-                    >
-                      Deploy Disruption
-                    </button>
+                    <p className="font-body-base text-on-surface-variant max-w-xl text-sm sm:text-base leading-relaxed">
+                      The Game Master has locked access to Round 0{potisRound} Power-Ups and Sabotages. As soon as the host unlocks this round from the Thalaivar Console, this terminal will automatically unlock in real-time.
+                    </p>
+                    <div className="px-4 py-2 rounded-full bg-surface-subtle border border-hairline-dark font-label-mono-sm text-xs text-on-surface-variant flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-sabotage-crimson animate-ping"></span>
+                      STANDBY MODE • WEBSOCKET REAL-TIME SYNC ACTIVE
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  /* If Round is UNLOCKED, Display Two Sections: Power Up & Sabotage */
+                  <div className="flex flex-col gap-10">
+                    
+                    {/* SECTION 1: POWER UP SECTION (Advantages) */}
+                    <div className="flex flex-col gap-6">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b-2 border-primary gap-2">
+                        <div className="flex items-center gap-2.5">
+                          <span className="p-2 rounded-xl bg-primary text-acid-chartreuse material-symbols-outlined text-2xl">
+                            bolt
+                          </span>
+                          <div>
+                            <h2 className="font-headline-lg text-xl sm:text-2xl font-bold text-primary tracking-tight">
+                              Power Up Section // Squad Advantages
+                            </h2>
+                            <span className="font-body-sm text-xs text-on-surface-variant">
+                              Operational boosts, query assists, freeze timers, and code debug templates.
+                            </span>
+                          </div>
+                        </div>
+                        <span className="px-3 py-1 bg-surface-subtle rounded-full font-label-mono-sm text-xs font-bold text-primary border border-hairline-light">
+                          {powerUps.length} Available Power-Ups
+                        </span>
+                      </div>
 
-                {/* Sabotage 4: Buzzer Jammer */}
-                <div className="bg-surface-subtle p-6 rounded-xl flex flex-col justify-between gap-4 border border-hairline-light hover:bg-surface-container/60 transition-colors">
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center justify-between">
-                      <span className="px-2.5 py-0.5 bg-sabotage-crimson text-on-primary font-label-mono-sm text-label-mono-sm uppercase rounded-full">CRITICAL</span>
-                      <span className="font-label-mono-sm text-label-mono-sm text-on-surface-variant">DUR: 30s</span>
-                    </div>
-                    <h3 className="font-headline-md text-headline-md font-bold text-primary mt-1">Buzzer Jammer</h3>
-                    <p className="font-body-sm text-body-sm text-on-surface-variant">Artificially inserts 3.00s latency buffer upon hardware buzzer strike.</p>
-                  </div>
-                  <div className="flex flex-col gap-3 pt-2">
-                    <div className="flex items-center gap-2">
-                      <span className="font-label-mono-sm text-label-mono-sm uppercase text-on-surface-variant">Target Team:</span>
-                      <select
-                        className="bg-surface-container-lowest px-2 py-1 text-body-sm font-body-sm rounded outline-none flex-1 border border-hairline-light"
-                        value={targetTeam4}
-                        onChange={(e) => setTargetTeam4(Number(e.target.value))}
-                      >
-                        {rivalTeams.map((t) => (
-                          <option key={t.id} value={t.id}>{t.teamName}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => deploySabotageToTeam('Buzzer Jammer', 30, targetTeam4)}
-                      className="w-full py-3 bg-primary text-on-primary hover:bg-acid-chartreuse hover:text-primary font-label-mono-sm text-label-mono-sm uppercase font-bold transition-all cursor-pointer shadow-[2px_2px_0px_#CCFF00]"
-                    >
-                      Deploy Disruption
-                    </button>
-                  </div>
-                </div>
+                      {/* Power Ups Grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                        {powerUps.map((item) => {
+                          const canAfford = currentTeam.score >= item.cost;
+                          return (
+                            <div
+                              key={item.id}
+                              className="bg-surface-subtle p-5 rounded-xl flex flex-col justify-between gap-4 border border-hairline-light hover:bg-surface-container/60 transition-colors shadow-sm"
+                            >
+                              <div className="flex flex-col gap-2">
+                                <div className="flex items-center justify-between">
+                                  <span className="px-2.5 py-0.5 bg-signal-emerald/20 text-on-surface font-label-mono-sm text-[11px] font-bold uppercase rounded-full">
+                                    {item.level || 'Power-Up'}
+                                  </span>
+                                  <span className="font-label-mono-sm text-xs font-bold bg-surface-dark px-2.5 py-0.5 rounded border border-hairline-dark text-acid-chartreuse">
+                                    {item.cost} PTS
+                                  </span>
+                                </div>
+                                <h3 className="font-headline-md text-base sm:text-lg font-bold text-primary mt-1">
+                                  {item.name}
+                                </h3>
+                                <div className="inline-flex items-center gap-1 font-label-mono-sm text-[11px] text-on-surface-variant font-bold">
+                                  <span className="material-symbols-outlined text-xs">timer</span>
+                                  <span>{item.duration_effect}</span>
+                                </div>
+                                <p className="font-body-sm text-xs text-on-surface-variant leading-relaxed">
+                                  {item.description}
+                                </p>
+                              </div>
 
-                {/* Sabotage 5: Double Risk */}
-                <div className="bg-surface-subtle p-6 rounded-xl flex flex-col justify-between gap-4 border border-hairline-light hover:bg-surface-container/60 transition-colors">
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center justify-between">
-                      <span className="px-2.5 py-0.5 bg-cobalt-deep text-on-primary font-label-mono-sm text-label-mono-sm uppercase rounded-full">2X MULT</span>
-                      <span className="font-label-mono-sm text-label-mono-sm text-on-surface-variant">STAKE</span>
+                              <button
+                                type="button"
+                                disabled={!canAfford || isDeploying}
+                                onClick={() => handleActivatePowerUp(item)}
+                                className={`w-full py-2.5 px-4 font-label-mono-sm text-xs uppercase font-bold tracking-wider rounded transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                                  !canAfford
+                                    ? 'bg-hairline-dark text-on-surface-variant opacity-50 cursor-not-allowed'
+                                    : 'bg-primary text-on-primary hover:bg-acid-chartreuse hover:text-primary shadow-[2px_2px_0px_#CCFF00]'
+                                }`}
+                              >
+                                <span className="material-symbols-outlined text-base">bolt</span>
+                                <span>{canAfford ? `Activate (${item.cost} Pts)` : `Need ${item.cost} Pts`}</span>
+                              </button>
+                            </div>
+                          );
+                        })}
+                        {powerUps.length === 0 && (
+                          <div className="col-span-full p-8 text-center text-on-surface-variant font-label-mono-sm text-sm bg-surface-subtle rounded-xl">
+                            No Power-Ups configured for Round 0{potisRound}.
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <h3 className="font-headline-md text-headline-md font-bold text-primary mt-1">Double Risk</h3>
-                    <p className="font-body-sm text-body-sm text-on-surface-variant">Stake next response: +200% points or instant severe -200 deduction.</p>
-                  </div>
-                  <div className="flex flex-col gap-3 pt-2">
-                    <div className="flex items-center gap-2">
-                      <span className="font-label-mono-sm text-label-mono-sm uppercase text-on-surface-variant">Target Team:</span>
-                      <select
-                        className="bg-surface-container-lowest px-2 py-1 text-body-sm font-body-sm rounded outline-none flex-1 border border-hairline-light"
-                        value={targetTeam5}
-                        onChange={(e) => setTargetTeam5(Number(e.target.value))}
-                      >
-                        {rivalTeams.map((t) => (
-                          <option key={t.id} value={t.id}>{t.teamName}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => deploySabotageToTeam('Double Risk', 15, targetTeam5)}
-                      className="w-full py-3 bg-primary text-on-primary hover:bg-acid-chartreuse hover:text-primary font-label-mono-sm text-label-mono-sm uppercase font-bold transition-all cursor-pointer shadow-[2px_2px_0px_#CCFF00]"
-                    >
-                      Deploy Disruption
-                    </button>
-                  </div>
-                </div>
 
-                {/* Sabotage 6: Time Drain */}
-                <div className="bg-surface-subtle p-6 rounded-xl flex flex-col justify-between gap-4 border border-hairline-light hover:bg-surface-container/60 transition-colors">
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center justify-between">
-                      <span className="px-2.5 py-0.5 bg-signal-emerald/20 text-on-surface font-label-mono-sm text-label-mono-sm uppercase rounded-full">Available</span>
-                      <span className="font-label-mono-sm text-label-mono-sm text-on-surface-variant">-5 SEC</span>
+                    {/* SECTION 2: SABOTAGE SECTION (Disruptions) */}
+                    <div className="flex flex-col gap-6 pt-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b-2 border-sabotage-crimson gap-2">
+                        <div className="flex items-center gap-2.5">
+                          <span className="p-2 rounded-xl bg-sabotage-crimson text-on-primary material-symbols-outlined text-2xl">
+                            warning
+                          </span>
+                          <div>
+                            <h2 className="font-headline-lg text-xl sm:text-2xl font-bold text-primary tracking-tight">
+                              Sabotage Section // Tactical Disruptions
+                            </h2>
+                            <span className="font-body-sm text-xs text-on-surface-variant">
+                              Cognitive, visual, auditory, and interface disruptions to inflict on rival contenders.
+                            </span>
+                          </div>
+                        </div>
+                        <span className="px-3 py-1 bg-surface-subtle rounded-full font-label-mono-sm text-xs font-bold text-sabotage-crimson border border-sabotage-crimson/30">
+                          {sabotages.length} Available Sabotages
+                        </span>
+                      </div>
+
+                      {/* Sabotages Grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                        {sabotages.map((item) => {
+                          const canAfford = currentTeam.score >= item.cost;
+                          const selectedTarget = sabotageTargets[item.name] || rivalTeams[0]?.id;
+
+                          return (
+                            <div
+                              key={item.id}
+                              className="bg-surface-subtle p-5 rounded-xl flex flex-col justify-between gap-4 border border-hairline-light hover:bg-surface-container/60 transition-colors shadow-sm"
+                            >
+                              <div className="flex flex-col gap-2">
+                                <div className="flex items-center justify-between">
+                                  <span className="px-2.5 py-0.5 bg-sabotage-crimson/20 text-sabotage-crimson font-label-mono-sm text-[11px] font-bold uppercase rounded-full">
+                                    {item.level || 'Sabotage'}
+                                  </span>
+                                  <span className="font-label-mono-sm text-xs text-sabotage-crimson font-bold bg-surface-dark px-2.5 py-0.5 rounded border border-sabotage-crimson/40">
+                                    {item.cost} PTS
+                                  </span>
+                                </div>
+                                <h3 className="font-headline-md text-base sm:text-lg font-bold text-primary mt-1">
+                                  {item.name}
+                                </h3>
+                                <div className="inline-flex items-center gap-1 font-label-mono-sm text-[11px] text-on-surface-variant font-bold">
+                                  <span className="material-symbols-outlined text-xs">timer</span>
+                                  <span>{item.duration_effect}</span>
+                                </div>
+                                <p className="font-body-sm text-xs text-on-surface-variant leading-relaxed">
+                                  {item.description}
+                                </p>
+                              </div>
+
+                              <div className="flex flex-col gap-2.5 pt-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-label-mono-sm text-[11px] uppercase text-on-surface-variant font-bold">Target:</span>
+                                  <select
+                                    className="bg-surface-container-lowest px-2 py-1 text-xs font-body-base rounded outline-none flex-1 border border-hairline-light text-primary font-semibold"
+                                    value={selectedTarget}
+                                    onChange={(e) =>
+                                      setSabotageTargets((prev) => ({
+                                        ...prev,
+                                        [item.name]: Number(e.target.value)
+                                      }))
+                                    }
+                                  >
+                                    {rivalTeams.map((t) => (
+                                      <option key={t.id} value={t.id}>
+                                        {t.teamName}
+                                      </option>
+                                    ))}
+                                    {rivalTeams.length === 0 && (
+                                      <option value="">No Rival Teams</option>
+                                    )}
+                                  </select>
+                                </div>
+
+                                <button
+                                  type="button"
+                                  disabled={!canAfford || isDeploying || rivalTeams.length === 0}
+                                  onClick={() => handleDeploySabotage(item)}
+                                  className={`w-full py-2.5 px-4 font-label-mono-sm text-xs uppercase font-bold tracking-wider rounded transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                                    !canAfford
+                                      ? 'bg-hairline-dark text-on-surface-variant opacity-50 cursor-not-allowed'
+                                      : 'bg-sabotage-crimson text-on-primary hover:bg-error shadow-[2px_2px_0px_#000]'
+                                  }`}
+                                >
+                                  <span className="material-symbols-outlined text-base">emergency_home</span>
+                                  <span>{canAfford ? `Deploy (${item.cost} Pts)` : `Need ${item.cost} Pts`}</span>
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {sabotages.length === 0 && (
+                          <div className="col-span-full p-8 text-center text-on-surface-variant font-label-mono-sm text-sm bg-surface-subtle rounded-xl">
+                            No Sabotages configured for Round 0{potisRound}.
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <h3 className="font-headline-md text-headline-md font-bold text-primary mt-1">Time Drain</h3>
-                    <p className="font-body-sm text-body-sm text-on-surface-variant">Instantly accelerates target squad's answer countdown clock.</p>
+
                   </div>
-                  <div className="flex flex-col gap-3 pt-2">
-                    <div className="flex items-center gap-2">
-                      <span className="font-label-mono-sm text-label-mono-sm uppercase text-on-surface-variant">Target Team:</span>
-                      <select
-                        className="bg-surface-container-lowest px-2 py-1 text-body-sm font-body-sm rounded outline-none flex-1 border border-hairline-light"
-                        value={targetTeam6}
-                        onChange={(e) => setTargetTeam6(Number(e.target.value))}
-                      >
-                        {rivalTeams.map((t) => (
-                          <option key={t.id} value={t.id}>{t.teamName}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => deploySabotageToTeam('Time Drain', 10, targetTeam6)}
-                      className="w-full py-3 bg-primary text-on-primary hover:bg-acid-chartreuse hover:text-primary font-label-mono-sm text-label-mono-sm uppercase font-bold transition-all cursor-pointer shadow-[2px_2px_0px_#CCFF00]"
-                    >
-                      Trigger Instant Drain
-                    </button>
-                  </div>
-                </div>
+                )}
 
               </div>
-            </div>
-          )}
+            );
+          })()}
 
         </main>
       </div>

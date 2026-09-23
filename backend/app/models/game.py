@@ -16,6 +16,8 @@ class GameSession(Base):
     round_name = Column(String(100), nullable=False, default="Round 01 - Technical Architecture")
     buzzers_armed = Column(Boolean, nullable=False, default=True)
     buzzers_armed_at = Column(DateTime(timezone=True), nullable=True)
+    round1_unlocked = Column(Boolean, nullable=False, default=False)
+    round2_unlocked = Column(Boolean, nullable=False, default=False)
     is_active = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)

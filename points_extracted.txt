@@ -1,0 +1,277 @@
+Overall Point System
+Starting Points
+Every team starts 
+with:
+ 100 Points
+During each round, teams can earn additional points from their web-dev performance.
+Round Score
+Each round has:
+Metric
+Points
+Technical Implementation
+10
+Vibe Coded Look
+10
+Features
+10
+Merging of Themes
+10
+Creative Interpretation
+10
+Maximum
+50
+So:
+Starting 100 + Round 1 score (max 50) + Round 2 score (max 50) = maximum 200 points
+These points form the team's event wallet.
+🟢
+ ROUND 1 — Advantages
+I'd price them like this:
+Advantage
+Level
+Duration / Effect
+Cost
+🛡️
+ Shield
+Easy
+5 min
+15
+🛡️
+ Shield
+Medium
+10 min
+25
+⏱️
+ Extra Time
+Medium
++5 min
+20
+⏱️
+ Extra Time
+Hard
++10 min
+35
+⏭️
+ Skip Task
+Hard
+Skip 1 task
+40
+🚫
+ Skip Punishment
+Medium
+Cancel 1 punishment
+25
+🔄
+ Reflecting Shield
+Medium
+Reflect for 5 min
+30
+🔄
+ Reflect Shield
+Hard
+Reflect for 10 min
+45
+👀
+ Check Progress
+Easy
+Check 2 teams
+10
+👀
+ Check Progress
+Medium
+Check 5 teams
+20
+🎲
+ Random
+Medium
+Random advantage
+15
+Why these prices?
+The basic rule is:
+Information < protection < time manipulation < task cancellation
+So
+ Check Progress is cheap because it doesn't directly improve their own development.
+Skip Task is expensive because completely removing a challenge is extremely powerful.
+🔴
+ ROUND 1 — Sabotages
+Sabotage
+Level
+Effect
+Cost
+🌑
+ Blackout
+Medium
+5 min
+15
+🌑
+ Blackout
+Hard
+10 min
+30
+📋
+ No Copy Paste
+Easy
+5 min
+10
+📋
+ No Copy Paste
+Medium
+10 min
+20
+🤖
+ No AI
+Medium
+5 min
+15
+🤖
+ No AI
+Hard
+10 min
+30
+⚠️
+ Force Punishment
+Medium
+1 punishment
+25
+🧊
+ Freeze Them
+Easy
+2 min
+10
+🧊
+ Freeze Them
+Medium
+5 min
+20
+🎯
+ Force Task
+Hard
+1 task / 5 min
+30
+Important balancing rule
+For Force Task, don't let teams choose something impossible.
+The organizers should have a predefined list of acceptable tasks.
+🔵
+ ROUND 2 — Advantages
+Round 2 has more strategic abilities, especially AI and hints, so I'd make them slightly expensive.
+Advantage
+Level
+Effect
+Cost
+🛡️
+ Shield
+Easy
+5 min
+15
+🛡️
+ Shield
+Medium
+10 min
+25
+⏱️
+ Extra Time
+Medium
++5 min
+20
+⏱️
+ Extra Time
+Hard
++10 min
+35
+⏭️
+ Skip Task
+Hard
+Skip 1 task
+40
+🚫
+ Skip Punishment
+Medium
+Cancel 1 punishment
+25
+🔄
+ Reflect
+Medium
+5 min
+30
+🔄
+ Reflect
+Hard
+10 min
+45
+💡
+ Get Hints
+Medium
+High-level hint
+15
+💡
+ Get Hints
+Hard
+Detailed explanation
+25
+🎲
+ Random
+Medium
+Random advantage
+15
+🤖
+ Get AI
+Medium
+1 AI question
+25
+🔀
+ Change Question
+Medium
+Change 1 question
+20
+🔴
+ ROUND 2 — Sabotages
+Sabotage
+Level
+Effect
+Cost
+🌑
+ Blackout
+Medium
+5 min
+15
+🌑
+ Blackout
+Hard
+10 min
+30
+🧩
+ Force Complexity
+Medium
+1 question
+20
+⚠️
+ Force Punishment
+Medium
+1 punishment
+25
+🧊
+ Freeze Them
+Easy
+2 min
+10
+🧊
+ Freeze Them
+Medium
+5 min
+20
+🎯
+ Force Task
+Hard
+1 task / 5 min
+30
+🎲
+ Random
+Medium
+Random sabotage
+15
+Instead of Random we 
+using
+ the Lottery system: 
+In the lottery system they have some special surprise powerups & sabotages. 
+If they got 
+sabotages
+ they use it to their opponent, if they got powerups they can use.

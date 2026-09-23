@@ -6,6 +6,7 @@ from sqlalchemy import select, update
 from app.models.team import Team
 from app.models.game import GameSession
 from app.models.sabotage import Sabotage, SabotageInstance
+from app.models.score import ScoreTransaction
 from app.services.audit_service import AuditService
 from app.services.score_service import ScoreService
 from app.websockets.connection_manager import manager
@@ -14,7 +15,7 @@ from app.websockets.connection_manager import manager
 class SabotageService:
     @staticmethod
     async def get_catalog(db: AsyncSession) -> List[Dict[str, Any]]:
-        result = await db.execute(select(Sabotage).order_by(Sabotage.id.asc()))
+        result = await db.execute(select(Sabotage).order_by(Sabotage.round_number.asc(), Sabotage.item_type.asc(), Sabotage.cost.asc(), Sabotage.id.asc()))
         catalog = result.scalars().all()
         return [
             {
@@ -27,6 +28,14 @@ class SabotageService:
                 "category": s.category,
                 "badge_label": s.badge_label,
                 "badgeLabel": s.badge_label,
+                "item_type": s.item_type,
+                "itemType": s.item_type,
+                "round_number": s.round_number,
+                "roundNumber": s.round_number,
+                "cost": s.cost,
+                "level": s.level,
+                "duration_effect": s.duration_effect,
+                "durationEffect": s.duration_effect,
             }
             for s in catalog
         ]
@@ -38,7 +47,7 @@ class SabotageService:
         target_team_id: int,
         sabotage_slug: str
     ) -> Dict[str, Any]:
-        """Deploys a tactical sabotage payload against a target team."""
+        """Deploys a tactical sabotage payload against a target team with balance deduction and lock checking."""
         now = datetime.now(timezone.utc)
 
         # 1. Fetch sabotage definition
@@ -46,6 +55,16 @@ class SabotageService:
         sab = sab_res.scalar_one_or_none()
         if not sab:
             raise ValueError(f"Unknown sabotage payload: {sabotage_slug}")
+
+        # Check round lock status
+        session_res = await db.execute(select(GameSession).where(GameSession.is_active == True).limit(1))
+        session = session_res.scalar_one_or_none()
+        if session:
+            if sab.round_number == 1 and not session.round1_unlocked:
+                raise ValueError("Round 1 tactical armory is currently LOCKED by Host Arbiter.")
+            elif sab.round_number == 2 and not session.round2_unlocked:
+                raise ValueError("Round 2 tactical armory is currently LOCKED by Host Arbiter.")
+        session_id = session.id if session else 1
 
         # 2. Fetch target & attacker teams
         target_res = await db.execute(select(Team).where(Team.id == target_team_id))
@@ -55,14 +74,27 @@ class SabotageService:
 
         attacker_res = await db.execute(select(Team).where(Team.id == attacker_team_id))
         attacker_team = attacker_res.scalar_one_or_none()
-        attacker_name = attacker_team.team_name if attacker_team else f"Team {attacker_team_id}"
+        if not attacker_team:
+            raise ValueError(f"Attacker team with ID {attacker_team_id} does not exist")
+        attacker_name = attacker_team.team_name
 
-        # 3. Get active session
-        session_res = await db.execute(select(GameSession).where(GameSession.is_active == True).limit(1))
-        session = session_res.scalar_one_or_none()
-        session_id = session.id if session else 1
+        cost = sab.cost or 0
+        if attacker_team.score < cost:
+            raise ValueError(f"Insufficient event wallet points: Requires {cost} PTS, but squad only holds {attacker_team.score} PTS.")
 
-        duration = sab.default_duration
+        # Deduct wallet points
+        attacker_team.score -= cost
+        tx = ScoreTransaction(
+            session_id=session_id,
+            team_id=attacker_team_id,
+            delta=-cost,
+            resulting_score=attacker_team.score,
+            reason=f"Sabotage Payload Deployed: {sab.name} (-{cost} PTS)"
+        )
+        db.add(tx)
+        await db.flush()
+
+        duration = sab.default_duration or 15
         expires_at = now + timedelta(seconds=duration)
 
         # 4. Insert SabotageInstance
@@ -87,7 +119,7 @@ class SabotageService:
             actor_id=attacker_team_id,
             target_team_id=target_team_id,
             action_type="SABOTAGE_DEPLOYED",
-            message=f"{sab.name} deployed by {attacker_name} against {target_team.team_name}.",
+            message=f"{sab.name} ({cost} PTS) deployed by {attacker_name} against {target_team.team_name}.",
             color_class="text-sabotage-crimson font-bold",
             broadcast=True
         )
@@ -110,10 +142,96 @@ class SabotageService:
             "threat": threat_data
         })
 
-        # Update leaderboard to reflect active disruption pill
+        await manager.broadcast({
+            "type": "SCORE_UPDATED",
+            "team_id": attacker_team_id,
+            "score": attacker_team.score
+        })
+
+        await db.commit()
+
+        # Update leaderboard to reflect active disruption pill & new score
         await ScoreService.broadcast_leaderboard(db)
 
         return threat_data
+
+    @staticmethod
+    async def activate_powerup(
+        db: AsyncSession,
+        team_id: int,
+        powerup_slug: str
+    ) -> Dict[str, Any]:
+        """Purchases and activates an advantage powerup for a squad."""
+        now = datetime.now(timezone.utc)
+
+        # 1. Fetch item definition
+        sab_res = await db.execute(select(Sabotage).where(Sabotage.slug == powerup_slug))
+        sab = sab_res.scalar_one_or_none()
+        if not sab:
+            raise ValueError(f"Unknown power-up advantage: {powerup_slug}")
+
+        # Check round lock status
+        session_res = await db.execute(select(GameSession).where(GameSession.is_active == True).limit(1))
+        session = session_res.scalar_one_or_none()
+        if session:
+            if sab.round_number == 1 and not session.round1_unlocked:
+                raise ValueError("Round 1 advantage armory is currently LOCKED by Host Arbiter.")
+            elif sab.round_number == 2 and not session.round2_unlocked:
+                raise ValueError("Round 2 advantage armory is currently LOCKED by Host Arbiter.")
+        session_id = session.id if session else 1
+
+        team_res = await db.execute(select(Team).where(Team.id == team_id))
+        team = team_res.scalar_one_or_none()
+        if not team:
+            raise ValueError(f"Team with ID {team_id} does not exist")
+
+        cost = sab.cost or 0
+        if team.score < cost:
+            raise ValueError(f"Insufficient event wallet points: Requires {cost} PTS, but squad only holds {team.score} PTS.")
+
+        # Deduct cost
+        team.score -= cost
+        tx = ScoreTransaction(
+            session_id=session_id,
+            team_id=team_id,
+            delta=-cost,
+            resulting_score=team.score,
+            reason=f"Advantage Activated: {sab.name} (-{cost} PTS)"
+        )
+        db.add(tx)
+        await db.flush()
+
+        # Log in Kanaku Valaku
+        await AuditService.log_event(
+            db=db,
+            category="SCORE",
+            actor_type="PLAYER_TEAM",
+            actor_id=team_id,
+            target_team_id=team_id,
+            action_type="POWERUP_ACTIVATED",
+            message=f"{team.team_name} activated advantage: {sab.name} ({sab.duration_effect or ''}) for {cost} PTS.",
+            color_class="text-acid-chartreuse font-bold",
+            broadcast=True
+        )
+
+        await db.commit()
+
+        # Broadcast score update
+        await manager.broadcast({
+            "type": "SCORE_UPDATED",
+            "team_id": team.id,
+            "score": team.score,
+        })
+        await ScoreService.broadcast_leaderboard(db)
+
+        return {
+            "success": True,
+            "teamId": team.id,
+            "powerupName": sab.name,
+            "cost": cost,
+            "newScore": team.score,
+            "durationEffect": sab.duration_effect
+        }
 
     @staticmethod
     async def neutralize_sabotage(

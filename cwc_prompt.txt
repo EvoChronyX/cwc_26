@@ -154,3 +154,32 @@ I want to understand and retain control of the backend architecture while you pe
 Never assume that a database design decision is approved merely because you proposed it.
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+For the sabotage and the power page it should now work correctly. If any person sabotages, it has to play a video on the victim's sabotage to identify and notify them, even if they are in another window. If they are in another window doing any coding or in the visual code, it also has to notify it correctly playing the video.
+
+For the powerups, it has to play a video for them also. We have all the playing videos with us locally. You have to just place a placeholder for the video:or anything need to stored somewhere also fine the video file image name and a guide to how to use it. We will make that. It has to load the video there for the powerup sabotage for the players and the victim persons.
+
+For the shield and reflective shield only, it has to notify the same concept: the shield is also a video and the reflective shield is also a video. No problem. The video technique should be implemented. I don't know whether it works correctly or not, whether it is working in another window or not. It has to show the video and the things.
+
+If you want any permissions also at the file system level, we can do it because all the systems are connected on the college Ethernet. One system has been chosen as admin and all the others are connected to that Ethernet. The admin provides the network link to all the clients. The players are chosen to link to play the games using the website.
+
+By the way I want these features on the sabotage and power-ups page. The power-ups and sabotage will have to work correctly and accurately to notify the users via the video. This is the part and the notification as well as the duration should play. That's the thing: it has to work correctly.
+
+

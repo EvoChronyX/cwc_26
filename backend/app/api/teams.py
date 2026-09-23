@@ -4,7 +4,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.core.database import get_db
+from app.core.dependencies import get_current_admin
 from app.models.team import Team
+from app.models.admin import AdminUser
 from app.schemas.team import TeamResponse
 from app.services.score_service import ScoreService
 
@@ -17,6 +19,16 @@ async def get_all_teams(db: AsyncSession = Depends(get_db)):
     return teams
 
 
+@router.delete("/all")
+@router.post("/delete-all")
+async def delete_all_teams(
+    admin: AdminUser = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db)
+):
+    await ScoreService.delete_all_teams(db, admin_id=admin.id)
+    return {"success": True, "message": "All tournament teams and users have been deleted."}
+
+
 @router.get("/{team_id}", response_model=TeamResponse)
 async def get_team_by_id(team_id: int, db: AsyncSession = Depends(get_db)):
     teams = await ScoreService.get_all_teams(db)
@@ -24,3 +36,4 @@ async def get_team_by_id(team_id: int, db: AsyncSession = Depends(get_db)):
         if t["id"] == team_id:
             return t
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team not found")
+

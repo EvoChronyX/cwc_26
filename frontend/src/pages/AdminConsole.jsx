@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import ClashLogo from '../components/common/ClashLogo';
 import { useGame } from '../context/GameContext';
 import { api } from '../services/api';
+import { PREDEFINED_AVATARS } from '../assets/avatars';
 
 export default function AdminConsole() {
   const {
@@ -29,7 +30,11 @@ export default function AdminConsole() {
     roundState,
     startRound0,
     endRound0,
-    awardCorrectAnswer
+    awardCorrectAnswer,
+    roundLocks,
+    toggleRoundLock,
+    deleteAllTeams,
+    deleteAllRecords
   } = useGame();
 
   // Active filter in Total Comalies
@@ -45,11 +50,27 @@ export default function AdminConsole() {
   // Kanaku Valaku filter category
   const [logFilter, setLogFilter] = useState('ALL');
 
-  const selectedNeutralizeTeam = teams.find((t) => t.id === Number(selectedNeutralizeTeamId)) || teams[0];
+  // Confirmation Modals for Kanakvaala page data management
+  const [showDeleteRecordsModal, setShowDeleteRecordsModal] = useState(false);
+  const [showDeleteUsersModal, setShowDeleteUsersModal] = useState(false);
+  const [isProcessingDelete, setIsProcessingDelete] = useState(false);
+
+  // Leaderboard sorting
+  const [sortByR0, setSortByR0] = useState(false);
+
+  const selectedNeutralizeTeam = teams.find((t) => t.id === Number(selectedNeutralizeTeamId)) || teams[0] || {
+    id: 0,
+    teamName: 'NO REGISTERED SQUADS',
+    p1: 'N/A',
+    p2: 'N/A',
+    score: 0,
+    activeSabotages: [],
+    lane: 'N/A'
+  };
 
   const handleNeutralizeSabotage = () => {
-    if (!selectedNeutralizeTeam) return;
-    const sabotageToRemove = selectedNeutralizeSabotage || (selectedNeutralizeTeam.activeSabotages[0] || 'ALL DISRUPTIONS');
+    if (!selectedNeutralizeTeam || !selectedNeutralizeTeam.id) return;
+    const sabotageToRemove = selectedNeutralizeSabotage || (selectedNeutralizeTeam.activeSabotages?.[0] || 'ALL DISRUPTIONS');
     removeSabotageFromTeam(selectedNeutralizeTeam.id, sabotageToRemove);
   };
 
@@ -71,6 +92,50 @@ export default function AdminConsole() {
     return log.category.toUpperCase().includes(logFilter);
   });
 
+  const getTeamAvatar = (team) => {
+    if (!team || !team.id) return PREDEFINED_AVATARS[0].src;
+    const idx = (team.id) % PREDEFINED_AVATARS.length;
+    return PREDEFINED_AVATARS[idx]?.src || PREDEFINED_AVATARS[idx]?.svg || PREDEFINED_AVATARS[0].src;
+  };
+
+  const sortedTeams = [...(teams || [])].sort((a, b) => {
+    if (sortByR0 || roundState.isEnded) {
+      const diffR0 = (b.r0 || b.r0Score || 0) - (a.r0 || a.r0Score || 0);
+      if (diffR0 !== 0) return diffR0;
+    }
+    return (b.score || 0) - (a.score || 0);
+  });
+
+  const rank1 = sortedTeams[0] || { id: 0, teamName: 'NO SQUAD REGISTERED', p1: 'PLAYER 1', p2: 'PLAYER 2', score: 0 };
+  const rank2 = sortedTeams[1] || { id: 0, teamName: 'NO SQUAD REGISTERED', p1: 'PLAYER 1', p2: 'PLAYER 2', score: 0 };
+  const rank3 = sortedTeams[2] || { id: 0, teamName: 'NO SQUAD REGISTERED', p1: 'PLAYER 1', p2: 'PLAYER 2', score: 0 };
+
+  const handleDeleteAllRecordsConfirm = async () => {
+    try {
+      setIsProcessingDelete(true);
+      await deleteAllRecords();
+      setShowDeleteRecordsModal(false);
+      playTone(600, 0.2);
+    } catch (err) {
+      console.error('Failed to delete records:', err);
+    } finally {
+      setIsProcessingDelete(false);
+    }
+  };
+
+  const handleDeleteAllUsersConfirm = async () => {
+    try {
+      setIsProcessingDelete(true);
+      await deleteAllTeams();
+      setShowDeleteUsersModal(false);
+      playTone(400, 0.3);
+    } catch (err) {
+      console.error('Failed to delete users:', err);
+    } finally {
+      setIsProcessingDelete(false);
+    }
+  };
+
   return (
     <div className="w-full min-h-screen bg-background flex">
       
@@ -85,7 +150,7 @@ export default function AdminConsole() {
           </span>
         </div>
 
-        {/* The 3 Admin Options Requested by User */}
+        {/* Admin Navigation Options */}
         <nav className="flex-1 px-space-sm flex flex-col gap-1.5">
           {/* 1. Thalaivar Page */}
           <button
@@ -136,6 +201,23 @@ export default function AdminConsole() {
           >
             <span className="material-symbols-outlined mr-space-sm text-[20px]">receipt_long</span>
             Kanaku Valaku
+          </button>
+
+          {/* 4. Leaderboard (Added as requested) */}
+          <button
+            type="button"
+            onClick={() => {
+              setAdminSubTab('leaderboard');
+              playTone(1050, 0.08);
+            }}
+            className={`flex items-center px-space-sm py-2.5 transition-all rounded-lg text-left cursor-pointer w-full font-body-base text-sm ${
+              adminSubTab === 'leaderboard'
+                ? 'bg-primary text-on-primary font-bold shadow-[2px_2px_0px_#CCFF00]'
+                : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'
+            }`}
+          >
+            <span className="material-symbols-outlined mr-space-sm text-[20px]">leaderboard</span>
+            Leaderboard
           </button>
         </nav>
 
@@ -474,15 +556,20 @@ export default function AdminConsole() {
                     </label>
                     <select
                       id="target-team-select"
-                      className="w-full bg-surface-subtle text-primary font-headline-md text-headline-md px-4 py-3.5 border-2 border-primary rounded-none focus:outline-none focus:border-cobalt-deep uppercase font-bold cursor-pointer"
+                      disabled={teams.length === 0}
+                      className="w-full bg-surface-subtle text-primary font-headline-md text-headline-md px-4 py-3.5 border-2 border-primary rounded-none focus:outline-none focus:border-cobalt-deep uppercase font-bold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                       value={selectedNeutralizeTeamId}
                       onChange={(e) => setSelectedNeutralizeTeamId(Number(e.target.value))}
                     >
-                      {teams.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.teamName} ({t.p1} &amp; {t.p2} - {t.lane})
-                        </option>
-                      ))}
+                      {teams.length > 0 ? (
+                        teams.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.teamName} ({t.p1} &amp; {t.p2} - {t.lane})
+                          </option>
+                        ))
+                      ) : (
+                        <option value="0">NO TEAMS REGISTERED IN DATABASE</option>
+                      )}
                     </select>
                   </div>
 
@@ -493,11 +580,12 @@ export default function AdminConsole() {
                     </label>
                     <select
                       id="target-sabotage-select"
-                      className="w-full bg-surface-subtle text-primary font-body-base text-body-base px-4 py-4 border-2 border-primary rounded-none focus:outline-none focus:border-cobalt-deep font-semibold cursor-pointer"
+                      disabled={teams.length === 0 || !selectedNeutralizeTeam?.id}
+                      className="w-full bg-surface-subtle text-primary font-body-base text-body-base px-4 py-4 border-2 border-primary rounded-none focus:outline-none focus:border-cobalt-deep font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                       value={selectedNeutralizeSabotage}
                       onChange={(e) => setSelectedNeutralizeSabotage(e.target.value)}
                     >
-                      {selectedNeutralizeTeam.activeSabotages.length > 0 ? (
+                      {(selectedNeutralizeTeam.activeSabotages || []).length > 0 ? (
                         selectedNeutralizeTeam.activeSabotages.map((sab) => (
                           <option key={sab} value={sab}>
                             ⚠️ {sab} (ACTIVE DISRUPTION)
@@ -514,7 +602,12 @@ export default function AdminConsole() {
                     <button
                       type="button"
                       onClick={handleNeutralizeSabotage}
-                      className="w-full px-8 py-4 bg-sabotage-crimson text-on-primary font-headline-md text-headline-md uppercase tracking-wider font-bold hover:bg-error hover:scale-[1.02] active:scale-95 transition-all duration-150 flex items-center justify-center gap-3 cursor-pointer shadow-[4px_4px_0px_#050505]"
+                      disabled={teams.length === 0 || !selectedNeutralizeTeam?.id || !(selectedNeutralizeTeam.activeSabotages?.length > 0)}
+                      className={`w-full px-8 py-4 font-headline-md text-headline-md uppercase tracking-wider font-bold transition-all duration-150 flex items-center justify-center gap-3 ${
+                        teams.length === 0 || !selectedNeutralizeTeam?.id || !(selectedNeutralizeTeam.activeSabotages?.length > 0)
+                          ? 'bg-surface-subtle text-on-surface-variant/40 border border-hairline-light cursor-not-allowed'
+                          : 'bg-sabotage-crimson text-on-primary hover:bg-error hover:scale-[1.02] active:scale-95 cursor-pointer shadow-[4px_4px_0px_#050505]'
+                      }`}
                     >
                       <span className="material-symbols-outlined text-2xl">shield_with_heart</span>
                       <span>REMOVE SABOTAGE</span>
@@ -526,22 +619,131 @@ export default function AdminConsole() {
                 <div className="p-4 bg-surface-subtle rounded-lg flex items-center justify-between border border-hairline-light">
                   <div className="flex items-center gap-3">
                     <span className={`w-3 h-3 rounded-full ${
-                      selectedNeutralizeTeam.activeSabotages.length > 0 ? 'bg-sabotage-crimson animate-ping' : 'bg-signal-emerald'
+                      (selectedNeutralizeTeam.activeSabotages || []).length > 0 ? 'bg-sabotage-crimson animate-ping' : 'bg-signal-emerald'
                     }`}></span>
                     <span className="font-body-base text-body-base text-primary">
-                      Status for <strong>{selectedNeutralizeTeam.teamName}</strong> ({selectedNeutralizeTeam.p1} &amp; {selectedNeutralizeTeam.p2}):{' '}
-                      {selectedNeutralizeTeam.activeSabotages.length > 0 ? (
-                        <span className="text-sabotage-crimson font-bold">
-                          Impacted by {selectedNeutralizeTeam.activeSabotages.join(', ')}
-                        </span>
+                      {teams.length === 0 ? (
+                        <span className="text-on-surface-variant font-bold">Roster empty. No registered teams in the database for the active game.</span>
                       ) : (
-                        <span className="text-signal-emerald font-bold">Shields nominal. No active disruptions.</span>
+                        <>
+                          Status for <strong>{selectedNeutralizeTeam.teamName}</strong> ({selectedNeutralizeTeam.p1} &amp; {selectedNeutralizeTeam.p2}):{' '}
+                          {(selectedNeutralizeTeam.activeSabotages || []).length > 0 ? (
+                            <span className="text-sabotage-crimson font-bold">
+                              Impacted by {selectedNeutralizeTeam.activeSabotages.join(', ')}
+                            </span>
+                          ) : (
+                            <span className="text-signal-emerald font-bold">Shields nominal. No active disruptions.</span>
+                          )}
+                        </>
                       )}
                     </span>
                   </div>
                   <span className="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase font-bold">
-                    SCORE: {selectedNeutralizeTeam.score.toLocaleString()} PTS
+                    SCORE: {(selectedNeutralizeTeam.score || 0).toLocaleString()} PTS
                   </span>
+                </div>
+              </div>
+
+              {/* Subsystem 03: Round 1 & Round 2 Arsenal Lock Controls (Power of Potis) */}
+              <div className="bg-surface-container-lowest p-6 md:p-8 rounded-xl shadow-sm flex flex-col gap-6 border border-hairline-light">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-hairline-light">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-primary text-xl">lock_open</span>
+                      <h2 className="font-headline-lg text-headline-lg text-primary font-bold">
+                        Arsenal Round Lock Controls // Power of Potis
+                      </h2>
+                    </div>
+                    <p className="font-body-base text-body-base text-on-surface-variant mt-1">
+                      Independently unlock or lock Round 1 &amp; Round 2 items in real-time across all player arena terminals.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 font-label-mono-sm text-xs text-on-surface-variant">
+                    <span className="w-2 h-2 rounded-full bg-signal-emerald animate-pulse"></span>
+                    LIVE SYNC VIA WEBSOCKET
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Round 1 Lock Card */}
+                  <div className={`p-6 rounded-xl border flex flex-col justify-between gap-5 transition-all ${
+                    roundLocks.round1Unlocked
+                      ? 'bg-signal-emerald/10 border-signal-emerald shadow-[3px_3px_0px_#00FF85]'
+                      : 'bg-surface-subtle border-hairline-light'
+                  }`}>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <span className="font-label-mono-sm text-xs uppercase font-bold text-on-surface-variant">ROUND 01 ARSENAL</span>
+                        <h3 className="font-headline-md text-xl font-bold text-primary mt-1">Round 1 (Puzzles &amp; Quiz)</h3>
+                        <p className="font-body-sm text-xs text-on-surface-variant mt-1">
+                          11 Advantages (20-100 pts) + 10 Sabotages (40-100 pts)
+                        </p>
+                      </div>
+                      <span className={`px-3 py-1 rounded-full font-label-mono-sm text-xs font-bold uppercase flex items-center gap-1.5 ${
+                        roundLocks.round1Unlocked
+                          ? 'bg-signal-emerald text-on-surface font-bold'
+                          : 'bg-sabotage-crimson/20 text-sabotage-crimson border border-sabotage-crimson/40'
+                      }`}>
+                        <span className="material-symbols-outlined text-sm">{roundLocks.round1Unlocked ? 'lock_open' : 'lock'}</span>
+                        {roundLocks.round1Unlocked ? 'UNLOCKED' : 'LOCKED'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => toggleRoundLock(1, !roundLocks.round1Unlocked)}
+                        className={`w-full py-3.5 px-4 rounded-lg font-headline-md text-sm uppercase font-bold tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                          roundLocks.round1Unlocked
+                            ? 'bg-surface-dark text-on-primary hover:bg-sabotage-crimson border border-hairline-dark'
+                            : 'bg-primary text-on-primary hover:bg-acid-chartreuse hover:text-primary shadow-[2px_2px_0px_#CCFF00]'
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-lg">{roundLocks.round1Unlocked ? 'lock' : 'lock_open'}</span>
+                        <span>{roundLocks.round1Unlocked ? 'LOCK ROUND 1 ARSENAL' : 'UNLOCK ROUND 1 ARSENAL'}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Round 2 Lock Card */}
+                  <div className={`p-6 rounded-xl border flex flex-col justify-between gap-5 transition-all ${
+                    roundLocks.round2Unlocked
+                      ? 'bg-signal-emerald/10 border-signal-emerald shadow-[3px_3px_0px_#00FF85]'
+                      : 'bg-surface-subtle border-hairline-light'
+                  }`}>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <span className="font-label-mono-sm text-xs uppercase font-bold text-on-surface-variant">ROUND 02 ARSENAL</span>
+                        <h3 className="font-headline-md text-xl font-bold text-primary mt-1">Round 2 (Coding &amp; Debugging)</h3>
+                        <p className="font-body-sm text-xs text-on-surface-variant mt-1">
+                          13 Advantages (30-150 pts) + 8 Sabotages (50-130 pts)
+                        </p>
+                      </div>
+                      <span className={`px-3 py-1 rounded-full font-label-mono-sm text-xs font-bold uppercase flex items-center gap-1.5 ${
+                        roundLocks.round2Unlocked
+                          ? 'bg-signal-emerald text-on-surface font-bold'
+                          : 'bg-sabotage-crimson/20 text-sabotage-crimson border border-sabotage-crimson/40'
+                      }`}>
+                        <span className="material-symbols-outlined text-sm">{roundLocks.round2Unlocked ? 'lock_open' : 'lock'}</span>
+                        {roundLocks.round2Unlocked ? 'UNLOCKED' : 'LOCKED'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => toggleRoundLock(2, !roundLocks.round2Unlocked)}
+                        className={`w-full py-3.5 px-4 rounded-lg font-headline-md text-sm uppercase font-bold tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                          roundLocks.round2Unlocked
+                            ? 'bg-surface-dark text-on-primary hover:bg-sabotage-crimson border border-hairline-dark'
+                            : 'bg-primary text-on-primary hover:bg-acid-chartreuse hover:text-primary shadow-[2px_2px_0px_#CCFF00]'
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-lg">{roundLocks.round2Unlocked ? 'lock' : 'lock_open'}</span>
+                        <span>{roundLocks.round2Unlocked ? 'LOCK ROUND 2 ARSENAL' : 'UNLOCK ROUND 2 ARSENAL'}</span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -609,10 +811,17 @@ export default function AdminConsole() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-surface-subtle font-body-base text-body-base">
-                      {(onlyActive
-                        ? teams.filter((t) => activeTeamIds.includes(t.id) || t.isOnline)
-                        : teams
-                      ).map((team) => {
+                      {teams.length === 0 ? (
+                        <tr>
+                          <td colSpan="6" className="py-12 text-center text-on-surface-variant font-label-mono-sm text-sm uppercase">
+                            No squads registered in tournament roster. Register new squads to initialize game.
+                          </td>
+                        </tr>
+                      ) : (
+                        (onlyActive
+                          ? teams.filter((t) => activeTeamIds.includes(t.id) || t.isOnline)
+                          : teams
+                        ).map((team) => {
                         const isOnline = activeTeamIds.includes(team.id) || !!team.isOnline;
                         return (
                           <tr
@@ -740,7 +949,7 @@ export default function AdminConsole() {
                             </td>
                           </tr>
                         );
-                      })}
+                      }))}
                     </tbody>
                   </table>
                 </div>
@@ -774,23 +983,40 @@ export default function AdminConsole() {
                   </p>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
                   <button
                     type="button"
                     onClick={() => {
                       playTone(950, 0.1);
                       window.open(api.audit.getExportUrl(), '_blank');
                     }}
-                    className="px-4 py-2 bg-surface-subtle hover:bg-surface-container-high text-primary font-label-mono-sm text-label-mono-sm uppercase rounded flex items-center gap-1.5 cursor-pointer border border-hairline-light"
+                    className="px-4 py-2 bg-surface-subtle hover:bg-surface-container-high text-primary font-label-mono-sm text-xs uppercase rounded flex items-center gap-1.5 cursor-pointer border border-hairline-light"
                   >
                     <span className="material-symbols-outlined text-sm">download</span> Export CSV
                   </button>
+
+                  {/* Delete All Records Button */}
                   <button
                     type="button"
-                    onClick={clearLogs}
-                    className="px-4 py-2 bg-primary text-on-primary font-label-mono-sm text-label-mono-sm uppercase rounded cursor-pointer shadow-[2px_2px_0px_#CCFF00]"
+                    onClick={() => {
+                      playTone(600, 0.1);
+                      setShowDeleteRecordsModal(true);
+                    }}
+                    className="px-4 py-2 bg-sabotage-crimson hover:bg-error text-on-primary font-label-mono-sm text-xs uppercase font-bold rounded flex items-center gap-1.5 cursor-pointer transition-all shadow-[2px_2px_0px_#000]"
                   >
-                    Purge History
+                    <span className="material-symbols-outlined text-sm">delete_sweep</span> Delete All Records
+                  </button>
+
+                  {/* Delete All Users Button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playTone(450, 0.1);
+                      setShowDeleteUsersModal(true);
+                    }}
+                    className="px-4 py-2 bg-surface-dark hover:bg-sabotage-crimson text-sabotage-crimson hover:text-white border-2 border-sabotage-crimson font-label-mono-sm text-xs uppercase font-bold rounded flex items-center gap-1.5 cursor-pointer transition-all shadow-[2px_2px_0px_#FF2A3B]"
+                  >
+                    <span className="material-symbols-outlined text-sm">group_remove</span> Delete All Users
                   </button>
                 </div>
               </div>
@@ -851,8 +1077,393 @@ export default function AdminConsole() {
             </div>
           )}
 
+          {/* ========================================================================= */}
+          {/* TAB 4: LEADERBOARD (Real-Time Podium & Standings Mirror for Admin)       */}
+          {/* ========================================================================= */}
+          {adminSubTab === 'leaderboard' && (
+            <div className="flex flex-col gap-8">
+              
+              {/* Header */}
+              <div className="flex flex-col lg:flex-row lg:items-end justify-between pb-6 gap-4 border-b border-hairline-light">
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-0.5 bg-acid-chartreuse text-canvas-dark font-label-mono-sm text-label-mono-sm uppercase font-bold">
+                      ADMIN OVERVIEW
+                    </span>
+                    <span className="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase">
+                      // TOURNAMENT LEADERBOARD &amp; PODIUM
+                    </span>
+                  </div>
+                  <h1 className="font-headline-xl text-headline-xl text-primary font-bold tracking-tight">
+                    Tournament Leaderboard
+                  </h1>
+                  <p className="font-body-base text-body-base text-on-surface-variant">
+                    Live hierarchical standings, podium winners, and complete score telemetry mirroring the player perspective in real-time.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setSortByR0(!sortByR0)}
+                    className={`px-3.5 py-2 rounded-lg font-label-mono-sm text-xs font-bold uppercase transition-all cursor-pointer border ${
+                      sortByR0
+                        ? 'bg-acid-chartreuse text-canvas-dark border-acid-chartreuse shadow-[2px_2px_0px_#000]'
+                        : 'bg-surface-subtle hover:bg-surface-container-high text-primary border-hairline-light'
+                    }`}
+                  >
+                    {sortByR0 ? 'Sorted: Round 0 Points' : 'Sort: Round 0 Points'}
+                  </button>
+                  <div className="bg-surface-subtle px-4 py-2 rounded-lg font-label-mono-sm text-label-mono-sm text-primary font-bold border border-hairline-light flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-signal-emerald animate-pulse"></span>
+                    <span>TOTAL SQUADS: {teams.length}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Top 3 Hierarchy Podium Layout */}
+              <div className="w-full bg-surface-container-lowest rounded-2xl p-6 md:p-8 shadow-sm border border-hairline-light flex flex-col gap-6">
+                <div className="flex flex-col items-center justify-center text-center pt-2 pb-2">
+                  <h2 className="font-black text-3xl sm:text-4xl text-acid-chartreuse tracking-wider uppercase drop-shadow-[0_0_15px_rgba(204,255,0,0.3)]">
+                    STANDINGS PODIUM
+                  </h2>
+                  <p className="font-body-base text-sm text-on-surface-variant mt-1">
+                    Top 3 Ranked Tournament Contenders
+                  </p>
+                </div>
+
+                <div className="w-full flex flex-col sm:flex-row items-end justify-center gap-4 sm:gap-6 md:gap-8 pt-4 pb-6 px-2">
+                  
+                  {/* RANK 2 (Left) */}
+                  <div className="flex-1 max-w-[240px] w-full flex flex-col items-center order-2 sm:order-1">
+                    <div className="relative mb-3">
+                      <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-[#8A99AD] bg-black p-1 shadow-lg overflow-hidden flex items-center justify-center">
+                        <img
+                          src={getTeamAvatar(rank2)}
+                          alt={rank2.teamName}
+                          className="w-full h-full object-cover rounded-full"
+                        />
+                      </div>
+                      <div className="absolute -top-1 -right-1 w-8 h-8 rounded-full bg-[#8A99AD] text-black font-black flex items-center justify-center text-sm shadow-md border-2 border-black">
+                        2
+                      </div>
+                    </div>
+                    <div className="w-full bg-surface-subtle border-2 border-[#8A99AD]/60 rounded-2xl p-4 flex flex-col items-center justify-center text-center shadow-md">
+                      <h3 className="font-bold text-primary text-base sm:text-lg truncate max-w-full">
+                        {rank2.teamName}
+                      </h3>
+                      <span className="font-body-sm text-xs text-on-surface-variant truncate max-w-full">
+                        {rank2.p1} &amp; {rank2.p2}
+                      </span>
+                      <span className="font-black text-2xl sm:text-3xl text-primary mt-2">
+                        {(rank2.score || 0).toLocaleString()}
+                      </span>
+                      <span className="font-label-mono-sm text-[11px] text-on-surface-variant uppercase tracking-widest font-bold mt-0.5">
+                        POINTS
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* RANK 1 (Center - Elevated & Bigger) */}
+                  <div className="flex-1 max-w-[270px] w-full flex flex-col items-center order-1 sm:order-2 -translate-y-0 sm:-translate-y-6">
+                    <div className="relative mb-3">
+                      <div className="w-32 h-32 sm:w-36 sm:h-36 rounded-full border-4 border-acid-chartreuse bg-black p-1 shadow-[0_0_35px_rgba(204,255,0,0.5)] overflow-hidden flex items-center justify-center">
+                        <img
+                          src={getTeamAvatar(rank1)}
+                          alt={rank1.teamName}
+                          className="w-full h-full object-cover rounded-full"
+                        />
+                      </div>
+                      <div className="absolute -top-1.5 -right-1.5 w-10 h-10 rounded-full bg-acid-chartreuse text-canvas-dark font-black flex items-center justify-center text-lg shadow-lg border-2 border-black animate-pulse">
+                        1
+                      </div>
+                    </div>
+                    <div className="w-full bg-surface-subtle border-2 border-acid-chartreuse rounded-2xl p-5 sm:p-6 flex flex-col items-center justify-center text-center shadow-[0_0_30px_rgba(204,255,0,0.25),4px_4px_0px_#CCFF00]">
+                      <h3 className="font-black text-acid-chartreuse text-lg sm:text-xl truncate max-w-full">
+                        {rank1.teamName}
+                      </h3>
+                      <span className="font-body-sm text-xs text-on-surface-variant truncate max-w-full">
+                        {rank1.p1} &amp; {rank1.p2}
+                      </span>
+                      <span className="font-black text-3xl sm:text-4xl text-primary mt-2 tracking-tight">
+                        {(rank1.score || 0).toLocaleString()}
+                      </span>
+                      <span className="font-label-mono-sm text-xs text-acid-chartreuse uppercase tracking-widest font-bold mt-0.5">
+                        POINTS
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* RANK 3 (Right) */}
+                  <div className="flex-1 max-w-[240px] w-full flex flex-col items-center order-3">
+                    <div className="relative mb-3">
+                      <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-[#C87D55] bg-black p-1 shadow-lg overflow-hidden flex items-center justify-center">
+                        <img
+                          src={getTeamAvatar(rank3)}
+                          alt={rank3.teamName}
+                          className="w-full h-full object-cover rounded-full"
+                        />
+                      </div>
+                      <div className="absolute -top-1 -right-1 w-8 h-8 rounded-full bg-[#C87D55] text-black font-black flex items-center justify-center text-sm shadow-md border-2 border-black">
+                        3
+                      </div>
+                    </div>
+                    <div className="w-full bg-surface-subtle border-2 border-[#C87D55]/60 rounded-2xl p-4 flex flex-col items-center justify-center text-center shadow-md">
+                      <h3 className="font-bold text-primary text-base sm:text-lg truncate max-w-full">
+                        {rank3.teamName}
+                      </h3>
+                      <span className="font-body-sm text-xs text-on-surface-variant truncate max-w-full">
+                        {rank3.p1} &amp; {rank3.p2}
+                      </span>
+                      <span className="font-black text-2xl sm:text-3xl text-primary mt-2">
+                        {(rank3.score || 0).toLocaleString()}
+                      </span>
+                      <span className="font-label-mono-sm text-[11px] text-on-surface-variant uppercase tracking-widest font-bold mt-0.5">
+                        POINTS
+                      </span>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* Full Roster Standings Table */}
+              <div className="w-full bg-surface-container-lowest rounded-2xl p-6 md:p-8 shadow-sm border border-hairline-light flex flex-col gap-6">
+                <div className="flex items-center justify-between border-b border-hairline-light pb-4">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-primary text-xl">format_list_numbered</span>
+                    <h3 className="font-headline-lg text-xl font-bold text-primary">
+                      Complete Squad Standings
+                    </h3>
+                  </div>
+                  <span className="font-label-mono-sm text-xs text-on-surface-variant">
+                    {teams.length} Registered Squads
+                  </span>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse min-w-[750px]">
+                    <thead>
+                      <tr className="border-b border-hairline-light text-on-surface-variant font-label-mono-sm text-xs uppercase">
+                        <th className="py-3 px-4">Rank</th>
+                        <th className="py-3 px-4">Squad Name</th>
+                        <th className="py-3 px-4">Roster</th>
+                        <th className="py-3 px-4">Status</th>
+                        <th className="py-3 px-4 text-center">Round 0 Pts</th>
+                        <th className="py-3 px-6 text-right">Total Score</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-hairline-light">
+                      {sortedTeams.map((team, idx) => {
+                        const isOnline = activeTeamIds.includes(team.id) || team.isOnline;
+                        const r0Pts = team.r0 || team.r0Score || 0;
+                        const isLeader = idx === 0 && team.score > 0;
+
+                        return (
+                          <tr
+                            key={team.id}
+                            className={`transition-colors ${
+                              isOnline ? 'hover:bg-surface-subtle/60' : 'opacity-50 grayscale bg-surface-subtle/30'
+                            }`}
+                          >
+                            <td className="py-4 px-4 font-label-mono-sm text-sm">
+                              <div className="flex items-center gap-1.5">
+                                {isLeader ? (
+                                  <span className="w-6 h-6 rounded-full bg-acid-chartreuse text-primary flex items-center justify-center font-bold text-xs shadow-sm">
+                                    ★
+                                  </span>
+                                ) : (
+                                  <span className="w-6 h-6 rounded-full bg-surface-subtle text-on-surface-variant flex items-center justify-center text-xs font-bold border border-hairline-light">
+                                    {idx + 1}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-4 px-4">
+                              <div className="flex items-center gap-3">
+                                <img
+                                  src={getTeamAvatar(team)}
+                                  alt={team.teamName}
+                                  className="w-9 h-9 rounded-xl border border-hairline-light bg-surface-subtle object-cover"
+                                />
+                                <div>
+                                  <span className="font-headline-md text-sm text-primary font-bold block">
+                                    {team.teamName}
+                                  </span>
+                                  <span className="font-label-mono-sm text-[11px] text-on-surface-variant uppercase">
+                                    {team.lane || `Squad #${team.id}`}
+                                  </span>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-4 px-4 font-body-base text-xs text-on-surface-variant">
+                              {team.p1} &amp; {team.p2}
+                            </td>
+                            <td className="py-4 px-4">
+                              {isOnline ? (
+                                <span className="inline-flex items-center gap-1.5 bg-signal-emerald/10 text-signal-emerald px-2.5 py-1 rounded-full font-label-mono-sm text-[10px] font-bold uppercase border border-signal-emerald/30">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-signal-emerald animate-pulse"></span>
+                                  ONLINE
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 bg-surface-subtle text-on-surface-variant/60 px-2.5 py-1 rounded-full font-label-mono-sm text-[10px] font-bold uppercase border border-hairline-light">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-on-surface-variant/40"></span>
+                                  OFFLINE
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-4 px-4 text-center">
+                              <span className={`inline-block px-3 py-1 rounded-xl font-label-mono-sm text-xs font-bold ${
+                                r0Pts > 0 ? 'bg-primary text-acid-chartreuse' : 'bg-surface-subtle text-on-surface-variant'
+                              }`}>
+                                {r0Pts} PTS
+                              </span>
+                            </td>
+                            <td className="py-4 px-6 text-right font-headline-md text-base font-bold text-primary">
+                              {team.score.toLocaleString()} PTS
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {sortedTeams.length === 0 && (
+                        <tr>
+                          <td colSpan="6" className="py-8 text-center text-on-surface-variant font-label-mono-sm text-sm">
+                            NO REGISTERED SQUADS IN DATABASE.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </div>
+          )}
+
         </main>
       </div>
+
+      {/* Confirmation Modal: Delete All Records */}
+      {showDeleteRecordsModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-surface-container-lowest border-2 border-sabotage-crimson max-w-lg w-full p-6 sm:p-8 rounded-2xl shadow-[0_0_50px_rgba(255,42,59,0.3)] flex flex-col gap-6">
+            <div className="flex items-center gap-3 text-sabotage-crimson pb-2 border-b border-hairline-light">
+              <span className="material-symbols-outlined text-3xl">warning</span>
+              <div>
+                <h3 className="font-headline-lg text-lg sm:text-xl font-bold uppercase tracking-tight">
+                  Confirm: Delete All Records
+                </h3>
+                <span className="font-label-mono-sm text-xs uppercase text-on-surface-variant">
+                  Kanaku Valaku Telemetry Purge
+                </span>
+              </div>
+            </div>
+
+            <p className="font-body-base text-sm text-on-surface leading-relaxed">
+              This action will permanently delete all <strong>Kanaku Valaku records</strong>:
+            </p>
+            <ul className="list-disc list-inside font-label-mono-sm text-xs text-on-surface-variant flex flex-col gap-1.5 pl-2">
+              <li>All Audit Logs &amp; Event Timestamps</li>
+              <li>All Score Transaction Ledgers &amp; History</li>
+              <li>All Buzzer Lock-in Event Logs</li>
+              <li>All Active &amp; Historical Sabotage Instances</li>
+            </ul>
+            <p className="font-body-sm text-xs text-on-surface-variant/80 italic">
+              Note: Squad user profiles and their current score wallet balances will NOT be deleted.
+            </p>
+
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-hairline-light">
+              <button
+                type="button"
+                disabled={isProcessingDelete}
+                onClick={() => setShowDeleteRecordsModal(false)}
+                className="px-5 py-2.5 bg-surface-subtle hover:bg-surface-container-high text-primary font-label-mono-sm text-xs uppercase font-bold rounded-lg cursor-pointer transition-colors border border-hairline-light"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isProcessingDelete}
+                onClick={handleDeleteAllRecordsConfirm}
+                className="px-6 py-2.5 bg-sabotage-crimson hover:bg-error text-on-primary font-label-mono-sm text-xs uppercase font-bold rounded-lg cursor-pointer transition-all shadow-[2px_2px_0px_#000] flex items-center gap-2"
+              >
+                {isProcessingDelete ? (
+                  <>
+                    <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                    <span>Purging...</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-base">delete_forever</span>
+                    <span>Yes, Delete All Records</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal: Delete All Users */}
+      {showDeleteUsersModal && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-surface-container-lowest border-2 border-error max-w-lg w-full p-6 sm:p-8 rounded-2xl shadow-[0_0_60px_rgba(255,42,59,0.5)] flex flex-col gap-6">
+            <div className="flex items-center gap-3 text-sabotage-crimson pb-2 border-b border-hairline-light">
+              <span className="material-symbols-outlined text-3xl animate-bounce">dangerous</span>
+              <div>
+                <h3 className="font-headline-lg text-lg sm:text-xl font-bold uppercase tracking-tight text-sabotage-crimson">
+                  Critical: Delete All Users
+                </h3>
+                <span className="font-label-mono-sm text-xs uppercase text-on-surface-variant">
+                  Total Comalies Database Purge
+                </span>
+              </div>
+            </div>
+
+            <p className="font-body-base text-sm text-on-surface leading-relaxed">
+              This action will permanently delete <strong>ALL user accounts and squads</strong> from the Total Comalies database:
+            </p>
+            <ul className="list-disc list-inside font-label-mono-sm text-xs text-on-surface-variant flex flex-col gap-1.5 pl-2">
+              <li>Purges all {teams.length} squads from the database <code className="text-acid-chartreuse">teams</code> table</li>
+              <li>Cascades and deletes all associated transactions and player records</li>
+              <li>Resets the platform for an entirely new tournament game</li>
+              <li>Allows registering brand-new teams with fresh starting scores (100 pts)</li>
+            </ul>
+            <div className="p-3 bg-sabotage-crimson/15 border border-sabotage-crimson/40 rounded-lg text-sabotage-crimson font-label-mono-sm text-xs font-bold">
+              ⚠️ WARNING: THIS CANNOT BE UNDONE. ALL CURRENT PLAYERS WILL BE SIGNED OUT.
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-hairline-light">
+              <button
+                type="button"
+                disabled={isProcessingDelete}
+                onClick={() => setShowDeleteUsersModal(false)}
+                className="px-5 py-2.5 bg-surface-subtle hover:bg-surface-container-high text-primary font-label-mono-sm text-xs uppercase font-bold rounded-lg cursor-pointer transition-colors border border-hairline-light"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isProcessingDelete}
+                onClick={handleDeleteAllUsersConfirm}
+                className="px-6 py-2.5 bg-sabotage-crimson hover:bg-error text-on-primary font-label-mono-sm text-xs uppercase font-bold rounded-lg cursor-pointer transition-all shadow-[3px_3px_0px_#000] flex items-center gap-2"
+              >
+                {isProcessingDelete ? (
+                  <>
+                    <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                    <span>Purging Users...</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-base">group_remove</span>
+                    <span>Yes, Purge All Squads</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

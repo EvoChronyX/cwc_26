@@ -38,6 +38,15 @@ async def clear_audit_logs(
     return {"success": True, "message": "Audit buffer cleared."}
 
 
+@router.post("/clear-all-records")
+async def clear_all_records(
+    admin: AdminUser = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db)
+):
+    await AuditService.clear_all_records(db=db, admin_id=admin.id)
+    return {"success": True, "message": "All Kanaku Valaku records and tournament telemetry purged."}
+
+
 @router.get("/export-csv")
 async def export_audit_csv(
     admin: AdminUser = Depends(get_current_admin),

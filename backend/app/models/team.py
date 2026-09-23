@@ -17,7 +17,7 @@ class Team(Base):
     password = Column(String(255), nullable=False)  # Plain text per competition configuration
     lane = Column(String(50), nullable=False, default="Lane #01")
     status = Column(String(30), nullable=False, default="CONNECTED")
-    score = Column(Integer, nullable=False, default=0)
+    score = Column(Integer, nullable=False, default=100)
     r0_score = Column(Integer, nullable=False, default=0)
     r1_score = Column(Integer, nullable=False, default=0)
     r2_score = Column(Integer, nullable=False, default=0)

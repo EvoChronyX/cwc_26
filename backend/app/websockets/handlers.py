@@ -3,9 +3,11 @@ import logging
 from typing import Optional
 from fastapi import WebSocket, WebSocketDisconnect
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 from app.core.database import AsyncSessionLocal
 from app.core.security import decode_access_token
+from app.models.game import GameSession
 from app.websockets.connection_manager import manager
 from app.services.score_service import ScoreService
 from app.services.buzzer_service import BuzzerService
@@ -42,6 +44,14 @@ async def handle_websocket(websocket: WebSocket, token: Optional[str] = None):
             teams = await ScoreService.get_all_teams(db)
             queue_state = await BuzzerService.get_queue_state(db)
             recent_logs = await AuditService.get_logs(db, category="ALL", limit=25)
+            session_res = await db.execute(
+                select(GameSession).where(GameSession.is_active == True).limit(1)
+            )
+            session = session_res.scalar_one_or_none()
+            round_locks = {
+                "round1Unlocked": session.round1_unlocked if session else False,
+                "round2Unlocked": session.round2_unlocked if session else False,
+            }
 
             init_payload = {
                 "type": "INIT_STATE",
@@ -49,7 +59,8 @@ async def handle_websocket(websocket: WebSocket, token: Optional[str] = None):
                 "queueState": queue_state,
                 "recentLogs": recent_logs,
                 "clientInfo": client_info,
-                "activeTeamIds": manager.get_active_team_ids()
+                "activeTeamIds": manager.get_active_team_ids(),
+                "roundLocks": round_locks,
             }
             await manager.send_personal(websocket, init_payload)
     except Exception as e:

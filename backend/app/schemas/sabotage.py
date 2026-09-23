@@ -13,6 +13,11 @@ class SabotageDefinition(BaseModel):
     category: str = "DISRUPTION"
     badge_label: str = "Available"
     badgeLabel: Optional[str] = None
+    item_type: str = "SABOTAGE"
+    round_number: int = 1
+    cost: int = 15
+    level: str = "Medium"
+    duration_effect: Optional[str] = None
 
     model_config = {"from_attributes": True}
 
@@ -20,6 +25,10 @@ class SabotageDefinition(BaseModel):
 class SabotageDeployRequest(BaseModel):
     sabotage_slug: str
     target_team_id: int
+
+
+class PowerUpActivateRequest(BaseModel):
+    powerup_slug: str
 
 
 class ActiveThreatResponse(BaseModel):

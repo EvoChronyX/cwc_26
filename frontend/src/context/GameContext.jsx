@@ -32,8 +32,11 @@ export function GameProvider({ children }) {
     return () => window.removeEventListener('hashchange', handleHash);
   }, []);
 
-  const [adminSubTab, setAdminSubTab] = useState('thalaivar'); // 'thalaivar' | 'total-comalies' | 'kanaku-valaku'
+  const [adminSubTab, setAdminSubTab] = useState('thalaivar'); // 'thalaivar' | 'total-comalies' | 'leaderboard' | 'kanaku-valaku'
   const [nammaAreaSubTab, setNammaAreaSubTab] = useState('kootani'); // 'kootani' | 'mani-adi' | 'power-up-pothys'
+  const [potisRound, setPotisRound] = useState(1); // 1 or 2 (Round 1 vs Round 2 in Power-up Pothys)
+  const [roundLocks, setRoundLocks] = useState({ round1Unlocked: false, round2Unlocked: false });
+  const [catalog, setCatalog] = useState([]);
 
   // User & Squad Identity State
   const initialUser = getStoredUser();
@@ -124,14 +127,27 @@ export function GameProvider({ children }) {
   // Fetch baseline state from PostgreSQL database
   const refreshDatabaseState = useCallback(async () => {
     try {
-      const [fetchedTeams, queueData, logsData] = await Promise.all([
+      const [fetchedTeams, queueData, logsData, locksData, catalogData] = await Promise.all([
         api.teams.getAll().catch(() => []),
         api.buzzer.getQueue().catch(() => ({ queue: [], queueIndex: 0, buzzersArmed: true })),
-        api.audit.getLogs('ALL', 50).catch(() => [])
+        api.audit.getLogs('ALL', 50).catch(() => []),
+        api.rounds.getState().catch(() => ({ round1Unlocked: false, round2Unlocked: false })),
+        api.sabotages.getCatalog().catch(() => [])
       ]);
 
-      if (Array.isArray(fetchedTeams) && fetchedTeams.length > 0) {
+      if (Array.isArray(fetchedTeams)) {
         setTeams(fetchedTeams);
+      }
+
+      if (locksData) {
+        setRoundLocks({
+          round1Unlocked: !!locksData.round1Unlocked,
+          round2Unlocked: !!locksData.round2Unlocked,
+        });
+      }
+
+      if (Array.isArray(catalogData) && catalogData.length > 0) {
+        setCatalog(catalogData);
       }
 
       if (queueData) {
@@ -281,6 +297,34 @@ export function GameProvider({ children }) {
           }
         }
         if (data.recentLogs) setAuditLogs(data.recentLogs);
+        if (data.roundLocks) {
+          setRoundLocks({
+            round1Unlocked: !!data.roundLocks.round1Unlocked,
+            round2Unlocked: !!data.roundLocks.round2Unlocked,
+          });
+        }
+        break;
+
+      case 'ROUND_LOCK_STATE_CHANGED':
+        setRoundLocks({
+          round1Unlocked: !!data.round1Unlocked,
+          round2Unlocked: !!data.round2Unlocked,
+        });
+        if (data.unlocked) {
+          playTone(850, 0.2);
+        } else {
+          playTone(350, 0.2, 'square');
+        }
+        break;
+
+      case 'TEAMS_CLEARED':
+        setTeams([]);
+        setActiveTeamIds([]);
+        playTone(300, 0.25, 'sawtooth');
+        break;
+
+      case 'POWERUP_ACTIVATED':
+        playTone(950, 0.2, 'triangle');
         break;
 
       case 'ACTIVE_TEAMS_UPDATE':
@@ -830,13 +874,81 @@ export function GameProvider({ children }) {
 
   // Deploy Sabotage to a target team (Calls backend)
   const deploySabotageToTeam = async (sabotageName, duration, targetTeamId) => {
-    const slug = sabotageName.toLowerCase().trim().replace(/\s+/g, '-');
+    const slug = String(sabotageName).trim();
     try {
       await api.sabotages.deploy(slug, targetTeamId);
       playTone(420, 0.3, 'sawtooth');
+      await refreshDatabaseState();
     } catch (err) {
       console.error('Failed to deploy sabotage:', err);
       alert(err.message || 'Failed to deploy sabotage');
+      throw err;
+    }
+  };
+
+  // Activate Power-Up (Calls backend)
+  const activatePowerUp = async (powerupSlug) => {
+    try {
+      const res = await api.sabotages.activatePowerUp(powerupSlug);
+      playTone(950, 0.25, 'triangle');
+      await refreshDatabaseState();
+      return res;
+    } catch (err) {
+      console.error('Failed to activate advantage:', err);
+      alert(err.message || 'Failed to activate advantage');
+      throw err;
+    }
+  };
+
+  // Toggle Round 1 or Round 2 Arsenal Lock State (Admin function)
+  const toggleRoundLock = async (roundNumber, unlocked) => {
+    try {
+      const res = await api.rounds.setLockState(roundNumber, unlocked);
+      setRoundLocks({
+        round1Unlocked: res.round1Unlocked,
+        round2Unlocked: res.round2Unlocked,
+      });
+      if (unlocked) {
+        playTone(850, 0.2);
+      } else {
+        playTone(350, 0.2, 'square');
+      }
+      return res;
+    } catch (err) {
+      console.error('Failed to toggle round lock:', err);
+      alert(err.message || 'Failed to toggle round lock');
+      throw err;
+    }
+  };
+
+  // Delete All Tournament Teams / Users from Database
+  const deleteAllTeams = async () => {
+    try {
+      await api.teams.deleteAll();
+      setTeams([]);
+      setActiveTeamIds([]);
+      playTone(300, 0.25, 'sawtooth');
+      await refreshDatabaseState();
+    } catch (err) {
+      console.error('Failed to delete all teams:', err);
+      alert(err.message || 'Failed to delete all teams');
+      throw err;
+    }
+  };
+
+  // Delete All Kanaku Valaku Records from Database
+  const deleteAllRecords = async () => {
+    try {
+      await api.audit.deleteAllRecords();
+      setAuditLogs([]);
+      setBuzzerQueue([]);
+      setIsLockedIn(false);
+      playTone(300, 0.25, 'sawtooth');
+      await refreshDatabaseState();
+    } catch (err) {
+      console.error('Failed to delete all records:', err);
+      alert(err.message || 'Failed to delete all records');
+      throw err;
     }
   };
 
@@ -895,6 +1007,10 @@ export function GameProvider({ children }) {
         setAdminSubTab,
         nammaAreaSubTab,
         setNammaAreaSubTab,
+        potisRound,
+        setPotisRound,
+        roundLocks,
+        catalog,
         currentUser,
         currentTeamId,
         teamName,
@@ -931,6 +1047,10 @@ export function GameProvider({ children }) {
         awardFastestAnswer,
         deploySabotageToTeam,
         deploySabotageToPlayer: deploySabotageToTeam,
+        activatePowerUp,
+        toggleRoundLock,
+        deleteAllTeams,
+        deleteAllRecords,
         removeSabotageFromTeam,
         removeSabotageFromPlayer: removeSabotageFromTeam,
         clearLogs,

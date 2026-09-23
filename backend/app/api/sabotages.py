@@ -6,13 +6,20 @@ from app.core.database import get_db
 from app.core.dependencies import get_current_team, get_current_admin
 from app.models.team import Team
 from app.models.admin import AdminUser
-from app.schemas.sabotage import SabotageDefinition, SabotageDeployRequest, ActiveThreatResponse, SabotageNeutralizeRequest
+from app.schemas.sabotage import (
+    SabotageDefinition,
+    SabotageDeployRequest,
+    PowerUpActivateRequest,
+    ActiveThreatResponse,
+    SabotageNeutralizeRequest
+)
 from app.services.sabotage_service import SabotageService
 
 router = APIRouter(prefix="/sabotages", tags=["Sabotages & Tactical Armory"])
 
 
 @router.get("", response_model=List[SabotageDefinition])
+@router.get("/catalog", response_model=List[SabotageDefinition])
 async def get_sabotages_catalog(db: AsyncSession = Depends(get_db)):
     catalog = await SabotageService.get_catalog(db)
     return catalog
@@ -39,6 +46,24 @@ async def deploy_sabotage(
         return threat
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.post("/activate-powerup")
+async def activate_powerup(
+    req: PowerUpActivateRequest,
+    current_team: Team = Depends(get_current_team),
+    db: AsyncSession = Depends(get_db)
+):
+    try:
+        res = await SabotageService.activate_powerup(
+            db=db,
+            team_id=current_team.id,
+            powerup_slug=req.powerup_slug
+        )
+        return res
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
 
 
 @router.post("/neutralize")

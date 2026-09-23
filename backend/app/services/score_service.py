@@ -1,6 +1,6 @@
 from typing import Optional, Dict, Any, List
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update
+from sqlalchemy import select, update, delete
 from sqlalchemy.orm import selectinload
 
 from app.models.team import Team
@@ -245,3 +245,37 @@ class ScoreService:
             "type": "LEADERBOARD_UPDATED",
             "teams": teams
         })
+
+    @staticmethod
+    async def delete_all_teams(db: AsyncSession, admin_id: int):
+        """Purges all teams and associated cascading records."""
+        from app.models.score import ScoreTransaction
+        from app.models.buzzer import BuzzerEvent
+        from app.models.sabotage import SabotageInstance
+
+        await db.execute(delete(ScoreTransaction))
+        await db.execute(delete(BuzzerEvent))
+        await db.execute(delete(SabotageInstance))
+        await db.execute(delete(Team))
+        await db.commit()
+
+        await AuditService.log_event(
+            db=db,
+            category="SYS",
+            actor_type="ADMIN",
+            actor_id=admin_id,
+            action_type="ALL_TEAMS_DELETED",
+            message="All squads and users deleted from tournament database by Admin.",
+            color_class="text-sabotage-crimson font-bold",
+            broadcast=True
+        )
+
+        await manager.broadcast({
+            "type": "TEAMS_CLEARED",
+            "teams": []
+        })
+        await manager.broadcast({
+            "type": "LEADERBOARD_UPDATED",
+            "teams": []
+        })
+

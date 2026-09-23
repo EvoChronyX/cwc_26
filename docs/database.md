@@ -46,6 +46,7 @@ erDiagram
         string lane
         string status
         int score
+        int r0_score
         int r1_score
         int r2_score
         int r3_live_score
@@ -68,10 +69,13 @@ erDiagram
     GAME_SESSIONS {
         int id PK
         string session_code UK
-        string tournament_name
+        tournament_name string
         int current_round
         string round_name
         boolean buzzers_armed
+        timestamp_tz buzzers_armed_at
+        boolean round1_unlocked
+        boolean round2_unlocked
         boolean is_active
         timestamp_tz created_at
         timestamp_tz updated_at
@@ -84,6 +88,8 @@ erDiagram
         int team_id FK
         timestamp_tz server_timestamp
         float latency_seconds
+        string client_timestamp_str
+        bigint raw_client_ms
         int queue_rank
         string status
         boolean is_resolved
@@ -97,6 +103,11 @@ erDiagram
         int default_duration
         string category
         string badge_label
+        string item_type
+        int round_number
+        int cost
+        string level
+        string duration_effect
     }
 
     SABOTAGE_INSTANCES {
@@ -155,7 +166,8 @@ erDiagram
   | `password` | `VARCHAR(255)` | `NOT NULL` | - | Squad access password (plain text) |
   | `lane` | `VARCHAR(50)` | `NOT NULL` | `'Lane #01'` | Physical / virtual competition lane |
   | `status` | `VARCHAR(30)` | `NOT NULL` | `'CONNECTED'` | Connection status (`CONNECTED`, `DISCONNECTED`, `STANDBY`) |
-  | `score` | `INTEGER` | `NOT NULL` | `0` | Authoritative total tournament points |
+  | `score` | `INTEGER` | `NOT NULL` | `100` | Authoritative total tournament points (starting balance: 100 PTS) |
+  | `r0_score` | `INTEGER` | `NOT NULL` | `0` | Round 00 Mani Adi buzzer duel points tally |
   | `r1_score` | `INTEGER` | `NOT NULL` | `0` | Round 01 points tally |
   | `r2_score` | `INTEGER` | `NOT NULL` | `0` | Round 02 points tally |
   | `r3_live_score`| `INTEGER` | `NOT NULL` | `0` | Round 03 live points tally |
@@ -201,9 +213,12 @@ erDiagram
   | `id` | `INTEGER` | `NOT NULL` | Autoincrement | Primary Key |
   | `session_code` | `VARCHAR(50)` | `NOT NULL` | - | Unique session code (e.g. `'STG-TOURNAMENT-2025-Q1'`) |
   | `tournament_name` | `VARCHAR(150)` | `NOT NULL` | `'Code with Comali 2026'` | Tournament event title |
-  | `current_round` | `INTEGER` | `NOT NULL` | `1` | Active round index (1, 2, 3...) |
+  | `current_round` | `INTEGER` | `NOT NULL` | `1` | Active round index (0, 1, 2...) |
   | `round_name` | `VARCHAR(100)` | `NOT NULL` | `'Round 01 - Technical Architecture'` | Active challenge title |
   | `buzzers_armed` | `BOOLEAN` | `NOT NULL` | `TRUE` | Master hardware circuit status (`TRUE` = Armed, `FALSE` = Locked) |
+  | `buzzers_armed_at` | `TIMESTAMP WITH TIME ZONE` | `NULL` | `NULL` | Timestamp when buzzers were armed |
+  | `round1_unlocked` | `BOOLEAN` | `NOT NULL` | `FALSE` | Real-time unlock toggle for Round 1 arsenal |
+  | `round2_unlocked` | `BOOLEAN` | `NOT NULL` | `FALSE` | Real-time unlock toggle for Round 2 arsenal |
   | `is_active` | `BOOLEAN` | `NOT NULL` | `TRUE` | Session active flag |
   | `created_at` | `TIMESTAMP WITH TIME ZONE` | `NOT NULL` | `CURRENT_TIMESTAMP` | Session start timestamp |
   | `updated_at` | `TIMESTAMP WITH TIME ZONE` | `NOT NULL` | `CURRENT_TIMESTAMP` | Session update timestamp |
@@ -226,6 +241,8 @@ erDiagram
   | `team_id` | `INTEGER` | `NOT NULL` | - | Foreign Key → `teams.id` |
   | `server_timestamp`| `TIMESTAMP WITH TIME ZONE` | `NOT NULL` | - | Microsecond server reception timestamp |
   | `latency_seconds`| `DOUBLE PRECISION` | `NOT NULL` | - | Calculated reaction latency |
+  | `client_timestamp_str`| `VARCHAR(50)` | `NULL` | `NULL` | Client formatted click time string (e.g. `'14:32:05.124'`) |
+  | `raw_client_ms` | `BIGINT` | `NULL` | `NULL` | Raw client device epoch timestamp in milliseconds |
   | `queue_rank` | `INTEGER` | `NOT NULL` | - | Validated position in queue (#1, #2, #3, ...) |
   | `status` | `VARCHAR(30)` | `NOT NULL` | `'ACCEPTED'` | Triage status (`ACCEPTED`, `REJECTED_LOCKED`, `REJECTED_DUPLICATE`) |
   | `is_resolved` | `BOOLEAN` | `NOT NULL` | `FALSE` | Has the Game Master arbitrated this buzz |
@@ -242,17 +259,22 @@ erDiagram
 ---
 
 ### 3.5 `sabotages`
-* **Purpose**: Master catalog of tactical disruption payloads (*Power-up Pothys*).
+* **Purpose**: Master catalog of tactical disruption payloads and power-up advantages (*Power of Potis*), seeded from the authentic competition point system specification.
 * **Columns**:
   | Column | Data Type | Nullable | Default | Description |
   | :--- | :--- | :--- | :--- | :--- |
   | `id` | `INTEGER` | `NOT NULL` | Autoincrement | Primary Key |
-  | `name` | `VARCHAR(100)` | `NOT NULL` | - | Display name (e.g. `'Static Blind'`, `'Sound Distortion'`) |
-  | `slug` | `VARCHAR(50)` | `NOT NULL` | - | Programmatic identifier (e.g. `'static-blind'`) |
-  | `description` | `TEXT` | `NOT NULL` | - | Tactical description of the sabotage |
-  | `default_duration`| `INTEGER` | `NOT NULL` | - | Duration in seconds (15, 20, 10, 30...) |
+  | `name` | `VARCHAR(100)` | `NOT NULL` | - | Display name (e.g. `'Skip Question'`, `'Keyboard Shuffle'`) |
+  | `slug` | `VARCHAR(50)` | `NOT NULL` | - | Programmatic identifier (e.g. `'skip-question'`) |
+  | `description` | `TEXT` | `NOT NULL` | - | Tactical description and rules |
+  | `default_duration`| `INTEGER` | `NOT NULL` | `30` | Duration in seconds (or effect window) |
   | `category` | `VARCHAR(50)` | `NOT NULL` | `'DISRUPTION'` | Tactical payload category |
   | `badge_label` | `VARCHAR(50)` | `NOT NULL` | `'Available'` | HUD badge label |
+  | `item_type` | `VARCHAR(30)` | `NOT NULL` | `'SABOTAGE'` | Classification (`POWERUP` advantage or `SABOTAGE` disruption) |
+  | `round_number` | `INTEGER` | `NOT NULL` | `1` | Round eligibility (`1` for Round 1 Puzzles/Quiz, `2` for Round 2 Coding) |
+  | `cost` | `INTEGER` | `NOT NULL` | `15` | Cost in tournament points (20 to 150 PTS) |
+  | `level` | `VARCHAR(20)` | `NOT NULL` | `'Medium'` | Intensity rating (`Easy`, `Medium`, `Hard`) |
+  | `duration_effect`| `VARCHAR(100)` | `NULL` | `NULL` | Human-readable duration or task impact (e.g. `'5 min'`, `'Single use'`) |
 * **Constraints**:
   * Primary Key: `pk_sabotages` (`id`)
   * Unique: `uq_sabotages_name` (`name`), `uq_sabotages_slug` (`slug`)
@@ -368,4 +390,6 @@ erDiagram
 
 | Revision ID | Date | Description | Status |
 | :--- | :--- | :--- | :--- |
-| `0001_initial_cwc_schema` | 2026-09-17 | Initial normalized schema creation for `teams`, `admin_users`, `game_sessions`, `buzzer_events`, `sabotages`, `sabotage_instances`, `score_transactions`, `audit_logs`. | Ready |
+| `0001_initial_cwc_schema` | 2026-09-17 | Initial normalized schema creation for `teams`, `admin_users`, `game_sessions`, `buzzer_events`, `sabotages`, `sabotage_instances`, `score_transactions`, `audit_logs`. | Applied |
+| `0002_add_buzzer_client_timing` | 2026-09-21 | Added `client_timestamp_str` and `raw_client_ms` columns to `buzzer_events` for millisecond client debounce tracking. | Applied |
+| `0003_round_locks_sabotages` | 2026-09-23 | Added `round1_unlocked` and `round2_unlocked` to `game_sessions`; added `r0_score` to `teams`; added `item_type`, `round_number`, `cost`, `level`, `duration_effect` to `sabotages`. Seeded authentic 42 items from official point scheme. | Applied |

@@ -108,3 +108,45 @@ class AuditService:
                 "colorClass": "text-on-surface-variant"
             }
         })
+
+    @staticmethod
+    async def clear_all_records(db: AsyncSession, admin_id: int):
+        """Purges all audit logs, score transactions, buzzer events, and sabotage instances."""
+        from app.models.score import ScoreTransaction
+        from app.models.buzzer import BuzzerEvent
+        from app.models.sabotage import SabotageInstance
+
+        await db.execute(delete(AuditLog))
+        await db.execute(delete(ScoreTransaction))
+        await db.execute(delete(BuzzerEvent))
+        await db.execute(delete(SabotageInstance))
+        await db.flush()
+
+        purge_log = AuditLog(
+            category="SYS",
+            actor_type="ADMIN",
+            actor_id=admin_id,
+            action_type="ALL_RECORDS_PURGED",
+            message="All Kanaku Valaku records, buzzer queues, and scoring history purged by Admin.",
+            extra_metadata={},
+            color_class="text-sabotage-crimson font-bold",
+        )
+        db.add(purge_log)
+        await db.commit()
+
+        time_str = datetime.now(timezone.utc).strftime("%H:%M:%S")
+        await manager.broadcast({
+            "type": "AUDIT_LOGS_CLEARED",
+            "log": {
+                "id": purge_log.id,
+                "time": time_str,
+                "category": "SYS",
+                "message": "All Kanaku Valaku records purged by Admin.",
+                "colorClass": "text-sabotage-crimson font-bold"
+            }
+        })
+        await manager.broadcast({
+            "type": "BUZZERS_RESET",
+            "queueState": {"queue": [], "queueIndex": 0, "buzzersArmed": True}
+        })
+
