@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import confetti from 'canvas-confetti';
 import { api, WS_URL, getAuthToken, setAuthToken, clearAuthToken, getStoredUser, setStoredUser } from '../services/api';
+import { resolveSabotageVideo, resolvePowerupVideo, resolveShieldVideo } from '../config/videoManifest';
 
 const GameContext = createContext();
 
@@ -90,12 +91,87 @@ export function GameProvider({ children }) {
     sub: 'Shields nominal. No hostile modifiers.'
   });
 
+  // Video Alert Overlay State (Sabotages, Power-ups, Shields, Counter-attacks)
+  const [videoAlertData, setVideoAlertData] = useState({
+    isOpen: false,
+    type: 'SABOTAGE',
+    title: '',
+    subtitle: '',
+    videoUrl: '',
+    fallbackTheme: 'matrix',
+    duration: 15,
+    timeLeft: 15,
+    target: '',
+    attacker: '',
+    isVictim: false,
+    color: '#FF2A3B',
+    accentColor: '#CCFF00',
+    icon: 'warning'
+  });
+
   // Kanaku Valaku (Audit Log)
   const [auditLogs, setAuditLogs] = useState([]);
 
   const threatTimerRef = useRef(null);
   const resetTimeoutRef = useRef(null);
   const wsRef = useRef(null);
+  const titleFlashIntervalRef = useRef(null);
+
+  const dismissVideoAlert = useCallback(() => {
+    setVideoAlertData((prev) => ({ ...prev, isOpen: false }));
+  }, []);
+
+  // Request browser desktop notification permissions for Linux & Windows
+  const requestNotificationPermission = useCallback(async () => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'default') {
+        try {
+          await Notification.requestPermission();
+        } catch (e) {
+          console.warn('Notification permission request error:', e);
+        }
+      }
+    }
+  }, []);
+
+  // Background Multi-Window Alert: triggers OS notifications & flashes window title if coding in VS Code
+  const triggerBackgroundAlert = useCallback((title, body) => {
+    // 1. Linux & Desktop System Notifications via Web Notification API
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'granted') {
+        try {
+          const notif = new Notification(title, {
+            body: body,
+            icon: '/favicon.svg',
+            requireInteraction: true,
+            tag: 'cwc-alert',
+            renotify: true,
+          });
+          notif.onclick = () => {
+            window.focus();
+            notif.close();
+          };
+        } catch (e) {
+          console.warn('Native notification failed:', e);
+        }
+      }
+    }
+
+    // 2. Flashing Browser Tab Title (Visible in Linux Taskbar/Panel)
+    if (typeof document !== 'undefined') {
+      if (titleFlashIntervalRef.current) clearInterval(titleFlashIntervalRef.current);
+      const originalTitle = document.title;
+      let count = 0;
+      titleFlashIntervalRef.current = setInterval(() => {
+        document.title = count % 2 === 0 ? `🚨 ${title}` : `⚠️ ${body} ⚠️`;
+        count++;
+        if (count >= 16) {
+          clearInterval(titleFlashIntervalRef.current);
+          document.title = originalTitle;
+        }
+      }, 700);
+    }
+  }, []);
 
   const getFormattedTime = () => {
     const d = new Date();
@@ -323,9 +399,44 @@ export function GameProvider({ children }) {
         playTone(300, 0.25, 'sawtooth');
         break;
 
-      case 'POWERUP_ACTIVATED':
-        playTone(950, 0.2, 'triangle');
+      case 'POWERUP_ACTIVATED': {
+        const teamId = data.teamId ?? data.team_id;
+        const isMe = Boolean(currentTeamId && teamId === currentTeamId);
+
+        if (isMe) {
+          const isShield = Boolean(data.isShield);
+          const isReflect = Boolean(data.isReflect);
+          const vInfo = isShield || isReflect
+            ? resolveShieldVideo(isReflect ? 'REFLECT_ACTIVE' : 'SHIELD_ACTIVE')
+            : resolvePowerupVideo(data.powerupSlug || data.powerupName);
+
+          playTone(950, 0.25, 'triangle');
+          triggerBackgroundAlert(
+            `⚡ ADVANTAGE ENGAGED: ${data.powerupName}`,
+            `Power-Up active for your squad! ${data.duration ? `Duration: ${data.duration}s` : ''}`
+          );
+
+          setVideoAlertData({
+            isOpen: true,
+            type: isShield ? 'DEFENSIVE SHIELD' : isReflect ? 'REFLECTIVE SHIELD' : 'ADVANTAGE ACTIVE',
+            title: vInfo.title,
+            subtitle: vInfo.subtitle,
+            videoUrl: vInfo.videoUrl,
+            fallbackTheme: vInfo.fallbackTheme,
+            duration: data.duration || 10,
+            timeLeft: data.duration || 10,
+            target: data.teamName || 'Your Squad',
+            attacker: '',
+            isVictim: false,
+            color: vInfo.color,
+            accentColor: vInfo.accentColor,
+            icon: vInfo.icon
+          });
+        } else {
+          playTone(850, 0.15, 'triangle');
+        }
         break;
+      }
 
       case 'ACTIVE_TEAMS_UPDATE':
         if (Array.isArray(data.activeTeamIds)) {
@@ -473,11 +584,16 @@ export function GameProvider({ children }) {
         playTone(780, 0.15);
         break;
 
-      case 'SABOTAGE_DEPLOYED':
+      case 'SABOTAGE_DEPLOYED': {
+        const targetId = data.targetTeamId ?? data.targetId;
+        const attackerId = data.attackerTeamId ?? data.attackerId;
+        const isMeTarget = Boolean(currentTeamId && targetId === currentTeamId);
+        const isMeAttacker = Boolean(currentTeamId && attackerId === currentTeamId);
+
         // Update teams active sabotages
         setTeams((prev) =>
           prev.map((t) => {
-            if (t.id === data.targetId) {
+            if (t.id === targetId) {
               const cur = t.activeSabotages || [];
               return {
                 ...t,
@@ -487,14 +603,17 @@ export function GameProvider({ children }) {
             return t;
           })
         );
+
         // If current team is target or attacker, update activeThreat HUD
-        if (currentTeamId && (data.targetId === currentTeamId || data.attackerId === currentTeamId)) {
+        if (isMeTarget || isMeAttacker) {
           setActiveThreat({
             name: `${(data.sabotageName || 'TACTICAL DISRUPTION').toUpperCase()} [ACTIVE]`,
             isActive: true,
             timeLeft: data.duration || 15,
-            target: data.targetTeamName || `Team #${data.targetId}`,
-            sub: `Disruption payload active against ${data.targetTeamName || 'target'}.`
+            target: data.targetTeamName || `Team #${targetId}`,
+            sub: isMeTarget
+              ? `Disruption payload active against your squad from ${data.attackerTeamName || 'a rival'}!`
+              : `Disruption payload active against ${data.targetTeamName || 'target'}.`
           });
           playTone(420, 0.3, 'sawtooth');
 
@@ -516,12 +635,159 @@ export function GameProvider({ children }) {
             }
           }, 1000);
         }
-        break;
 
-      case 'SABOTAGE_NEUTRALIZED':
+        // If current squad is the victim, play sabotage video & trigger multi-window alerts
+        if (isMeTarget) {
+          const vInfo = resolveSabotageVideo(data.sabotageSlug || data.sabotageName);
+          triggerBackgroundAlert(
+            `🚨 SABOTAGE HIT: ${data.sabotageName}`,
+            `Hostile payload deployed by ${data.attackerTeamName || 'rival team'} (${data.duration || 15}s)!`
+          );
+
+          setVideoAlertData({
+            isOpen: true,
+            type: 'SABOTAGE',
+            title: vInfo.title,
+            subtitle: `Hostile sabotage deployed by ${data.attackerTeamName || 'Rival Squad'}! Active duration: ${data.duration}s.`,
+            videoUrl: vInfo.videoUrl,
+            fallbackTheme: vInfo.fallbackTheme,
+            duration: data.duration || 15,
+            timeLeft: data.duration || 15,
+            target: data.targetTeamName || `Team #${targetId}`,
+            attacker: data.attackerTeamName || `Team #${attackerId}`,
+            isVictim: true,
+            color: vInfo.color,
+            accentColor: vInfo.accentColor,
+            icon: vInfo.icon
+          });
+        }
+        break;
+      }
+
+      case 'SABOTAGE_BLOCKED': {
+        const targetId = data.targetTeamId ?? data.targetId;
+        const attackerId = data.attackerTeamId ?? data.attackerId;
+        const isMeTarget = Boolean(currentTeamId && targetId === currentTeamId);
+        const isMeAttacker = Boolean(currentTeamId && attackerId === currentTeamId);
+
+        const vInfo = resolveShieldVideo('SHIELD_BLOCKED');
+
+        if (isMeTarget) {
+          // Protected by shield!
+          triggerBackgroundAlert(
+            `🛡️ SABOTAGE BLOCKED!`,
+            `Your tactical shield absorbed incoming attack from ${data.attackerTeamName || 'rival'}!`
+          );
+          setVideoAlertData({
+            isOpen: true,
+            type: 'SHIELD DEFENSE',
+            title: vInfo.title,
+            subtitle: `Hostile attack (${data.sabotageName}) from ${data.attackerTeamName || 'rival'} was completely absorbed by your shield!`,
+            videoUrl: vInfo.videoUrl,
+            fallbackTheme: vInfo.fallbackTheme,
+            duration: 10,
+            timeLeft: 10,
+            target: data.targetTeamName || 'Your Squad',
+            attacker: data.attackerTeamName || 'Rival Squad',
+            isVictim: false,
+            color: vInfo.color,
+            accentColor: vInfo.accentColor,
+            icon: vInfo.icon
+          });
+        } else if (isMeAttacker) {
+          // Attacker's attack was absorbed!
+          triggerBackgroundAlert(
+            `⚠️ ATTACK BLOCKED!`,
+            `Target ${data.targetTeamName} is protected by a tactical shield!`
+          );
+          setVideoAlertData({
+            isOpen: true,
+            type: 'ATTACK BLOCKED',
+            title: 'SABOTAGE ABSORBED BY SHIELD',
+            subtitle: `Your sabotage (${data.sabotageName}) against ${data.targetTeamName} was neutralized by their shield barrier.`,
+            videoUrl: vInfo.videoUrl,
+            fallbackTheme: vInfo.fallbackTheme,
+            duration: 8,
+            timeLeft: 8,
+            target: data.targetTeamName,
+            attacker: 'Your Squad',
+            isVictim: false,
+            color: '#FF6B00',
+            accentColor: '#CCFF00',
+            icon: 'shield'
+          });
+        }
+        break;
+      }
+
+      case 'SABOTAGE_REFLECTED': {
+        const originalTargetId = data.originalTargetTeamId;
+        const attackerId = data.attackerTeamId ?? data.attackerId;
+        const isMeOriginalTarget = Boolean(currentTeamId && originalTargetId === currentTeamId);
+        const isMeAttacker = Boolean(currentTeamId && attackerId === currentTeamId);
+
+        if (isMeOriginalTarget) {
+          // Reflective shield squad successfully reflected attack!
+          const vInfo = resolveShieldVideo('REFLECT_COUNTER');
+          triggerBackgroundAlert(
+            `🔄 SABOTAGE REFLECTED!`,
+            `Attack from ${data.attackerTeamName} was reflected back onto them!`
+          );
+          setVideoAlertData({
+            isOpen: true,
+            type: 'REFLECT COUNTER-ATTACK',
+            title: vInfo.title,
+            subtitle: `Your Reflective Shield deflected ${data.sabotageName} back onto ${data.attackerTeamName}! They are now suffering the sabotage!`,
+            videoUrl: vInfo.videoUrl,
+            fallbackTheme: vInfo.fallbackTheme,
+            duration: 10,
+            timeLeft: 10,
+            target: data.attackerTeamName,
+            attacker: 'Your Squad (Counter)',
+            isVictim: false,
+            color: vInfo.color,
+            accentColor: vInfo.accentColor,
+            icon: vInfo.icon
+          });
+        } else if (isMeAttacker) {
+          // Attacker is struck by their own attack!
+          const vInfo = resolveSabotageVideo(data.sabotageSlug || data.sabotageName);
+          triggerBackgroundAlert(
+            `🚨 STRUCK BY OWN SABOTAGE!`,
+            `Your sabotage was reflected back onto your squad by ${data.originalTargetName}!`
+          );
+          setActiveThreat({
+            name: `${(data.sabotageName || 'REFLECTED DISRUPTION').toUpperCase()} [ACTIVE]`,
+            isActive: true,
+            timeLeft: data.duration || 15,
+            target: data.attackerTeamName || 'Your Squad',
+            sub: `Reflected back onto your squad by ${data.originalTargetName}!`
+          });
+          setVideoAlertData({
+            isOpen: true,
+            type: 'SABOTAGE REFLECTED ONTO YOU',
+            title: `🚨 REFLECTED: ${vInfo.title}`,
+            subtitle: `Your sabotage was deflected back by ${data.originalTargetName}'s Reflective Shield! Your squad is affected!`,
+            videoUrl: vInfo.videoUrl,
+            fallbackTheme: vInfo.fallbackTheme,
+            duration: data.duration || 15,
+            timeLeft: data.duration || 15,
+            target: data.attackerTeamName || 'Your Squad',
+            attacker: `${data.originalTargetName} (Reflected)`,
+            isVictim: true,
+            color: vInfo.color,
+            accentColor: vInfo.accentColor,
+            icon: vInfo.icon
+          });
+        }
+        break;
+      }
+
+      case 'SABOTAGE_NEUTRALIZED': {
+        const targetId = data.targetTeamId ?? data.targetId;
         setTeams((prev) =>
           prev.map((t) => {
-            if (t.id === data.targetTeamId) {
+            if (t.id === targetId) {
               return {
                 ...t,
                 activeSabotages: Array.isArray(data.activeSabotages)
@@ -532,7 +798,7 @@ export function GameProvider({ children }) {
             return t;
           })
         );
-        if (currentTeamId && data.targetTeamId === currentTeamId) {
+        if (currentTeamId && targetId === currentTeamId) {
           setActiveThreat({
             name: 'NONE ACTIVE',
             isActive: false,
@@ -541,9 +807,11 @@ export function GameProvider({ children }) {
             sub: 'Shields nominal. Hostile modifier neutralized by Admin.'
           });
           if (threatTimerRef.current) clearInterval(threatTimerRef.current);
+          dismissVideoAlert();
         }
         playTone(1050, 0.25, 'triangle');
         break;
+      }
 
       case 'AUDIT_EVENT':
         if (data.event) {
@@ -1063,7 +1331,12 @@ export function GameProvider({ children }) {
         roundState,
         startRound0,
         endRound0,
-        awardCorrectAnswer
+        awardCorrectAnswer,
+        videoAlertData,
+        setVideoAlertData,
+        dismissVideoAlert,
+        requestNotificationPermission,
+        triggerBackgroundAlert
       }}
     >
       {children}

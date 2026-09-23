@@ -50,8 +50,12 @@ class SabotageService:
         """Deploys a tactical sabotage payload against a target team with balance deduction and lock checking."""
         now = datetime.now(timezone.utc)
 
-        # 1. Fetch sabotage definition
-        sab_res = await db.execute(select(Sabotage).where(Sabotage.slug == sabotage_slug))
+        # 1. Fetch sabotage definition (check both slug and name)
+        sab_res = await db.execute(
+            select(Sabotage).where(
+                (Sabotage.slug == sabotage_slug) | (Sabotage.name == sabotage_slug)
+            )
+        )
         sab = sab_res.scalar_one_or_none()
         if not sab:
             raise ValueError(f"Unknown sabotage payload: {sabotage_slug}")
@@ -82,7 +86,7 @@ class SabotageService:
         if attacker_team.score < cost:
             raise ValueError(f"Insufficient event wallet points: Requires {cost} PTS, but squad only holds {attacker_team.score} PTS.")
 
-        # Deduct wallet points
+        # Deduct wallet points from attacker
         attacker_team.score -= cost
         tx = ScoreTransaction(
             session_id=session_id,
@@ -97,7 +101,136 @@ class SabotageService:
         duration = sab.default_duration or 15
         expires_at = now + timedelta(seconds=duration)
 
-        # 4. Insert SabotageInstance
+        # 3. Check for Defensive Buffs (Shield / Reflective Shield) on target squad
+        shield_stmt = (
+            select(SabotageInstance, Sabotage)
+            .join(Sabotage, SabotageInstance.sabotage_id == Sabotage.id)
+            .where(
+                SabotageInstance.target_team_id == target_team_id,
+                SabotageInstance.attacker_team_id == target_team_id,
+                SabotageInstance.status == "ACTIVE",
+                SabotageInstance.expires_at > now,
+                Sabotage.item_type == "POWERUP"
+            )
+            .order_by(SabotageInstance.started_at.desc())
+        )
+        shield_res = await db.execute(shield_stmt)
+        active_buff_row = shield_res.first()
+
+        # CASE A: TARGET HAS REFLECTIVE SHIELD ACTIVE
+        if active_buff_row and ("reflect" in active_buff_row[1].slug.lower() or "reflect" in active_buff_row[1].name.lower()):
+            reflect_buff = active_buff_row[1]
+
+            # Sabotage is reflected back to the attacker team!
+            instance = SabotageInstance(
+                session_id=session_id,
+                sabotage_id=sab.id,
+                attacker_team_id=attacker_team_id,
+                target_team_id=attacker_team_id, # Struck by their own attack!
+                duration_seconds=duration,
+                started_at=now,
+                expires_at=expires_at,
+                status="ACTIVE"
+            )
+            db.add(instance)
+            await db.flush()
+
+            await AuditService.log_event(
+                db=db,
+                category="SABOTAGE",
+                actor_type="PLAYER_TEAM",
+                actor_id=attacker_team_id,
+                target_team_id=attacker_team_id,
+                action_type="SABOTAGE_REFLECTED",
+                message=f"REFLECTIVE SHIELD TRIGGERED! {sab.name} from {attacker_name} was REFLECTED back onto {attacker_name} by {target_team.team_name}!",
+                color_class="text-acid-chartreuse font-bold",
+                broadcast=True
+            )
+
+            threat_data = {
+                "name": f"{sab.name.upper()} [ACTIVE - REFLECTED]",
+                "isActive": True,
+                "timeLeft": duration,
+                "target": attacker_name,
+                "sub": f"Sabotage was reflected back by {target_team.team_name}'s shield! Your squad is affected!"
+            }
+
+            # Broadcast sabotage reflected event to all clients
+            await manager.broadcast({
+                "type": "SABOTAGE_REFLECTED",
+                "originalTargetTeamId": target_team_id,
+                "originalTargetName": target_team.team_name,
+                "attackerTeamId": attacker_team_id,
+                "attackerId": attacker_team_id,
+                "attackerTeamName": attacker_name,
+                "victimTeamId": attacker_team_id,
+                "targetTeamId": attacker_team_id,
+                "targetId": attacker_team_id,
+                "sabotageName": sab.name,
+                "sabotageSlug": sab.slug,
+                "duration": duration,
+                "shieldName": reflect_buff.name,
+                "threat": threat_data
+            })
+
+            await manager.broadcast({
+                "type": "SCORE_UPDATED",
+                "team_id": attacker_team_id,
+                "score": attacker_team.score
+            })
+
+            await db.commit()
+            await ScoreService.broadcast_leaderboard(db)
+            return threat_data
+
+        # CASE B: TARGET HAS STANDARD SHIELD ACTIVE (BLOCKS SABOTAGE)
+        elif active_buff_row and ("shield" in active_buff_row[1].slug.lower() or "shield" in active_buff_row[1].name.lower()):
+            shield_buff = active_buff_row[1]
+
+            await AuditService.log_event(
+                db=db,
+                category="SABOTAGE",
+                actor_type="PLAYER_TEAM",
+                actor_id=attacker_team_id,
+                target_team_id=target_team_id,
+                action_type="SABOTAGE_BLOCKED",
+                message=f"SHIELD DEFENSE ACTIVATED! {sab.name} deployed by {attacker_name} was BLOCKED by {target_team.team_name}'s tactical shield!",
+                color_class="text-signal-emerald font-bold",
+                broadcast=True
+            )
+
+            # Broadcast sabotage blocked event to all clients
+            await manager.broadcast({
+                "type": "SABOTAGE_BLOCKED",
+                "targetTeamId": target_team_id,
+                "targetId": target_team_id,
+                "targetTeamName": target_team.team_name,
+                "attackerTeamId": attacker_team_id,
+                "attackerId": attacker_team_id,
+                "attackerTeamName": attacker_name,
+                "sabotageName": sab.name,
+                "sabotageSlug": sab.slug,
+                "shieldName": shield_buff.name,
+            })
+
+            await manager.broadcast({
+                "type": "SCORE_UPDATED",
+                "team_id": attacker_team_id,
+                "score": attacker_team.score
+            })
+
+            await db.commit()
+            await ScoreService.broadcast_leaderboard(db)
+
+            return {
+                "name": "SABOTAGE BLOCKED",
+                "isActive": False,
+                "timeLeft": 0,
+                "target": target_team.team_name,
+                "sub": f"Sabotage payload was absorbed by {target_team.team_name}'s shield."
+            }
+
+        # CASE C: NORMAL SABOTAGE (NO SHIELD ACTIVE)
         instance = SabotageInstance(
             session_id=session_id,
             sabotage_id=sab.id,
@@ -111,7 +244,7 @@ class SabotageService:
         db.add(instance)
         await db.flush()
 
-        # 5. Log in Kanaku Valaku
+        # Log in Kanaku Valaku
         await AuditService.log_event(
             db=db,
             category="SABOTAGE",
@@ -136,8 +269,13 @@ class SabotageService:
         await manager.broadcast({
             "type": "SABOTAGE_DEPLOYED",
             "targetTeamId": target_team_id,
+            "targetId": target_team_id,
+            "targetTeamName": target_team.team_name,
             "attackerTeamId": attacker_team_id,
+            "attackerId": attacker_team_id,
+            "attackerTeamName": attacker_name,
             "sabotageName": sab.name,
+            "sabotageSlug": sab.slug,
             "duration": duration,
             "threat": threat_data
         })
@@ -164,8 +302,12 @@ class SabotageService:
         """Purchases and activates an advantage powerup for a squad."""
         now = datetime.now(timezone.utc)
 
-        # 1. Fetch item definition
-        sab_res = await db.execute(select(Sabotage).where(Sabotage.slug == powerup_slug))
+        # 1. Fetch item definition (support both slug and name)
+        sab_res = await db.execute(
+            select(Sabotage).where(
+                (Sabotage.slug == powerup_slug) | (Sabotage.name == powerup_slug)
+            )
+        )
         sab = sab_res.scalar_one_or_none()
         if not sab:
             raise ValueError(f"Unknown power-up advantage: {powerup_slug}")
@@ -201,6 +343,42 @@ class SabotageService:
         db.add(tx)
         await db.flush()
 
+        # If this is a Defensive Shield or Reflective Shield, persist an active buff
+        slug_lower = sab.slug.lower()
+        name_lower = sab.name.lower()
+        is_shield = "shield" in slug_lower or "shield" in name_lower
+        is_reflect = "reflect" in slug_lower or "reflect" in name_lower
+        duration = sab.default_duration or 0
+
+        if is_shield or is_reflect:
+            duration = duration or 300
+            expires_at = now + timedelta(seconds=duration)
+
+            # Expire any previous active shields for this squad
+            await db.execute(
+                update(SabotageInstance)
+                .where(
+                    SabotageInstance.target_team_id == team_id,
+                    SabotageInstance.attacker_team_id == team_id,
+                    SabotageInstance.status == "ACTIVE"
+                )
+                .values(status="EXPIRED")
+            )
+
+            # Insert active shield instance
+            shield_inst = SabotageInstance(
+                session_id=session_id,
+                sabotage_id=sab.id,
+                attacker_team_id=team_id,
+                target_team_id=team_id,
+                duration_seconds=duration,
+                started_at=now,
+                expires_at=expires_at,
+                status="ACTIVE"
+            )
+            db.add(shield_inst)
+            await db.flush()
+
         # Log in Kanaku Valaku
         await AuditService.log_event(
             db=db,
@@ -216,20 +394,40 @@ class SabotageService:
 
         await db.commit()
 
-        # Broadcast score update
+        # Broadcast score update & powerup activated event
         await manager.broadcast({
             "type": "SCORE_UPDATED",
             "team_id": team.id,
             "score": team.score,
         })
+
+        await manager.broadcast({
+            "type": "POWERUP_ACTIVATED",
+            "teamId": team.id,
+            "team_id": team.id,
+            "teamName": team.team_name,
+            "powerupName": sab.name,
+            "powerupSlug": sab.slug,
+            "duration": duration,
+            "cost": cost,
+            "newScore": team.score,
+            "isShield": is_shield,
+            "isReflect": is_reflect,
+            "durationEffect": sab.duration_effect
+        })
+
         await ScoreService.broadcast_leaderboard(db)
 
         return {
             "success": True,
             "teamId": team.id,
             "powerupName": sab.name,
+            "powerupSlug": sab.slug,
             "cost": cost,
             "newScore": team.score,
+            "duration": duration,
+            "isShield": is_shield,
+            "isReflect": is_reflect,
             "durationEffect": sab.duration_effect
         }
 
@@ -309,7 +507,8 @@ class SabotageService:
             .join(Team, SabotageInstance.target_team_id == Team.id)
             .where(
                 SabotageInstance.target_team_id == team_id,
-                SabotageInstance.status == "ACTIVE"
+                SabotageInstance.status == "ACTIVE",
+                Sabotage.item_type == "SABOTAGE"
             )
             .order_by(SabotageInstance.started_at.desc())
         )

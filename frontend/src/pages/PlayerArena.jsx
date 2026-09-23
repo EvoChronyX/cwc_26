@@ -1,7 +1,61 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ClashLogo from '../components/common/ClashLogo';
 import { useGame } from '../context/GameContext';
 import { PREDEFINED_AVATARS } from '../assets/avatars';
+import { VideoAlertOverlay } from '../components/common/VideoAlertOverlay';
+
+function getBaseItemName(rawName) {
+  if (!rawName) return 'Tactical Item';
+  const n = rawName.toLowerCase();
+  if (n.includes('reflect')) return 'Reflecting Shield';
+  if (n.includes('shield')) return 'Defensive Shield';
+  if (n.includes('extra time')) return 'Extra Time Matrix';
+  if (n.includes('blackout')) return 'Blackout Disruption';
+  if (n.includes('copy') || n.includes('paste')) return 'Clipboard Lock (No Copy-Paste)';
+  if (n.includes('no ai') || n.includes('no-ai')) return 'No AI Assistants';
+  if (n.includes('freeze')) return 'Freeze Them (Editor Lock)';
+  if (n.includes('hint')) return 'Judge Architectural Hints';
+  if (n.includes('check progress') || n.includes('progress')) return 'Surveillance Radar';
+  if (n.includes('force task')) return 'Force Task Protocol';
+  if (n.includes('skip task')) return 'Skip Task Barrier';
+  if (n.includes('skip punish')) return 'Skip Punishment Defuser';
+  if (n.includes('force punish') || n.includes('penalty')) return 'Force Punishment';
+  if (n.includes('complexity')) return 'Force Complexity';
+  if (n.includes('lottery')) return 'Surprise Lottery Advantage';
+  if (n.includes('get ai') || n.includes('ai prompt')) return 'Neural AI Assistance';
+  if (n.includes('change question') || n.includes('swap')) return 'Question Swap';
+
+  return rawName.replace(/\s*-\s*R\d+/gi, '').replace(/\s*\([^)]*\)/gi, '').trim();
+}
+
+function groupCatalogItems(items) {
+  const groupsMap = new Map();
+
+  items.forEach((item) => {
+    const baseName = getBaseItemName(item.name);
+    const key = `${baseName}__${item.round_number || 1}`;
+
+    if (!groupsMap.has(key)) {
+      groupsMap.set(key, {
+        id: item.id,
+        baseName,
+        category: item.category,
+        itemType: item.item_type || item.itemType,
+        roundNumber: item.round_number || item.roundNumber,
+        level: item.level,
+        description: item.description,
+        variants: []
+      });
+    }
+
+    groupsMap.get(key).variants.push(item);
+  });
+
+  return Array.from(groupsMap.values()).map((grp) => ({
+    ...grp,
+    variants: grp.variants.sort((a, b) => (a.cost || 0) - (b.cost || 0))
+  }));
+}
 
 export default function PlayerArena() {
   const {
@@ -29,15 +83,23 @@ export default function PlayerArena() {
     potisRound,
     setPotisRound,
     roundLocks,
-    catalog
+    catalog,
+    videoAlertData,
+    dismissVideoAlert,
+    requestNotificationPermission
   } = useGame();
 
   const [sortByR0, setSortByR0] = useState(false);
 
-  // Dynamic Sabotage Targets and Action feedback for Power of Potis
+  // Dynamic Sabotage Targets, Variant Selection, and Action feedback for Power of Potis
+  const [selectedVariantId, setSelectedVariantId] = useState({});
   const [sabotageTargets, setSabotageTargets] = useState({});
   const [actionFeedback, setActionFeedback] = useState(null);
   const [isDeploying, setIsDeploying] = useState(false);
+
+  useEffect(() => {
+    requestNotificationPermission();
+  }, [requestNotificationPermission]);
 
   const selectedAvatarObj = PREDEFINED_AVATARS.find((a) => a.id === playerAvatar) || PREDEFINED_AVATARS[0];
 
@@ -79,7 +141,7 @@ export default function PlayerArena() {
     }
     try {
       setIsDeploying(true);
-      await activatePowerUp(item.name);
+      await activatePowerUp(item.slug || item.name);
       playTone(850, 0.15);
       setActionFeedback({ message: `Power-Up Activated: ${item.name} (-${item.cost} PTS)!`, type: 'success' });
       setTimeout(() => setActionFeedback(null), 4000);
@@ -100,12 +162,12 @@ export default function PlayerArena() {
       return;
     }
     const defaultRivalId = rivalTeams[0]?.id || 2;
-    const targetTeamId = sabotageTargets[item.name] || defaultRivalId;
-    const duration = parseDurationSeconds(item.duration_effect);
+    const targetTeamId = sabotageTargets[item.baseName || item.name] || defaultRivalId;
+    const duration = parseDurationSeconds(item.duration_effect) || item.default_duration || 15;
 
     try {
       setIsDeploying(true);
-      await deploySabotageToTeam(item.name, duration, targetTeamId);
+      await deploySabotageToTeam(item.slug || item.name, duration, targetTeamId);
       playTone(550, 0.2);
       const targetName = teams.find((t) => t.id === Number(targetTeamId))?.teamName || 'Rival Squad';
       setActionFeedback({ message: `Sabotage Deployed: ${item.name} on ${targetName} (-${item.cost} PTS)!`, type: 'success' });
@@ -923,8 +985,11 @@ export default function PlayerArena() {
           {nammaAreaSubTab === 'power-up-pothys' && (() => {
             const isCurrentRoundUnlocked = potisRound === 1 ? roundLocks.round1Unlocked : roundLocks.round2Unlocked;
             const currentRoundItems = catalog.filter((item) => item.round_number === potisRound);
-            const powerUps = currentRoundItems.filter((item) => item.item_type === 'POWERUP');
-            const sabotages = currentRoundItems.filter((item) => item.item_type === 'SABOTAGE');
+            const rawPowerUps = currentRoundItems.filter((item) => item.item_type === 'POWERUP');
+            const rawSabotages = currentRoundItems.filter((item) => item.item_type === 'SABOTAGE');
+
+            const groupedPowerUps = groupCatalogItems(rawPowerUps);
+            const groupedSabotages = groupCatalogItems(rawSabotages);
 
             return (
               <div className="flex flex-col gap-8">
@@ -1104,7 +1169,7 @@ export default function PlayerArena() {
                   /* If Round is UNLOCKED, Display Two Sections: Power Up & Sabotage */
                   <div className="flex flex-col gap-10">
                     
-                    {/* SECTION 1: POWER UP SECTION (Advantages) */}
+                    {/* SECTION 1: POWER UP SECTION (Advantages) - Consolidates Same Items with Duration Dropdown */}
                     <div className="flex flex-col gap-6">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b-2 border-primary gap-2">
                         <div className="flex items-center gap-2.5">
@@ -1116,49 +1181,81 @@ export default function PlayerArena() {
                               Power Up Section // Squad Advantages
                             </h2>
                             <span className="font-body-sm text-xs text-on-surface-variant">
-                              Operational boosts, query assists, freeze timers, and code debug templates.
+                              Operational shields, chronos boosts, bypass tools, and judge intelligence hints.
                             </span>
                           </div>
                         </div>
                         <span className="px-3 py-1 bg-surface-subtle rounded-full font-label-mono-sm text-xs font-bold text-primary border border-hairline-light">
-                          {powerUps.length} Available Power-Ups
+                          {groupedPowerUps.length} Power-Up Categories ({rawPowerUps.length} Total Options)
                         </span>
                       </div>
 
                       {/* Power Ups Grid */}
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                        {powerUps.map((item) => {
-                          const canAfford = currentTeam.score >= item.cost;
+                        {groupedPowerUps.map((grp) => {
+                          const activeVariant = grp.variants.find((v) => v.id === selectedVariantId[grp.baseName]) || grp.variants[0];
+                          const canAfford = currentTeam.score >= activeVariant.cost;
+
                           return (
                             <div
-                              key={item.id}
+                              key={grp.baseName}
                               className="bg-surface-subtle p-5 rounded-xl flex flex-col justify-between gap-4 border border-hairline-light hover:bg-surface-container/60 transition-colors shadow-sm"
                             >
                               <div className="flex flex-col gap-2">
                                 <div className="flex items-center justify-between">
                                   <span className="px-2.5 py-0.5 bg-signal-emerald/20 text-on-surface font-label-mono-sm text-[11px] font-bold uppercase rounded-full">
-                                    {item.level || 'Power-Up'}
+                                    {activeVariant.level || grp.level || 'Power-Up'}
                                   </span>
                                   <span className="font-label-mono-sm text-xs font-bold bg-surface-dark px-2.5 py-0.5 rounded border border-hairline-dark text-acid-chartreuse">
-                                    {item.cost} PTS
+                                    {activeVariant.cost} PTS
                                   </span>
                                 </div>
+
                                 <h3 className="font-headline-md text-base sm:text-lg font-bold text-primary mt-1">
-                                  {item.name}
+                                  {grp.baseName}
                                 </h3>
-                                <div className="inline-flex items-center gap-1 font-label-mono-sm text-[11px] text-on-surface-variant font-bold">
-                                  <span className="material-symbols-outlined text-xs">timer</span>
-                                  <span>{item.duration_effect}</span>
-                                </div>
+
+                                {/* Duration / Variant Dropdown Selector if multiple durations exist */}
+                                {grp.variants.length > 1 ? (
+                                  <div className="flex flex-col gap-1.5 pt-1">
+                                    <span className="font-label-mono-sm text-[10px] uppercase text-on-surface-variant font-bold flex items-center gap-1">
+                                      <span className="material-symbols-outlined text-xs">schedule</span>
+                                      <span>Select Duration / Tier:</span>
+                                    </span>
+                                    <select
+                                      value={activeVariant.id}
+                                      onChange={(e) => {
+                                        const selectedId = Number(e.target.value);
+                                        setSelectedVariantId((prev) => ({
+                                          ...prev,
+                                          [grp.baseName]: selectedId
+                                        }));
+                                      }}
+                                      className="bg-surface-container-lowest px-3 py-1.5 text-xs font-label-mono-sm font-bold rounded-lg outline-none border border-hairline-light text-primary hover:border-acid-chartreuse transition-colors cursor-pointer"
+                                    >
+                                      {grp.variants.map((v) => (
+                                        <option key={v.id} value={v.id}>
+                                          ⏱️ {v.duration_effect || `${Math.round(v.default_duration / 60)} min`} — {v.cost} PTS
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                ) : (
+                                  <div className="inline-flex items-center gap-1 font-label-mono-sm text-[11px] text-on-surface-variant font-bold">
+                                    <span className="material-symbols-outlined text-xs">timer</span>
+                                    <span>{activeVariant.duration_effect || 'Standard Advantage'}</span>
+                                  </div>
+                                )}
+
                                 <p className="font-body-sm text-xs text-on-surface-variant leading-relaxed">
-                                  {item.description}
+                                  {activeVariant.description}
                                 </p>
                               </div>
 
                               <button
                                 type="button"
                                 disabled={!canAfford || isDeploying}
-                                onClick={() => handleActivatePowerUp(item)}
+                                onClick={() => handleActivatePowerUp(activeVariant)}
                                 className={`w-full py-2.5 px-4 font-label-mono-sm text-xs uppercase font-bold tracking-wider rounded transition-all cursor-pointer flex items-center justify-center gap-2 ${
                                   !canAfford
                                     ? 'bg-hairline-dark text-on-surface-variant opacity-50 cursor-not-allowed'
@@ -1166,12 +1263,12 @@ export default function PlayerArena() {
                                 }`}
                               >
                                 <span className="material-symbols-outlined text-base">bolt</span>
-                                <span>{canAfford ? `Activate (${item.cost} Pts)` : `Need ${item.cost} Pts`}</span>
+                                <span>{canAfford ? `Activate (${activeVariant.cost} Pts)` : `Need ${activeVariant.cost} Pts`}</span>
                               </button>
                             </div>
                           );
                         })}
-                        {powerUps.length === 0 && (
+                        {groupedPowerUps.length === 0 && (
                           <div className="col-span-full p-8 text-center text-on-surface-variant font-label-mono-sm text-sm bg-surface-subtle rounded-xl">
                             No Power-Ups configured for Round 0{potisRound}.
                           </div>
@@ -1179,7 +1276,7 @@ export default function PlayerArena() {
                       </div>
                     </div>
 
-                    {/* SECTION 2: SABOTAGE SECTION (Disruptions) */}
+                    {/* SECTION 2: SABOTAGE SECTION (Disruptions) - Consolidates Same Items with Duration Dropdown */}
                     <div className="flex flex-col gap-6 pt-4">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b-2 border-sabotage-crimson gap-2">
                         <div className="flex items-center gap-2.5">
@@ -1196,39 +1293,70 @@ export default function PlayerArena() {
                           </div>
                         </div>
                         <span className="px-3 py-1 bg-surface-subtle rounded-full font-label-mono-sm text-xs font-bold text-sabotage-crimson border border-sabotage-crimson/30">
-                          {sabotages.length} Available Sabotages
+                          {groupedSabotages.length} Sabotage Categories ({rawSabotages.length} Total Options)
                         </span>
                       </div>
 
                       {/* Sabotages Grid */}
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                        {sabotages.map((item) => {
-                          const canAfford = currentTeam.score >= item.cost;
-                          const selectedTarget = sabotageTargets[item.name] || rivalTeams[0]?.id;
+                        {groupedSabotages.map((grp) => {
+                          const activeVariant = grp.variants.find((v) => v.id === selectedVariantId[grp.baseName]) || grp.variants[0];
+                          const canAfford = currentTeam.score >= activeVariant.cost;
+                          const selectedTarget = sabotageTargets[grp.baseName] || rivalTeams[0]?.id;
 
                           return (
                             <div
-                              key={item.id}
+                              key={grp.baseName}
                               className="bg-surface-subtle p-5 rounded-xl flex flex-col justify-between gap-4 border border-hairline-light hover:bg-surface-container/60 transition-colors shadow-sm"
                             >
                               <div className="flex flex-col gap-2">
                                 <div className="flex items-center justify-between">
                                   <span className="px-2.5 py-0.5 bg-sabotage-crimson/20 text-sabotage-crimson font-label-mono-sm text-[11px] font-bold uppercase rounded-full">
-                                    {item.level || 'Sabotage'}
+                                    {activeVariant.level || grp.level || 'Sabotage'}
                                   </span>
                                   <span className="font-label-mono-sm text-xs text-sabotage-crimson font-bold bg-surface-dark px-2.5 py-0.5 rounded border border-sabotage-crimson/40">
-                                    {item.cost} PTS
+                                    {activeVariant.cost} PTS
                                   </span>
                                 </div>
+
                                 <h3 className="font-headline-md text-base sm:text-lg font-bold text-primary mt-1">
-                                  {item.name}
+                                  {grp.baseName}
                                 </h3>
-                                <div className="inline-flex items-center gap-1 font-label-mono-sm text-[11px] text-on-surface-variant font-bold">
-                                  <span className="material-symbols-outlined text-xs">timer</span>
-                                  <span>{item.duration_effect}</span>
-                                </div>
+
+                                {/* Duration / Variant Dropdown Selector if multiple durations exist */}
+                                {grp.variants.length > 1 ? (
+                                  <div className="flex flex-col gap-1.5 pt-1">
+                                    <span className="font-label-mono-sm text-[10px] uppercase text-on-surface-variant font-bold flex items-center gap-1">
+                                      <span className="material-symbols-outlined text-xs">schedule</span>
+                                      <span>Select Duration:</span>
+                                    </span>
+                                    <select
+                                      value={activeVariant.id}
+                                      onChange={(e) => {
+                                        const selectedId = Number(e.target.value);
+                                        setSelectedVariantId((prev) => ({
+                                          ...prev,
+                                          [grp.baseName]: selectedId
+                                        }));
+                                      }}
+                                      className="bg-surface-container-lowest px-3 py-1.5 text-xs font-label-mono-sm font-bold rounded-lg outline-none border border-hairline-light text-primary hover:border-sabotage-crimson transition-colors cursor-pointer"
+                                    >
+                                      {grp.variants.map((v) => (
+                                        <option key={v.id} value={v.id}>
+                                          ⏱️ {v.duration_effect || `${Math.round(v.default_duration / 60)} min`} — {v.cost} PTS
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                ) : (
+                                  <div className="inline-flex items-center gap-1 font-label-mono-sm text-[11px] text-on-surface-variant font-bold">
+                                    <span className="material-symbols-outlined text-xs">timer</span>
+                                    <span>{activeVariant.duration_effect || 'Fixed Disruption'}</span>
+                                  </div>
+                                )}
+
                                 <p className="font-body-sm text-xs text-on-surface-variant leading-relaxed">
-                                  {item.description}
+                                  {activeVariant.description}
                                 </p>
                               </div>
 
@@ -1241,7 +1369,7 @@ export default function PlayerArena() {
                                     onChange={(e) =>
                                       setSabotageTargets((prev) => ({
                                         ...prev,
-                                        [item.name]: Number(e.target.value)
+                                        [grp.baseName]: Number(e.target.value)
                                       }))
                                     }
                                   >
@@ -1259,7 +1387,7 @@ export default function PlayerArena() {
                                 <button
                                   type="button"
                                   disabled={!canAfford || isDeploying || rivalTeams.length === 0}
-                                  onClick={() => handleDeploySabotage(item)}
+                                  onClick={() => handleDeploySabotage({ ...activeVariant, baseName: grp.baseName })}
                                   className={`w-full py-2.5 px-4 font-label-mono-sm text-xs uppercase font-bold tracking-wider rounded transition-all cursor-pointer flex items-center justify-center gap-2 ${
                                     !canAfford
                                       ? 'bg-hairline-dark text-on-surface-variant opacity-50 cursor-not-allowed'
@@ -1267,13 +1395,13 @@ export default function PlayerArena() {
                                   }`}
                                 >
                                   <span className="material-symbols-outlined text-base">emergency_home</span>
-                                  <span>{canAfford ? `Deploy (${item.cost} Pts)` : `Need ${item.cost} Pts`}</span>
+                                  <span>{canAfford ? `Deploy (${activeVariant.cost} Pts)` : `Need ${activeVariant.cost} Pts`}</span>
                                 </button>
                               </div>
                             </div>
                           );
                         })}
-                        {sabotages.length === 0 && (
+                        {groupedSabotages.length === 0 && (
                           <div className="col-span-full p-8 text-center text-on-surface-variant font-label-mono-sm text-sm bg-surface-subtle rounded-xl">
                             No Sabotages configured for Round 0{potisRound}.
                           </div>
@@ -1290,6 +1418,12 @@ export default function PlayerArena() {
 
         </main>
       </div>
+
+      {/* Cyberpunk Video Alert Modal with Always-on-Top PiP for VS Code alerts */}
+      <VideoAlertOverlay
+        alertData={videoAlertData}
+        onDismiss={dismissVideoAlert}
+      />
 
     </div>
   );
