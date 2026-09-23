@@ -79,6 +79,35 @@ async def handle_websocket(websocket: WebSocket, token: Optional[str] = None):
             if msg_type == "PING":
                 await manager.send_personal(websocket, {"type": "PONG"})
 
+            elif msg_type in ("REQUEST_SYNC", "REFRESH", "SYNC_STATE"):
+                try:
+                    async with AsyncSessionLocal() as db:
+                        teams = await ScoreService.get_all_teams(db)
+                        queue_state = await BuzzerService.get_queue_state(db)
+                        recent_logs = await AuditService.get_logs(db, category="ALL", limit=25)
+                        session_res = await db.execute(
+                            select(GameSession).where(GameSession.is_active == True).limit(1)
+                        )
+                        session = session_res.scalar_one_or_none()
+                        round_locks = {
+                            "round1Unlocked": session.round1_unlocked if session else False,
+                            "round2Unlocked": session.round2_unlocked if session else False,
+                        }
+
+                        sync_payload = {
+                            "type": "INIT_STATE",
+                            "teams": teams,
+                            "queueState": queue_state,
+                            "recentLogs": recent_logs,
+                            "activeTeamIds": manager.get_active_team_ids(),
+                            "roundLocks": round_locks,
+                        }
+                        await manager.send_personal(websocket, sync_payload)
+                        # Also broadcast updated leaderboard to all peers
+                        await ScoreService.broadcast_leaderboard(db)
+                except Exception as sync_err:
+                    logger.error(f"Error handling sync request: {sync_err}")
+
             elif msg_type in ("LOGOUT", "PLAYER_LOGOUT"):
                 await manager.disconnect_and_broadcast(websocket)
                 break

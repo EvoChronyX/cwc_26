@@ -200,8 +200,13 @@ export function GameProvider({ children }) {
     }
   };
 
+  // Database Refreshing & Last Synced State
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastRefreshedAt, setLastRefreshedAt] = useState(new Date());
+
   // Fetch baseline state from PostgreSQL database
-  const refreshDatabaseState = useCallback(async () => {
+  const refreshDatabaseState = useCallback(async (showFeedback = false) => {
+    setIsRefreshing(true);
     try {
       const [fetchedTeams, queueData, logsData, locksData, catalogData] = await Promise.all([
         api.teams.getAll().catch(() => []),
@@ -259,10 +264,54 @@ export function GameProvider({ children }) {
       if (Array.isArray(logsData)) {
         setAuditLogs(logsData);
       }
+
+      setLastRefreshedAt(new Date());
+
+      if (showFeedback) {
+        playTone(850, 0.1);
+      }
+
+      // Also request sync over WebSocket if connected
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        try {
+          wsRef.current.send(JSON.stringify({ type: 'REQUEST_SYNC' }));
+        } catch (e) {}
+      }
+
+      return { success: true, count: Array.isArray(fetchedTeams) ? fetchedTeams.length : 0 };
     } catch (err) {
       console.warn('Error refreshing database state:', err);
+      return { success: false, error: err };
+    } finally {
+      setIsRefreshing(false);
     }
   }, [currentTeamId]);
+
+  // Auto-polling and tab-focus sync for bulletproof live database freshness
+  useEffect(() => {
+    // Background polling every 6 seconds when authenticated
+    const pollInterval = setInterval(() => {
+      if (currentUser && (currentView === 'arena' || currentView === 'admin')) {
+        refreshDatabaseState(false);
+      }
+    }, 6000);
+
+    // Instant sync when user switches back to tab or windows gains focus
+    const handleVisibilityOrFocus = () => {
+      if (document.visibilityState === 'visible' && currentUser) {
+        refreshDatabaseState(false);
+      }
+    };
+
+    window.addEventListener('focus', handleVisibilityOrFocus);
+    document.addEventListener('visibilitychange', handleVisibilityOrFocus);
+
+    return () => {
+      clearInterval(pollInterval);
+      window.removeEventListener('focus', handleVisibilityOrFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
+    };
+  }, [currentUser, currentView, refreshDatabaseState]);
 
   // Connect WebSocket for live tournament telemetry with keepalive and auto-reconnect
   useEffect(() => {
@@ -442,6 +491,9 @@ export function GameProvider({ children }) {
         if (Array.isArray(data.activeTeamIds)) {
           setActiveTeamIds(data.activeTeamIds);
         }
+        if (Array.isArray(data.teams)) {
+          setTeams(data.teams);
+        }
         break;
 
       case 'ROUND_STATE_CHANGED':
@@ -480,9 +532,13 @@ export function GameProvider({ children }) {
         break;
 
       case 'LEADERBOARD_UPDATED':
+      case 'TEAMS_UPDATED':
       case 'SCORE_RESET':
         if (Array.isArray(data.teams)) {
           setTeams(data.teams);
+        }
+        if (Array.isArray(data.activeTeamIds)) {
+          setActiveTeamIds(data.activeTeamIds);
         }
         break;
 
@@ -1327,6 +1383,8 @@ export function GameProvider({ children }) {
         loginAdmin,
         logout,
         refreshDatabaseState,
+        isRefreshing,
+        lastRefreshedAt,
         activeTeamIds,
         roundState,
         startRound0,

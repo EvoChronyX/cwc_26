@@ -243,7 +243,8 @@ class ScoreService:
         teams = await ScoreService.get_all_teams(db)
         await manager.broadcast({
             "type": "LEADERBOARD_UPDATED",
-            "teams": teams
+            "teams": teams,
+            "activeTeamIds": manager.get_active_team_ids()
         })
 
     @staticmethod

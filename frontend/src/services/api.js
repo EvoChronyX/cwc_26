@@ -43,6 +43,8 @@ async function request(endpoint, options = {}) {
   const token = getAuthToken();
   const headers = {
     'Content-Type': 'application/json',
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(options.headers || {}),
   };
@@ -50,6 +52,7 @@ async function request(endpoint, options = {}) {
   const response = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
     headers,
+    cache: 'no-store',
   });
 
   if (!response.ok) {

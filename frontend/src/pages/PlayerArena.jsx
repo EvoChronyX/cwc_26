@@ -86,10 +86,21 @@ export default function PlayerArena() {
     catalog,
     videoAlertData,
     dismissVideoAlert,
-    requestNotificationPermission
+    requestNotificationPermission,
+    refreshDatabaseState,
+    isRefreshing,
+    lastRefreshedAt
   } = useGame();
 
   const [sortByR0, setSortByR0] = useState(false);
+
+  // Active Squads & Active Players Telemetry (2 players per squad)
+  const activeSquadsCount = teams.filter((t) => activeTeamIds.includes(t.id) || t.isOnline).length;
+  const totalSquadsCount = teams.length;
+  const activePlayersCount = teams
+    .filter((t) => activeTeamIds.includes(t.id) || t.isOnline)
+    .reduce((acc, t) => acc + (t.p1 ? 1 : 0) + (t.p2 ? 1 : 0), 0) || (activeSquadsCount * 2);
+  const totalPlayersCount = teams.reduce((acc, t) => acc + (t.p1 ? 1 : 0) + (t.p2 ? 1 : 0), 0) || (teams.length * 2);
 
   // Dynamic Sabotage Targets, Variant Selection, and Action feedback for Power of Potis
   const [selectedVariantId, setSelectedVariantId] = useState({});
@@ -270,8 +281,42 @@ export default function PlayerArena() {
           </button>
         </nav>
 
+        {/* Live Active Presence Telemetry in Sidebar */}
+        <div className="px-3 py-2.5 mx-2 mb-2 rounded-xl bg-canvas-dark border border-white/10 flex flex-col gap-1.5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-signal-emerald opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-signal-emerald"></span>
+              </span>
+              <span className="font-label-mono-sm text-[10px] text-signal-emerald uppercase font-bold tracking-wider">
+                LIVE ROSTER
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                refreshDatabaseState(true);
+                playTone(850, 0.08);
+              }}
+              title="Refresh from Database"
+              className="text-white/60 hover:text-acid-chartreuse transition-colors p-0.5 cursor-pointer"
+            >
+              <span className={`material-symbols-outlined text-sm ${isRefreshing ? 'animate-spin' : ''}`}>refresh</span>
+            </button>
+          </div>
+          <div className="flex items-center justify-between text-[11px] font-label-mono-sm">
+            <span className="text-white/70">Active Squads:</span>
+            <span className="text-signal-emerald font-bold">{activeSquadsCount} / {totalSquadsCount}</span>
+          </div>
+          <div className="flex items-center justify-between text-[11px] font-label-mono-sm">
+            <span className="text-white/70">Active Players:</span>
+            <span className="text-acid-chartreuse font-bold">{activePlayersCount} / {totalPlayersCount}</span>
+          </div>
+        </div>
+
         {/* Bottom Sidebar Action: Logout / Switch Squad */}
-        <div className="p-space-sm border-t border-hairline-light mt-auto">
+        <div className="p-space-sm border-t border-hairline-light">
           <button
             type="button"
             onClick={logout}
@@ -315,9 +360,60 @@ export default function PlayerArena() {
                   </p>
                 </div>
 
-                <div className="flex items-center gap-4">
-                  <div className="bg-primary text-on-primary p-4 rounded-xl flex flex-col items-start min-w-[140px] shadow-[3px_3px_0px_#CCFF00]">
-                    <span className="font-label-mono-sm text-label-mono-sm text-acid-chartreuse uppercase">TEAM SCORE</span>
+                <div className="flex flex-wrap items-center gap-3">
+                  {/* Live Active Telemetry Widget */}
+                  <div className="bg-canvas-dark text-white px-4 py-3 rounded-xl border border-white/15 flex flex-col gap-1 shadow-sm min-w-[220px]">
+                    <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="relative flex h-2.5 w-2.5">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-signal-emerald opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-signal-emerald"></span>
+                        </span>
+                        <span className="font-label-mono-sm text-[10px] text-signal-emerald uppercase font-bold tracking-wider">
+                          LIVE TELEMETRY
+                        </span>
+                      </div>
+                      <span className="font-label-mono-sm text-[9px] text-white/50 uppercase">
+                        {isRefreshing ? 'SYNCING...' : `SYNCED: ${lastRefreshedAt ? lastRefreshedAt.toTimeString().split(' ')[0] : 'LIVE'}`}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 pt-0.5">
+                      <div className="flex flex-col">
+                        <span className="font-label-mono-sm text-[9px] text-white/60 uppercase">ACTIVE SQUADS</span>
+                        <span className="font-label-mono-lg text-sm font-black text-signal-emerald">
+                          {activeSquadsCount} <span className="text-white/40 text-xs font-normal">/ {totalSquadsCount}</span>
+                        </span>
+                      </div>
+                      <div className="w-[1px] h-6 bg-white/15"></div>
+                      <div className="flex flex-col">
+                        <span className="font-label-mono-sm text-[9px] text-white/60 uppercase">ACTIVE PLAYERS</span>
+                        <span className="font-label-mono-lg text-sm font-black text-acid-chartreuse">
+                          {activePlayersCount} <span className="text-white/40 text-xs font-normal">/ {totalPlayersCount}</span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Manual Refresh Button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      refreshDatabaseState(true);
+                      playTone(880, 0.08);
+                    }}
+                    disabled={isRefreshing}
+                    title="Force fetch all registered squads and live scores directly from PostgreSQL"
+                    className="flex items-center gap-2 px-4 py-3.5 bg-acid-chartreuse hover:bg-black hover:text-acid-chartreuse text-canvas-dark rounded-xl font-label-mono-sm text-xs uppercase font-black transition-all cursor-pointer border-2 border-black shadow-[3px_3px_0px_#050505] active:translate-x-0.5 active:translate-y-0.5 disabled:opacity-60 shrink-0"
+                  >
+                    <span className={`material-symbols-outlined text-[18px] ${isRefreshing ? 'animate-spin' : ''}`}>
+                      refresh
+                    </span>
+                    <span>{isRefreshing ? 'SYNCING...' : 'REFRESH ROSTER'}</span>
+                  </button>
+
+                  {/* Team Score Card */}
+                  <div className="bg-primary text-on-primary p-3.5 rounded-xl flex flex-col items-start min-w-[125px] shadow-[3px_3px_0px_#CCFF00] border-2 border-primary shrink-0">
+                    <span className="font-label-mono-sm text-[10px] text-acid-chartreuse uppercase font-bold">YOUR SCORE</span>
                     <span className="font-label-mono-lg text-headline-md text-on-primary font-bold tracking-tight">
                       {currentTeam.score.toLocaleString()} PTS
                     </span>
@@ -536,19 +632,40 @@ export default function PlayerArena() {
 
                 {/* Complete Division Standings Subheading */}
                 <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pt-4 pb-2 border-t border-hairline-light">
-                  <div>
-                    <span className="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold tracking-widest">
-                      COMPLETE DIVISION STANDINGS
-                    </span>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-label-mono-sm text-xs uppercase text-on-surface-variant font-bold tracking-widest">
+                        COMPLETE DIVISION STANDINGS
+                      </span>
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-signal-emerald/15 text-primary text-[10px] font-label-mono-sm font-bold border border-signal-emerald/40">
+                        <span className="w-1.5 h-1.5 rounded-full bg-signal-emerald"></span>
+                        {activeSquadsCount}/{totalSquadsCount} ONLINE ({activePlayersCount} PLAYERS)
+                      </span>
+                    </div>
                     <h3 className="font-headline-md text-primary uppercase font-bold tracking-tight">
                       All Connected Squads
                     </h3>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        refreshDatabaseState(true);
+                        playTone(850, 0.08);
+                      }}
+                      disabled={isRefreshing}
+                      title="Force database refresh"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full font-label-mono-sm text-xs uppercase font-bold bg-surface-subtle hover:bg-black hover:text-acid-chartreuse text-primary border border-hairline-light transition-all cursor-pointer shadow-sm active:translate-y-0.5 disabled:opacity-60"
+                    >
+                      <span className={`material-symbols-outlined text-sm ${isRefreshing ? 'animate-spin' : ''}`}>
+                        refresh
+                      </span>
+                      <span>{isRefreshing ? 'SYNCING...' : 'SYNC'}</span>
+                    </button>
                     <button
                       type="button"
                       onClick={() => setSortByR0(!sortByR0)}
-                      className={`px-3 py-1 rounded-full font-label-mono-sm text-xs uppercase font-bold transition-all cursor-pointer border ${
+                      className={`px-3 py-1.5 rounded-full font-label-mono-sm text-xs uppercase font-bold transition-all cursor-pointer border ${
                         sortByR0
                           ? 'bg-acid-chartreuse text-canvas-dark border-acid-chartreuse shadow-[2px_2px_0px_#000]'
                           : 'bg-surface-subtle hover:bg-surface-container text-primary border-hairline-light'
@@ -556,7 +673,7 @@ export default function PlayerArena() {
                     >
                       {sortByR0 ? 'Ranked: Round 0 (Mani Adi)' : 'Sort by: Round 0 (Mani Adi)'}
                     </button>
-                    <span className="bg-primary text-on-primary px-3 py-1 rounded-full font-label-mono-sm text-label-mono-sm uppercase font-bold">
+                    <span className="bg-primary text-on-primary px-3 py-1.5 rounded-full font-label-mono-sm text-label-mono-sm uppercase font-bold">
                       {sortByR0 ? 'SORTED BY: ROUND 0 PTS' : 'SORTED BY: TOTAL SCORE'}
                     </span>
                   </div>

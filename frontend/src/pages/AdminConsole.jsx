@@ -34,8 +34,19 @@ export default function AdminConsole() {
     roundLocks,
     toggleRoundLock,
     deleteAllTeams,
-    deleteAllRecords
+    deleteAllRecords,
+    refreshDatabaseState,
+    isRefreshing,
+    lastRefreshedAt
   } = useGame();
+
+  // Active Squads & Active Players Telemetry (2 players per squad)
+  const activeSquadsCount = teams.filter((t) => activeTeamIds.includes(t.id) || t.isOnline).length;
+  const totalSquadsCount = teams.length;
+  const activePlayersCount = teams
+    .filter((t) => activeTeamIds.includes(t.id) || t.isOnline)
+    .reduce((acc, t) => acc + (t.p1 ? 1 : 0) + (t.p2 ? 1 : 0), 0) || (activeSquadsCount * 2);
+  const totalPlayersCount = teams.reduce((acc, t) => acc + (t.p1 ? 1 : 0) + (t.p2 ? 1 : 0), 0) || (teams.length * 2);
 
   // Active filter in Total Comalies
   const [onlyActive, setOnlyActive] = useState(false);
@@ -221,16 +232,42 @@ export default function AdminConsole() {
           </button>
         </nav>
 
-        {/* Bottom Telemetry Latency Card */}
-        <div className="px-space-md pt-space-md mt-auto">
-          <div className="bg-surface-subtle p-space-sm rounded-lg flex flex-col gap-space-2xs border border-hairline-light">
-            <span className="font-label-mono-sm text-label-mono-sm uppercase text-on-surface-variant">TELEMETRY LATENCY</span>
-            <span className="font-label-mono-lg text-label-mono-lg text-primary font-bold">14ms // STABLE</span>
+        {/* Live Active Presence Telemetry in Admin Sidebar */}
+        <div className="px-3 py-2.5 mx-2 mt-auto mb-2 rounded-xl bg-canvas-dark border border-white/10 flex flex-col gap-1.5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-signal-emerald opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-signal-emerald"></span>
+              </span>
+              <span className="font-label-mono-sm text-[10px] text-signal-emerald uppercase font-bold tracking-wider">
+                ACTIVE TOURNAMENT
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                refreshDatabaseState(true);
+                playTone(850, 0.08);
+              }}
+              title="Force Database Fetch"
+              className="text-white/60 hover:text-acid-chartreuse transition-colors p-0.5 cursor-pointer"
+            >
+              <span className={`material-symbols-outlined text-sm ${isRefreshing ? 'animate-spin' : ''}`}>refresh</span>
+            </button>
+          </div>
+          <div className="flex items-center justify-between text-[11px] font-label-mono-sm">
+            <span className="text-white/70">Connected Squads:</span>
+            <span className="text-signal-emerald font-bold">{activeSquadsCount} / {totalSquadsCount}</span>
+          </div>
+          <div className="flex items-center justify-between text-[11px] font-label-mono-sm">
+            <span className="text-white/70">Connected Players:</span>
+            <span className="text-acid-chartreuse font-bold">{activePlayersCount} / {totalPlayersCount}</span>
           </div>
         </div>
 
         {/* Bottom Sidebar Action: Logout Admin */}
-        <div className="p-space-sm border-t border-hairline-light mt-2">
+        <div className="p-space-sm border-t border-hairline-light">
           <button
             type="button"
             onClick={logout}
@@ -292,6 +329,19 @@ export default function AdminConsole() {
                 </div>
 
                 <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      refreshDatabaseState(true);
+                      playTone(850, 0.08);
+                    }}
+                    disabled={isRefreshing}
+                    title="Force fetch all tournament state from database"
+                    className="bg-surface-subtle hover:bg-black hover:text-acid-chartreuse text-primary font-label-mono-sm text-label-mono-sm uppercase px-4 py-3 border border-hairline-light shadow-sm transition-all flex items-center gap-2 cursor-pointer font-bold disabled:opacity-60"
+                  >
+                    <span className={`material-symbols-outlined text-sm ${isRefreshing ? 'animate-spin' : ''}`}>refresh</span>
+                    <span>{isRefreshing ? 'SYNCING...' : 'SYNC DB'}</span>
+                  </button>
                   <button
                     type="button"
                     onClick={lockBuzzers}
@@ -775,17 +825,54 @@ export default function AdminConsole() {
                   </p>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <div className="bg-surface-subtle px-4 py-2 rounded-lg font-label-mono-sm text-label-mono-sm text-primary font-bold border border-hairline-light flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-signal-emerald animate-pulse"></span>
-                    <span>
-                      ACTIVE NOW: <strong className="text-signal-emerald">{teams.filter((t) => activeTeamIds.includes(t.id) || t.isOnline).length}</strong> / {teams.length}
-                    </span>
+                <div className="flex flex-wrap items-center gap-3">
+                  {/* Live Active Presence Telemetry Card */}
+                  <div className="bg-canvas-dark text-white px-3.5 py-2 rounded-lg border border-white/15 flex items-center gap-3 shadow-sm">
+                    <div className="flex items-center gap-1.5">
+                      <span className="relative flex h-2.5 w-2.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-signal-emerald opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-signal-emerald"></span>
+                      </span>
+                      <span className="font-label-mono-sm text-[10px] text-signal-emerald uppercase font-bold tracking-wider">
+                        LIVE ROSTER
+                      </span>
+                    </div>
+                    <div className="w-[1px] h-4 bg-white/20"></div>
+                    <div className="flex items-center gap-1 text-xs font-label-mono-sm">
+                      <span className="text-white/60 text-[10px] uppercase">SQUADS:</span>
+                      <strong className="text-signal-emerald font-black text-sm">{activeSquadsCount}</strong>
+                      <span className="text-white/40">/{totalSquadsCount}</span>
+                    </div>
+                    <div className="w-[1px] h-4 bg-white/20"></div>
+                    <div className="flex items-center gap-1 text-xs font-label-mono-sm">
+                      <span className="text-white/60 text-[10px] uppercase">PLAYERS:</span>
+                      <strong className="text-acid-chartreuse font-black text-sm">{activePlayersCount}</strong>
+                      <span className="text-white/40">/{totalPlayersCount}</span>
+                    </div>
                   </div>
+
+                  {/* Manual Refresh Button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      refreshDatabaseState(true);
+                      playTone(880, 0.08);
+                    }}
+                    disabled={isRefreshing}
+                    title="Force fetch all registered squads directly from PostgreSQL database"
+                    className="flex items-center gap-2 px-4 py-2.5 bg-acid-chartreuse hover:bg-black hover:text-acid-chartreuse text-canvas-dark rounded-lg font-label-mono-sm text-xs font-black uppercase transition-all cursor-pointer border-2 border-black shadow-[3px_3px_0px_#050505] active:translate-x-0.5 active:translate-y-0.5 disabled:opacity-60"
+                  >
+                    <span className={`material-symbols-outlined text-[18px] ${isRefreshing ? 'animate-spin' : ''}`}>
+                      refresh
+                    </span>
+                    <span>{isRefreshing ? 'FETCHING DB...' : 'REFRESH COMALIES'}</span>
+                  </button>
+
+                  {/* Filter: Active Only */}
                   <button
                     type="button"
                     onClick={() => setOnlyActive(!onlyActive)}
-                    className={`px-3.5 py-2 rounded-lg font-label-mono-sm text-xs font-bold uppercase transition-all cursor-pointer border ${
+                    className={`px-3.5 py-2.5 rounded-lg font-label-mono-sm text-xs font-bold uppercase transition-all cursor-pointer border ${
                       onlyActive
                         ? 'bg-signal-emerald text-on-surface border-signal-emerald shadow-[2px_2px_0px_#000]'
                         : 'bg-surface-subtle hover:bg-surface-container-high text-primary border-hairline-light'
@@ -987,6 +1074,20 @@ export default function AdminConsole() {
                   <button
                     type="button"
                     onClick={() => {
+                      refreshDatabaseState(true);
+                      playTone(850, 0.08);
+                    }}
+                    disabled={isRefreshing}
+                    title="Force fetch latest audit logs from PostgreSQL database"
+                    className="px-4 py-2 bg-surface-subtle hover:bg-black hover:text-acid-chartreuse text-primary font-label-mono-sm text-xs uppercase font-bold rounded flex items-center gap-1.5 cursor-pointer border border-hairline-light transition-all disabled:opacity-60"
+                  >
+                    <span className={`material-symbols-outlined text-sm ${isRefreshing ? 'animate-spin' : ''}`}>refresh</span>
+                    <span>{isRefreshing ? 'SYNCING...' : 'SYNC LOGS'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
                       playTone(950, 0.1);
                       window.open(api.audit.getExportUrl(), '_blank');
                     }}
@@ -1102,7 +1203,20 @@ export default function AdminConsole() {
                   </p>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      refreshDatabaseState(true);
+                      playTone(850, 0.08);
+                    }}
+                    disabled={isRefreshing}
+                    title="Force fetch latest standings from database"
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg font-label-mono-sm text-xs font-bold uppercase transition-all cursor-pointer border bg-surface-subtle hover:bg-black hover:text-acid-chartreuse text-primary border-hairline-light shadow-sm disabled:opacity-60"
+                  >
+                    <span className={`material-symbols-outlined text-sm ${isRefreshing ? 'animate-spin' : ''}`}>refresh</span>
+                    <span>{isRefreshing ? 'SYNCING...' : 'SYNC'}</span>
+                  </button>
                   <button
                     type="button"
                     onClick={() => setSortByR0(!sortByR0)}
@@ -1116,7 +1230,7 @@ export default function AdminConsole() {
                   </button>
                   <div className="bg-surface-subtle px-4 py-2 rounded-lg font-label-mono-sm text-label-mono-sm text-primary font-bold border border-hairline-light flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-signal-emerald animate-pulse"></span>
-                    <span>TOTAL SQUADS: {teams.length}</span>
+                    <span>ACTIVE: <strong className="text-signal-emerald">{activeSquadsCount}</strong> / {teams.length} SQUADS</span>
                   </div>
                 </div>
               </div>

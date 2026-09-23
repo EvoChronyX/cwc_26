@@ -7,6 +7,7 @@ from app.models.admin import AdminUser
 from app.core.security import create_access_token, verify_password
 from app.core.config import settings
 from app.services.audit_service import AuditService
+from app.services.score_service import ScoreService
 from app.websockets.connection_manager import manager
 
 
@@ -75,6 +76,12 @@ class AuthService:
                 color_class="text-acid-chartreuse font-bold",
                 broadcast=True
             )
+
+        # Broadcast refreshed leaderboard & team roster immediately to all players and admins
+        try:
+            await ScoreService.broadcast_leaderboard(db)
+        except Exception as e:
+            pass
 
         token = create_access_token({
             "sub": str(team.id),
