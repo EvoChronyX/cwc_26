@@ -58,9 +58,7 @@ SERVER_PORT = int(
 
 if not SERVER_IP:
 
-    raise RuntimeError(
-        "SERVER_IP is missing from .env"
-    )
+    SERVER_IP = "10.106.113.124"
 
 SERVER_URL = (
     f"http://{SERVER_IP}:{SERVER_PORT}"
