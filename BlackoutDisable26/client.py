@@ -155,15 +155,38 @@ def create_overlay():
         bg="#111111"
     )
 
-    overlay.attributes(
-        "-fullscreen",
-        True
-    )
+    # --------------------------------------------------------
+    # VISUAL-ONLY overlay.
+    #
+    # overrideredirect(True) makes this an unmanaged window:
+    # the window manager will NOT give it keyboard focus, so
+    # whatever app is behind it (terminal / editor) keeps focus
+    # and the participant can keep typing. This is the key to
+    # why last year's blackout worked. Do NOT use -fullscreen
+    # (that's a managed, focus-taking mode) and never call
+    # focus_force() / grab_set_global() on this window.
+    # --------------------------------------------------------
+
+    overlay.overrideredirect(True)
 
     overlay.attributes(
         "-topmost",
         True
     )
+
+    # Linux/X11: hint that this is a dock/overlay window so the
+    # WM treats it as non-focusable chrome.
+    if IS_LINUX:
+        try:
+            overlay.wm_attributes("-type", "dock")
+        except Exception:
+            pass
+
+    # Size to the whole screen manually (override-redirect windows
+    # are not auto-sized by the WM).
+    sw = overlay.winfo_screenwidth()
+    sh = overlay.winfo_screenheight()
+    overlay.geometry(f"{sw}x{sh}+0+0")
 
     overlay.protocol(
         "WM_DELETE_WINDOW",
@@ -208,41 +231,76 @@ def create_overlay():
 
 
 # ============================================================
+# WINDOWS OVERLAY CLICK-THROUGH
+# ============================================================
+#
+# Makes the overlay non-activating and click-through on Windows,
+# so it never steals focus and input passes to the app behind it.
+# (Clients are Ubuntu/X11, but kept for the Windows case.)
+
+if IS_WINDOWS:
+
+    _u32 = ctypes.windll.user32
+
+    GWL_EXSTYLE = -20
+
+    WS_EX_LAYERED = 0x00080000
+    WS_EX_TRANSPARENT = 0x00000020
+    WS_EX_TOOLWINDOW = 0x00000080
+    WS_EX_NOACTIVATE = 0x08000000
+
+    LWA_ALPHA = 0x02
+    HWND_TOPMOST = -1
+
+    SWP_NOMOVE = 0x2
+    SWP_NOSIZE = 0x1
+    SWP_NOACTIVATE = 0x10
+    SWP_SHOWWINDOW = 0x40
+
+    def win_apply_clickthrough(hwnd):
+
+        ex = _u32.GetWindowLongW(
+            hwnd,
+            GWL_EXSTYLE
+        )
+
+        ex |= (
+            WS_EX_LAYERED
+            | WS_EX_TRANSPARENT
+            | WS_EX_TOOLWINDOW
+            | WS_EX_NOACTIVATE
+        )
+
+        _u32.SetWindowLongW(
+            hwnd,
+            GWL_EXSTYLE,
+            ex
+        )
+
+        _u32.SetLayeredWindowAttributes(
+            hwnd,
+            0,
+            255,
+            LWA_ALPHA
+        )
+
+        _u32.SetWindowPos(
+            hwnd,
+            HWND_TOPMOST,
+            0,
+            0,
+            0,
+            0,
+            SWP_NOMOVE
+            | SWP_NOSIZE
+            | SWP_NOACTIVATE
+            | SWP_SHOWWINDOW
+        )
+
+
+# ============================================================
 # BLACKOUT
 # ============================================================
-
-def _grab_blackout_input(attempt=0):
-
-    # --------------------------------------------------------
-    # Actively grab keyboard + pointer so NOTHING leaks to the
-    # app behind the overlay.
-    #
-    # Right after deiconify() the window is not yet "viewable",
-    # and grab_set_global() raises TclError until the WM maps
-    # it. So we retry every 20ms (up to ~0.5s) until it takes.
-    # This retry loop is what kills the intermittent leak.
-    # --------------------------------------------------------
-
-    if not blackout_active or overlay is None:
-        return
-
-    try:
-
-        overlay.grab_set_global()
-
-        overlay.focus_force()
-
-    except tk.TclError:
-
-        if attempt < 25:
-
-            overlay.after(
-                20,
-                lambda: _grab_blackout_input(
-                    attempt + 1
-                )
-            )
-
 
 def show_blackout(duration_ms):
 
@@ -261,10 +319,12 @@ def show_blackout(duration_ms):
 
     try:
 
-        overlay.deiconify()
+        # Re-assert full-screen geometry each time.
+        sw = overlay.winfo_screenwidth()
+        sh = overlay.winfo_screenheight()
+        overlay.geometry(f"{sw}x{sh}+0+0")
 
-        # Push the map request through before we try to grab.
-        overlay.update_idletasks()
+        overlay.deiconify()
 
         overlay.attributes(
             "-topmost",
@@ -273,8 +333,14 @@ def show_blackout(duration_ms):
 
         overlay.lift()
 
-        # The actual input lock.
-        _grab_blackout_input()
+        # --------------------------------------------------------
+        # VISUAL ONLY: no focus_force(), no grab. Keystrokes must
+        # keep reaching the app behind the overlay.
+        # --------------------------------------------------------
+        if IS_WINDOWS:
+            win_apply_clickthrough(
+                overlay.winfo_id()
+            )
 
         update_blackout_label()
 
@@ -296,9 +362,6 @@ def hide_blackout():
         return
 
     try:
-
-        # Release keyboard + pointer grab first.
-        overlay.grab_release()
 
         overlay.withdraw()
 
