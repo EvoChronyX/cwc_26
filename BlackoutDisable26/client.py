@@ -211,6 +211,39 @@ def create_overlay():
 # BLACKOUT
 # ============================================================
 
+def _grab_blackout_input(attempt=0):
+
+    # --------------------------------------------------------
+    # Actively grab keyboard + pointer so NOTHING leaks to the
+    # app behind the overlay.
+    #
+    # Right after deiconify() the window is not yet "viewable",
+    # and grab_set_global() raises TclError until the WM maps
+    # it. So we retry every 20ms (up to ~0.5s) until it takes.
+    # This retry loop is what kills the intermittent leak.
+    # --------------------------------------------------------
+
+    if not blackout_active or overlay is None:
+        return
+
+    try:
+
+        overlay.grab_set_global()
+
+        overlay.focus_force()
+
+    except tk.TclError:
+
+        if attempt < 25:
+
+            overlay.after(
+                20,
+                lambda: _grab_blackout_input(
+                    attempt + 1
+                )
+            )
+
+
 def show_blackout(duration_ms):
 
     global blackout_active
@@ -230,6 +263,9 @@ def show_blackout(duration_ms):
 
         overlay.deiconify()
 
+        # Push the map request through before we try to grab.
+        overlay.update_idletasks()
+
         overlay.attributes(
             "-topmost",
             True
@@ -237,7 +273,8 @@ def show_blackout(duration_ms):
 
         overlay.lift()
 
-        overlay.focus_force()
+        # The actual input lock.
+        _grab_blackout_input()
 
         update_blackout_label()
 
@@ -259,6 +296,9 @@ def hide_blackout():
         return
 
     try:
+
+        # Release keyboard + pointer grab first.
+        overlay.grab_release()
 
         overlay.withdraw()
 
