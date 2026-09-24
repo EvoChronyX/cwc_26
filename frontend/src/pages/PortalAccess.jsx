@@ -80,52 +80,107 @@ export default function PortalAccess() {
     setTimeout(() => setKeyVerified(false), 3000);
   };
 
+  // PLAYER VALIDATION & LOGIN
   const handleEnterArena = async () => {
-    if (!teamName || !teamName.trim()) {
-      setAuthError('Please enter your Squad / Team Name.');
-      playTone(280, 0.2, 'sawtooth');
-      return;
-    }
-    if (!playerPassword || !playerPassword.trim()) {
-      setAuthError('Please enter your Squad Access Key / Password.');
-      playTone(280, 0.2, 'sawtooth');
-      return;
-    }
-    setIsLoading(true);
     setAuthError('');
+
+    // TEAM NAME VALIDATION
+    if (!teamName || !teamName.trim()) {
+      setAuthError('❌ Team name is required.');
+      playTone(280, 0.2, 'sawtooth');
+      return;
+    }
+    if (teamName.trim().length < 3) {
+      setAuthError('❌ Team name should be more than 2 characters.');
+      playTone(280, 0.2, 'sawtooth');
+      return;
+    }
+    if (teamName.trim().length > 50) {
+      setAuthError('❌ Team name should not exceed 50 characters.');
+      playTone(280, 0.2, 'sawtooth');
+      return;
+    }
+
+    // PASSWORD VALIDATION
+    if (!playerPassword || !playerPassword.trim()) {
+      setAuthError('❌ Squad Access Key / Password is required.');
+      playTone(280, 0.2, 'sawtooth');
+      return;
+    }
+    if (playerPassword.trim().length < 6) {
+      setAuthError('❌ Password should be at least 6 characters.');
+      playTone(280, 0.2, 'sawtooth');
+      return;
+    }
+    if (playerPassword.trim().length > 50) {
+      setAuthError('❌ Password should not exceed 50 characters.');
+      playTone(280, 0.2, 'sawtooth');
+      return;
+    }
+
+    // MEMBER HANDLES VALIDATION (if provided)
+    if (p1Handle && p1Handle.trim().length > 0 && p1Handle.trim().length < 2) {
+      setAuthError('❌ Member 1 name should be more than 1 character.');
+      playTone(280, 0.2, 'sawtooth');
+      return;
+    }
+
+    if (p2Handle && p2Handle.trim().length > 0 && p2Handle.trim().length < 2) {
+      setAuthError('❌ Member 2 name should be more than 1 character.');
+      playTone(280, 0.2, 'sawtooth');
+      return;
+    }
+
+    setIsLoading(true);
     try {
       await loginPlayer(teamName.trim(), p1Handle, p2Handle, playerAvatar, playerPassword);
       playTone(900, 0.2);
       setNammaAreaSubTab('kootani');
       setCurrentView('arena');
     } catch (err) {
-      setAuthError(err.message || 'Authentication failed. Please verify squad credentials.');
+      setAuthError(`❌ ${err.message || 'Authentication failed. Please verify squad credentials.'}`);
       playTone(280, 0.2, 'sawtooth');
     } finally {
       setIsLoading(false);
     }
   };
 
+  // ADMIN VALIDATION & LOGIN
   const handleLaunchAdmin = async () => {
-    if (!gmId || !gmId.trim()) {
-      setAuthError('Please enter Game Master Identifier.');
-      playTone(280, 0.2, 'sawtooth');
-      return;
-    }
-    if (!masterKey || !masterKey.trim()) {
-      setAuthError('Please enter Master Override Security Password.');
-      playTone(280, 0.2, 'sawtooth');
-      return;
-    }
-    setIsLoading(true);
     setAuthError('');
+
+    // GAME MASTER ID VALIDATION
+    if (!gmId || !gmId.trim()) {
+      setAuthError('❌ Game Master Identifier is required.');
+      playTone(280, 0.2, 'sawtooth');
+      return;
+    }
+    if (gmId.trim().length < 3) {
+      setAuthError('❌ Game Master ID should be more than 2 characters.');
+      playTone(280, 0.2, 'sawtooth');
+      return;
+    }
+
+    // MASTER KEY VALIDATION
+    if (!masterKey || !masterKey.trim()) {
+      setAuthError('❌ Master Override Security Password is required.');
+      playTone(280, 0.2, 'sawtooth');
+      return;
+    }
+    if (masterKey.trim().length < 8) {
+      setAuthError('❌ Master password should be at least 8 characters.');
+      playTone(280, 0.2, 'sawtooth');
+      return;
+    }
+
+    setIsLoading(true);
     try {
       await loginAdmin(gmId.trim(), masterKey);
       playTone(1100, 0.2);
       setAdminSubTab('thalaivar');
       setCurrentView('admin');
     } catch (err) {
-      setAuthError(err.message || 'Game Master authentication failed.');
+      setAuthError(`❌ ${err.message || 'Game Master authentication failed.'}`);
       playTone(280, 0.2, 'sawtooth');
     } finally {
       setIsLoading(false);
@@ -432,11 +487,11 @@ export default function PortalAccess() {
                 </div>
               </div>
 
-              {/* Error Banner */}
+              {/* Error Banner - ENHANCED */}
               {authError && (
-                <div className="p-3 bg-error-container/30 border-2 border-sabotage-crimson rounded-xl flex items-center gap-2 text-sabotage-crimson font-label-mono-sm text-xs font-bold animate-pulse">
-                  <span className="material-symbols-outlined text-base">error</span>
-                  <span>{authError}</span>
+                <div className="p-4 bg-sabotage-crimson/20 border-2 border-sabotage-crimson rounded-xl flex items-start gap-3 text-sabotage-crimson font-label-mono-sm text-sm font-bold animate-pulse">
+                  <span className="material-symbols-outlined text-lg flex-shrink-0 mt-0.5">error</span>
+                  <span className="leading-relaxed">{authError}</span>
                 </div>
               )}
 
@@ -496,11 +551,11 @@ export default function PortalAccess() {
                 </div>
               </div>
 
-              {/* Error Banner */}
+              {/* Error Banner - ENHANCED */}
               {authError && (
-                <div className="p-3 bg-error-container/30 border-2 border-sabotage-crimson rounded-xl flex items-center gap-2 text-sabotage-crimson font-label-mono-sm text-xs font-bold animate-pulse">
-                  <span className="material-symbols-outlined text-base">error</span>
-                  <span>{authError}</span>
+                <div className="p-4 bg-sabotage-crimson/20 border-2 border-sabotage-crimson rounded-xl flex items-start gap-3 text-sabotage-crimson font-label-mono-sm text-sm font-bold animate-pulse">
+                  <span className="material-symbols-outlined text-lg flex-shrink-0 mt-0.5">error</span>
+                  <span className="leading-relaxed">{authError}</span>
                 </div>
               )}
 
