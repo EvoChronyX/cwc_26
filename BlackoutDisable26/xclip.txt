@@ -1,0 +1,21 @@
+echo ""
+echo "Installing xclip..."
+
+sudo apt update
+sudo apt install -y xclip
+
+echo ""
+echo "Installing Python requirements..."
+-----
+
+python -m pip install python-socketio[client] python-dotenv python-xlib
+
+echo ""
+echo "============================================"
+echo "Setup complete"
+echo "============================================"
+
+echo ""
+echo "Node: $(node --version)"
+echo "npm:  $(npm --version)"
+echo "xclip: $(which xclip)"
