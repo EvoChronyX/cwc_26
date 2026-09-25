@@ -1,0 +1,61 @@
+#!/bin/bash
+
+set -e
+
+NODE_VERSION="22.23.2"
+NODE_DIR="/opt/node22"
+NODE_URL="https://nodejs.org/download/release/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz"
+
+echo "Downloading Node.js ${NODE_VERSION}..."
+
+cd /tmp
+
+wget -O "node-v${NODE_VERSION}-linux-x64.tar.xz" "$NODE_URL"
+
+echo "Installing Node.js to ${NODE_DIR}..."
+
+sudo rm -rf "$NODE_DIR"
+sudo mkdir -p "$NODE_DIR"
+
+sudo tar -xJf "node-v${NODE_VERSION}-linux-x64.tar.xz" \
+    --strip-components=1 \
+    -C "$NODE_DIR"
+
+echo "Creating system-wide commands..."
+
+sudo ln -sf "$NODE_DIR/bin/node" /usr/local/bin/node
+sudo ln -sf "$NODE_DIR/bin/npm" /usr/local/bin/npm
+sudo ln -sf "$NODE_DIR/bin/npx" /usr/local/bin/npx
+
+hash -r
+
+echo ""
+echo "Node:"
+node --version 
+
+echo ""
+echo "npm:"
+npm --version
+
+echo ""
+echo "Installing xclip..."
+
+sudo apt update
+sudo apt install -y xclip
+
+echo ""
+echo "Installing Python requirements..."
+
+python -m pip install python-socketio[client] python-dotenv python-xlib
+
+echo ""
+echo "============================================"
+echo "Setup complete"
+echo "============================================"
+
+echo ""
+echo "Node: $(node --version)"
+echo "npm:  $(npm --version)"
+echo "xclip: $(which xclip)"
+
+
